@@ -3,10 +3,9 @@ package local
 import (
 	"github.com/aarzilli/nucular"
 	"github.com/kiamev/pr-modsync/mods"
-	"image"
-	"image/draw"
-	"image/png"
-	"os"
+	"github.com/kiamev/pr-modsync/ui/configure"
+	"github.com/kiamev/pr-modsync/ui/state"
+	"github.com/kiamev/pr-modsync/ui/util"
 )
 
 const (
@@ -40,32 +39,20 @@ func Draw(w *nucular.Window, gm mods.GameMods) {
 	w.Spacing(1)
 	if sw := w.GroupBegin("preview", nucular.WindowBorder|nucular.WindowNoScrollbar); sw != nil {
 		if selected != nil {
-			addFieldValueText(sw, "Name:", selected.Mod.Name)
-			addFieldValueText(sw, "Version:", selected.Mod.Version)
-			addFieldValueText(sw, "Description:", selected.Mod.Description)
-			addFieldValueText(sw, "Category:", selected.Mod.Category)
-			addFieldValueText(sw, "Release Date:", selected.Mod.ReleaseDate)
+			util.AddFieldValueText(sw, "Name:", selected.Mod.Name)
+			util.AddFieldValueText(sw, "Version:", selected.Mod.Version)
+			util.AddFieldValueText(sw, "Description:", selected.Mod.Description)
+			util.AddFieldValueText(sw, "Category:", selected.Mod.Category)
+			util.AddFieldValueText(sw, "Release Date:", selected.Mod.ReleaseDate)
 
-			fr, _ := os.Open(selected.Mod.Preview)
-			img, _ := png.Decode(fr)
-			i := image.NewRGBA(image.Rect(0, 0, 400, 225))
-			draw.Draw(i, i.Bounds(), img, image.Point{}, draw.Src)
-
-			sw.Row(225).Static(400)
-			sw.Image(i)
+			util.DrawImg(sw, selected.Mod.Preview)
 
 			sw.Row(20).Static(60)
-			sw.ButtonText("Enable")
-
+			if sw.ButtonText("Enable") {
+				configure.Initialize(selected, state.CurrentUI)
+				state.CurrentUI = state.Configure
+			}
 		}
 		sw.GroupEnd()
 	}
-}
-
-func addFieldValueText(w *nucular.Window, label string, value string) {
-	w.Row(12).Static(w.Bounds.W - 20)
-	w.Label(label, "LC")
-	w.Row(12).Static(w.Bounds.W - 20)
-	w.Label(value, "LC")
-	w.Row(8).Static()
 }

@@ -7,8 +7,7 @@ type GUI byte
 const (
 	None GUI = iota
 	LocalMods
-	RemoteMods
-	Config
+	Configure
 )
 
 var (

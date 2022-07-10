@@ -85,7 +85,6 @@ func (gm *gameMods) readModDir(dir string) (err error) {
 		err = fmt.Errorf("failed to read %s for mod in %s: %v", modXmlName, dir, err)
 		return
 	}
-	gameMod.Mod.Preview = filepath.Join(dir, gameMod.Mod.Preview)
 
 	_, err = os.Stat(filepath.Join(dir, modEnabledName))
 	gameMod.Enabled = err == nil

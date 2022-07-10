@@ -8,6 +8,7 @@ import (
 	"github.com/kiamev/pr-modsync/browser"
 	"github.com/kiamev/pr-modsync/config"
 	"github.com/kiamev/pr-modsync/mods"
+	"github.com/kiamev/pr-modsync/ui/configure"
 	"github.com/kiamev/pr-modsync/ui/local"
 	state "github.com/kiamev/pr-modsync/ui/state"
 	"image"
@@ -25,6 +26,102 @@ var (
 )
 
 func main() {
+	/*mo := mods.GameMod{
+		Mod: mods.Mod{
+			ID:               "metalliguyau.sprites.ffvipr",
+			Name:             "Textbox Portraits",
+			Author:           "metalliguyAU",
+			Version:          "2.1",
+			ReleaseDate:      "2022-07-07",
+			Category:         "Textures",
+			Description:      "Adds Portraits to the textboxes for the main characters! Includes Opera Omnia, OldVer and SNES Portraits, with 6 UI styles. This update now includes Kefka's portrait! To make this mod work properly, Shiryu's Classic Text Box Framework (FFVI) HAS to be installed first. Thanks to Shiryu for enabling a workaround for Kefka's portrait! It also replaces Mog, Gogo and Umaro's portraits with Cid, Leo and Gestahl's. The reason for this is because Mog, Gogo and Umaro have very little dialogue compared to Cid, Leo and Gestahl. It makes the game a lot more immersive with these new portraits! Now includes support for Chrono Trigger UI!",
+			ReleaseNotes:     "",
+			Link:             "https://www.nexusmods.com/finalfantasy6pixelremaster/mods/26",
+			Preview:          "https://staticdelivery.nexusmods.com/mods/4335/images/26/26-1650565736-597895528.png",
+			ModCompatibility: mods.ModCompatibility{},
+			GameVersions:     nil,
+			Downloadables: []mods.Download{
+				{
+					Name:        "Boarderless",
+					Sources:     []string{"https://supporter-files.nexus-cdn.com/4335/26/FFVIPR_Textbox_Portraits_(Full_Frame)_metalliguy-26-2-1-1650566101.rar"},
+					InstallType: "Archive",
+				},
+				{
+					Name:        "Boardered",
+					Sources:     []string{"https://supporter-files.nexus-cdn.com/4335/26/FFVIPR_Textbox_Portraits_(Full_Frame_Bordered)_metalliguy-26-1-1-1650566164.rar"},
+					InstallType: "Archive",
+				},
+			},
+			Configurations: []mods.Configuration{
+				{
+					Name:        "Frame Type",
+					Description: "Choose a frame type for the textbox portraits.",
+					Choices: []mods.Choice{
+						{
+							Description:           "Borderless",
+							Preview:               "https://staticdelivery.nexusmods.com/mods/4335/images/26/26-1650565736-597895528.png",
+							NextConfigurationName: toPtr("FullFramePortraitType"),
+						},
+						{
+							Description:           "Bordered",
+							Preview:               "https://staticdelivery.nexusmods.com/mods/4335/images/26/26-1650565780-1285802872.png",
+							NextConfigurationName: toPtr("BorderedPortraitType"),
+						},
+					},
+				},
+				{
+					Name:        "FullFramePortraitType",
+					Description: "Choose the type of portrait to use.",
+					Choices: []mods.Choice{
+						{
+							Description: "Stock UI SNES",
+							Preview:     "https://staticdelivery.nexusmods.com/mods/4335/images/26/26-1650565736-597895528.png",
+							DownloadFiles: mods.DownloadFiles{
+								DownloadName: "Boarderless",
+								Files: []mods.ModFile{
+									{
+										From: "Stock UI + SNES",
+										To:   toPtr("FINAL FANTASY VI PR/FINAL FANTASY VI_Data/StreamingAssets/aa/StandaloneWindows64"),
+									},
+								},
+							},
+						},
+						{
+							Description: "Stock UI OO",
+							Preview:     "https://staticdelivery.nexusmods.com/mods/4335/images/26/26-1650565736-597895528.png",
+							DownloadFiles: mods.DownloadFiles{
+								DownloadName: "Boarderless",
+								Files: []mods.ModFile{
+									{
+										From: "Stock UI + OO",
+										To:   toPtr("FINAL FANTASY VI PR/FINAL FANTASY VI_Data/StreamingAssets/aa/StandaloneWindows64"),
+									},
+								},
+							},
+						},
+						{
+							Description: "Stock UI Old Version",
+							Preview:     "https://staticdelivery.nexusmods.com/mods/4335/images/26/26-1650565736-597895528.png",
+							DownloadFiles: mods.DownloadFiles{
+								DownloadName: "Boarderless",
+								Files: []mods.ModFile{
+									{
+										From: "Stock UI + OO",
+										To:   toPtr("FINAL FANTASY VI PR/FINAL FANTASY VI_Data/StreamingAssets/aa/StandaloneWindows64"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Enabled: false,
+	}
+
+	result, _ := xml.Marshal(mo.Mod)
+	println(result)*/
+
 	errTextEditor.Flags = nucular.EditReadOnly | nucular.EditSelectable | nucular.EditSelectable | nucular.EditMultiline
 	var (
 		x = config.Get().WindowX
@@ -109,16 +206,16 @@ func updateWindow(w *nucular.Window) {
 	w.MenubarEnd()
 
 	if state.Game != config.None {
-		var gm mods.GameMods
-		if gm, err = mods.GetGameMods(state.Game); err != nil {
-			popupErr(w, err)
-			return
-		}
 		switch state.CurrentUI {
 		case state.LocalMods:
+			var gm mods.GameMods
+			if gm, err = mods.GetGameMods(state.Game); err != nil {
+				popupErr(w, err)
+				return
+			}
 			local.Draw(w, gm)
-		case state.RemoteMods:
-		case state.Config:
+		case state.Configure:
+			configure.Draw(w)
 		case state.None:
 			break
 		}
@@ -173,4 +270,8 @@ var customTheme = style.ColorTable{
 	ColorScrollbarCursorHover:  color.RGBA{150, 150, 150, 255},
 	ColorScrollbarCursorActive: color.RGBA{160, 160, 160, 255},
 	ColorTabHeader:             color.RGBA{210, 210, 210, 255},
+}
+
+func toPtr(s string) *string {
+	return &s
 }

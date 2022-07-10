@@ -12,47 +12,74 @@ type Mod struct {
 	Link             string           `json:"Link"`
 	Preview          string           `json:"Preview"`
 	ModCompatibility ModCompatibility `json:"Compatibility"`
-	GameVersions     []string         `json:"GameVersions"`
+	GameVersions     []string         `json:"GameVersion"`
+	Downloadables    []Download       `json:"Downloadable"`
+	DonationLinks    []DonationLink   `json:"DonationLink"`
 
-	// Either Files or Configs for a mod
-	Files          []ModFile       `json:"Files"`
-	Configurations []Configuration `json:"Configurations"`
+	// Either Download or Configs for a mod
+	DownloadFiles  *DownloadFiles  `json:"DownloadFiles,omitempty"`
+	Configurations []Configuration `json:"Configuration"`
 }
 
 type ModCompatibility struct {
-	Require          []ModCompat `json:"Require"`
-	Forbid           []ModCompat `json:"Forbid"`
-	OrderConstraints []ModCompat `json:"OrderConstraints"`
+	Requires []ModCompat `json:"Require"`
+	Forbids  []ModCompat `json:"Forbid"`
+	//OrderConstraints []ModCompat `json:"OrderConstraint"`
 }
 
 type ModCompat struct {
-	ModID    string         `json:"ModID"`
-	Versions []string       `json:"Versions"`
-	Order    ModCompatOrder `json:"Order"`
+	ModID    string   `json:"ModID"`
+	Versions []string `json:"Version"`
+	Source   string   `json:"Source"`
+	//Order   ModCompatOrder `json:"Order"`
 }
 
-type ModCompatOrder string
+/*type ModCompatOrder string
 
 const (
 	Before ModCompatOrder = "Before"
 	After  ModCompatOrder = "After"
+)*/
+
+type InstallType string
+
+const (
+	Compressed InstallType = "Compressed"
+	Memoria    InstallType = "Memoria"
+	Magicite   InstallType = "Magicite"
 )
 
+type Download struct {
+	Name        string   `json:"Name"`
+	Sources     []string `json:"Source"`
+	InstallType string   `json:"InstallType"`
+}
+
+type DownloadFiles struct {
+	DownloadName string    `json:"DownloadName"`
+	Files        []ModFile `json:"File"`
+}
+
 type ModFile struct {
-	IsDir bool   `json:"IsDir"`
-	From  string `json:"From"`
-	To    string `json:"To"`
+	From string  `json:"From"`
+	To   *string `json:"To,omitempty"`
 }
 
 type Configuration struct {
 	Name        string   `json:"Name"`
 	Description string   `json:"Description"`
-	Choices     []Choice `json:"Choices"`
+	Preview     string   `json:"Preview"`
+	Choices     []Choice `json:"Choice"`
 }
 
 type Choice struct {
-	Description           string    `json:"Description"`
-	Preview               string    `json:"Preview"`
-	Files                 []ModFile `json:"Files"`
-	NextConfigurationName *string   `json:"NextConfigurationName"`
+	Description           string        `json:"Description"`
+	Preview               string        `json:"Preview"`
+	DownloadFiles         DownloadFiles `json:"DownloadFiles"`
+	NextConfigurationName *string       `json:"NextConfigurationName,omitempty"`
+}
+
+type DonationLink struct {
+	Name string `json:"Name"`
+	Link string `json:"Link"`
 }
