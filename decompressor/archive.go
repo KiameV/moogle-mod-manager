@@ -2,32 +2,39 @@ package decompressor
 
 import (
 	"archive/zip"
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
-func handleArchive(src string, dest string) error {
-	r, err := zip.OpenReader(src)
+func newArchiveDecompressor(src string) Decompressor {
+	return &archiveDecompressor{src: src}
+}
+
+type archiveDecompressor struct {
+	src string
+}
+
+func (d archiveDecompressor) DecompressTo(dest string) error {
+	r, err := zip.OpenReader(d.src)
 	if err != nil {
 		return err
 	}
 	defer func() { _ = r.Close() }()
-	if err = os.MkdirAll(dest, 0755); err != nil {
+	if err = os.MkdirAll(dest, 0777); err != nil {
 		return err
 	}
 	// Closure to address file descriptors issue with all the deferred .Close() methods
 	for _, f := range r.File {
-		if err = extractArchiveFile(dest, f); err != nil {
+		if err = d.extractFile(dest, f); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func extractArchiveFile(dest string, f *zip.File) (err error) {
+func (d archiveDecompressor) extractFile(dest string, f *zip.File) (err error) {
 	var (
 		rc   io.ReadCloser
 		file *os.File
@@ -40,10 +47,7 @@ func extractArchiveFile(dest string, f *zip.File) (err error) {
 
 	path = filepath.Join(dest, f.Name)
 	// Check for ZipSlip (Directory traversal)
-	if !strings.HasPrefix(path, filepath.Clean(dest)+string(os.PathSeparator)) {
-		err = fmt.Errorf("illegal file path: %s", path)
-		return
-	}
+	path = strings.ReplaceAll(path, "..", "")
 
 	if f.FileInfo().IsDir() {
 		if err = os.MkdirAll(path, f.Mode()); err != nil {

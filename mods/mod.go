@@ -44,9 +44,13 @@ const (
 type InstallType string
 
 const (
+	Bundles  InstallType = "Bundles"
+	Memoria  InstallType = "Memoria"
+	Magicite InstallType = "Magicite"
+	BepInEx  InstallType = "BepInEx"
+	// DLL Patcher https://discord.com/channels/371784427162042368/518331294858608650/863930606446182420
+	DllPatch   InstallType = "DllPatch"
 	Compressed InstallType = "Compressed"
-	Memoria    InstallType = "Memoria"
-	Magicite   InstallType = "Magicite"
 )
 
 type Download struct {
@@ -61,8 +65,8 @@ type DownloadFiles struct {
 }
 
 type ModFile struct {
-	From string  `json:"From"`
-	To   *string `json:"To,omitempty"`
+	From string `json:"From"`
+	To   string `json:"To"`
 }
 
 type Configuration struct {

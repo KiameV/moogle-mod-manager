@@ -1,7 +1,6 @@
 package decompressor
 
 import (
-	"fmt"
 	"github.com/bodgit/sevenzip"
 	"io"
 	"os"
@@ -9,25 +8,33 @@ import (
 	"strings"
 )
 
-func handle7zip(src string, dest string) error {
-	r, err := sevenzip.OpenReader(src)
+func new7zDecompressor(src string) Decompressor {
+	return &szDecompressor{src: src}
+}
+
+type szDecompressor struct {
+	src string
+}
+
+func (d szDecompressor) DecompressTo(dest string) error {
+	r, err := sevenzip.OpenReader(d.src)
 	if err != nil {
 		return err
 	}
 	defer func() { _ = r.Close() }()
-	if err = os.MkdirAll(dest, 0755); err != nil {
+	if err = os.MkdirAll(dest, 0777); err != nil {
 		return err
 	}
 	// Closure to address file descriptors issue with all the deferred .Close() methods
 	for _, f := range r.File {
-		if err = extract7zipFile(dest, f); err != nil {
+		if err = d.extractFile(dest, f); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func extract7zipFile(dest string, f *sevenzip.File) (err error) {
+func (d szDecompressor) extractFile(dest string, f *sevenzip.File) (err error) {
 	var (
 		rc   io.ReadCloser
 		file *os.File
@@ -40,10 +47,7 @@ func extract7zipFile(dest string, f *sevenzip.File) (err error) {
 
 	path = filepath.Join(dest, f.Name)
 	// Check for ZipSlip (Directory traversal)
-	if !strings.HasPrefix(path, filepath.Clean(dest)+string(os.PathSeparator)) {
-		err = fmt.Errorf("illegal file path: %s", path)
-		return
-	}
+	path = strings.ReplaceAll(path, "..", "")
 
 	if f.FileInfo().IsDir() {
 		if err = os.MkdirAll(path, f.Mode()); err != nil {
