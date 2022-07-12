@@ -17,7 +17,7 @@ type Mod struct {
 	DonationLinks    []DonationLink   `json:"DonationLink"`
 
 	// Either Download or Configs for a mod
-	DownloadFiles  *DownloadFiles  `json:"DownloadFiles,omitempty"`
+	DownloadFiles  *DownloadFiles  `json:"DownloadFile,omitempty"`
 	Configurations []Configuration `json:"Configuration"`
 }
 
@@ -28,18 +28,18 @@ type ModCompatibility struct {
 }
 
 type ModCompat struct {
-	ModID    string   `json:"ModID"`
-	Versions []string `json:"Version"`
-	Source   string   `json:"Source"`
-	//Order   ModCompatOrder `json:"Order"`
+	ModID    string         `json:"ModID"`
+	Versions []string       `json:"Version"`
+	Source   string         `json:"Source"`
+	Order    ModCompatOrder `json:"Order"`
 }
 
-/*type ModCompatOrder string
+type ModCompatOrder string
 
 const (
 	Before ModCompatOrder = "Before"
 	After  ModCompatOrder = "After"
-)*/
+)
 
 type InstallType string
 
