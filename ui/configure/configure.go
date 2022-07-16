@@ -4,17 +4,18 @@ import (
 	"fmt"
 	"github.com/aarzilli/nucular"
 	"github.com/kiamev/pr-modsync/mods"
+	"github.com/kiamev/pr-modsync/mods/managed"
 	"github.com/kiamev/pr-modsync/ui/state"
 	"github.com/kiamev/pr-modsync/ui/util"
 )
 
 var (
-	gm            *mods.GameMod
+	gm            *managed.GameMod
 	currentConfig mods.Configuration
 	previousUI    state.GUI
 )
 
-func Initialize(gameMod *mods.GameMod, callingUI state.GUI) {
+func Initialize(gameMod *managed.GameMod, callingUI state.GUI) {
 	if len(gameMod.Mod.Configurations) == 0 {
 		state.CurrentUI = callingUI
 	}

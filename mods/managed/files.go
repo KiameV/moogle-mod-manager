@@ -4,12 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/kiamev/pr-modsync/config"
+	"github.com/kiamev/pr-modsync/mods/io"
 	"io/ioutil"
 	"strings"
 )
 
 const (
-	managedXmlName = "managed.xml"
+	managedXmlName = "managed.json"
 )
 
 var (
@@ -47,10 +48,10 @@ func AddModFiles(game config.Game, modID string, files []string) error {
 	for _, f := range files {
 		m.AllFiles[f] = true
 	}
-	return saveManagedXml()
+	return saveManagedJson()
 }
 
-func RemoveModFiles(game config.Game, modID string, files []string) error {
+func RemoveModFiles(game config.Game, modID string) error {
 	m, ok := managed[game]
 	if !ok {
 		return nil
@@ -59,13 +60,16 @@ func RemoveModFiles(game config.Game, modID string, files []string) error {
 		if modID == mf.ModID {
 			m.Mods[i] = m.Mods[len(m.Mods)-1]
 			m.Mods = m.Mods[:len(m.Mods)-1]
-			for _, f := range files {
+			if err := io.RevertMoveFiles(mf.Files, game); err != nil {
+				return err
+			}
+			for _, f := range mf.Files {
 				delete(m.AllFiles, f)
 			}
 			break
 		}
 	}
-	return saveManagedXml()
+	return saveManagedJson()
 }
 
 func detectCollisions(managedFiles map[string]bool, modFiles []string) (collisions []string) {
@@ -78,7 +82,7 @@ func detectCollisions(managedFiles map[string]bool, modFiles []string) (collisio
 	return
 }
 
-func saveManagedXml() error {
+func saveManagedJson() error {
 	b, err := json.Marshal(managed)
 	if err != nil {
 		return err

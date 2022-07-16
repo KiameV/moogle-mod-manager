@@ -1,37 +1,39 @@
 package mods
 
+import "github.com/kiamev/pr-modsync/config"
+
 type Mod struct {
-	ID               string           `json:"ID"`
-	Name             string           `json:"Name"`
-	Author           string           `json:"Author"`
-	Version          string           `json:"Version"`
-	ReleaseDate      string           `json:"ReleaseDate"`
-	Category         string           `json:"Category"`
-	Description      string           `json:"Description"`
-	ReleaseNotes     string           `json:"ReleaseNotes"`
-	Link             string           `json:"Link"`
-	Preview          string           `json:"Preview"`
-	ModCompatibility ModCompatibility `json:"Compatibility"`
-	GameVersions     []string         `json:"GameVersion"`
-	Downloadables    []Download       `json:"Downloadable"`
-	DonationLinks    []DonationLink   `json:"DonationLink"`
+	ID               string           `json:"ID" xml:"ID"`
+	Name             string           `json:"Name" xml:"Name"`
+	Author           string           `json:"Author" xml:"Author"`
+	Version          string           `json:"Version" xml:"Version"`
+	ReleaseDate      string           `json:"ReleaseDate" xml:"ReleaseDate"`
+	Category         string           `json:"Category" xml:"Category"`
+	Description      string           `json:"Description" xml:"Description"`
+	ReleaseNotes     string           `json:"ReleaseNotes" xml:"ReleaseNotes"`
+	Link             string           `json:"Link" xml:"Link"`
+	Preview          string           `json:"Preview" xml:"Preview"`
+	ModCompatibility ModCompatibility `json:"Compatibility" xml:"ModCompatibility"`
+	Downloadables    []Download       `json:"Downloadable" xml:"Downloadables"`
+	DonationLinks    []DonationLink   `json:"DonationLink" xml:"DonationLinks"`
+	Game             []Game           `json:"Games" xml:"Games"`
 
 	// Either Download or Configs for a mod
-	DownloadFiles  *DownloadFiles  `json:"DownloadFile,omitempty"`
-	Configurations []Configuration `json:"Configuration"`
+	DownloadFiles  *DownloadFiles  `json:"DownloadFile,omitempty" xml:"DownloadFiles"`
+	Configurations []Configuration `json:"Configuration" xml:"Configurations"`
 }
 
 type ModCompatibility struct {
-	Requires []ModCompat `json:"Require"`
-	Forbids  []ModCompat `json:"Forbid"`
+	Requires []ModCompat `json:"Require" xml:"Requires"`
+	Forbids  []ModCompat `json:"Forbid" xml:"Forbids"`
 	//OrderConstraints []ModCompat `json:"OrderConstraint"`
 }
 
 type ModCompat struct {
-	ModID    string         `json:"ModID"`
-	Versions []string       `json:"Version"`
-	Source   string         `json:"Source"`
-	Order    ModCompatOrder `json:"Order"`
+	ModID    string         `json:"ModID" xml:"ModID"`
+	Versions []string       `json:"Version" xml:"Versions"`
+	Source   string         `json:"Source" xml:"Source"`
+	Order    ModCompatOrder `json:"Order" xml:"Order"`
 }
 
 type ModCompatOrder string
@@ -53,37 +55,42 @@ const (
 	Compressed InstallType = "Compressed"
 )
 
+type Game struct {
+	Name     config.GameName `json:"Name" xml:"Name"`
+	Versions []string        `json:"Version,omitempty" xml:"GameVersions,omitempty"`
+}
+
 type Download struct {
-	Name        string   `json:"Name"`
-	Sources     []string `json:"Source"`
-	InstallType string   `json:"InstallType"`
+	Name        string   `json:"Name" xml:"Name"`
+	Sources     []string `json:"Source" xml:"Sources"`
+	InstallType string   `json:"InstallType" xml:"InstallType"`
 }
 
 type DownloadFiles struct {
-	DownloadName string    `json:"DownloadName"`
-	Files        []ModFile `json:"File"`
+	DownloadName string    `json:"DownloadName" xml:"DownloadName"`
+	Files        []ModFile `json:"File" xml:"Files"`
 }
 
 type ModFile struct {
-	From string `json:"From"`
-	To   string `json:"To"`
+	From string `json:"From" xml:"From"`
+	To   string `json:"To" xml:"To"`
 }
 
 type Configuration struct {
-	Name        string   `json:"Name"`
-	Description string   `json:"Description"`
-	Preview     string   `json:"Preview"`
-	Choices     []Choice `json:"Choice"`
+	Name        string   `json:"Name" xml:"Name"`
+	Description string   `json:"Description" xml:"Description"`
+	Preview     string   `json:"Preview" xml:"Preview"`
+	Choices     []Choice `json:"Choice" xml:"Choices"`
 }
 
 type Choice struct {
-	Description           string        `json:"Description"`
-	Preview               string        `json:"Preview"`
-	DownloadFiles         DownloadFiles `json:"DownloadFiles"`
-	NextConfigurationName *string       `json:"NextConfigurationName,omitempty"`
+	Description           string        `json:"Description" xml:"Description"`
+	Preview               string        `json:"Preview" xml:"Preview"`
+	DownloadFiles         DownloadFiles `json:"DownloadFiles" xml:"DownloadFiles"`
+	NextConfigurationName *string       `json:"NextConfigurationName,omitempty" xml:"NextConfigurationName"`
 }
 
 type DonationLink struct {
-	Name string `json:"Name"`
-	Link string `json:"Link"`
+	Name string `json:"Name" xml:"Name"`
+	Link string `json:"Link" xml:"Link"`
 }

@@ -2,7 +2,8 @@ package local
 
 import (
 	"github.com/aarzilli/nucular"
-	"github.com/kiamev/pr-modsync/mods"
+	"github.com/kiamev/pr-modsync/config"
+	"github.com/kiamev/pr-modsync/mods/managed"
 	"github.com/kiamev/pr-modsync/ui/configure"
 	"github.com/kiamev/pr-modsync/ui/state"
 	"github.com/kiamev/pr-modsync/ui/util"
@@ -17,19 +18,20 @@ const (
 var (
 	filters  = []string{All, Enabled, Disabled}
 	filter   = 0
-	selected *mods.GameMod
+	game     config.Game
+	selected *managed.GameMod
 )
 
-func Draw(w *nucular.Window, gm mods.GameMods) {
+func Draw(w *nucular.Window, game config.Game) {
 	w.Row(4).Static()
 	w.Row(14).Static(200, 100, 100)
-	w.Label(gm.GetGameName(), "LC")
+	w.Label(config.GetGameName(game), "LC")
 	filter = w.ComboSimple(filters, filter, 12)
 
 	w.Row(700).Static(290, 10, 500)
 	if sw := w.GroupBegin("mods", nucular.WindowBorder|nucular.WindowNoScrollbar); sw != nil {
 		sw.Row(20).Static(270)
-		for _, m := range gm.GetMods() {
+		for _, m := range managed.GetMods(game) {
 			checked := m.Enabled
 			sw.CheckboxText(m.Mod.Name, &checked)
 			selected = m

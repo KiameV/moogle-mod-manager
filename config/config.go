@@ -32,18 +32,6 @@ type ConfigData struct {
 	BackupDir string `json:"backup-dir"`
 }
 
-type Game byte
-
-const (
-	None Game = iota
-	I
-	II
-	III
-	IV
-	V
-	VI
-)
-
 func Get() *ConfigData {
 	return &config
 }
@@ -77,7 +65,7 @@ func Save() {
 	}
 }
 
-func (c *ConfigData) GetGameDir(game Game) (dir string) {
+func GetGameDir(game Game) (dir string) {
 	switch game {
 	case I:
 		dir = Get().DirI
@@ -115,7 +103,7 @@ func (c *ConfigData) SetGameDir(dir string, game Game) {
 	}
 }
 
-func (c *ConfigData) GetModDir(game Game) (s string) {
+func GetModDir(game Game) (s string) {
 	switch game {
 	case I:
 		s = "I"
@@ -134,7 +122,7 @@ func (c *ConfigData) GetModDir(game Game) (s string) {
 	return
 }
 
-func (c *ConfigData) GetBackupDir(game Game) (s string) {
+func GetBackupDir(game Game) (s string) {
 	switch game {
 	case I:
 		s = "I"

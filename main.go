@@ -7,10 +7,11 @@ import (
 	"github.com/aarzilli/nucular/style"
 	"github.com/kiamev/pr-modsync/browser"
 	"github.com/kiamev/pr-modsync/config"
-	"github.com/kiamev/pr-modsync/mods"
+	"github.com/kiamev/pr-modsync/mods/managed"
 	"github.com/kiamev/pr-modsync/ui/configure"
 	"github.com/kiamev/pr-modsync/ui/local"
 	state "github.com/kiamev/pr-modsync/ui/state"
+	"github.com/ncruces/zenity"
 	"image"
 	"image/color"
 	"time"
@@ -122,6 +123,10 @@ func main() {
 	result, _ := xml.Marshal(mo.Mod)
 	println(result)*/
 
+	if err := managed.Initialize(); err != nil {
+		panic(err)
+	}
+
 	errTextEditor.Flags = nucular.EditReadOnly | nucular.EditSelectable | nucular.EditSelectable | nucular.EditMultiline
 	var (
 		x = config.Get().WindowX
@@ -143,35 +148,47 @@ func updateWindow(w *nucular.Window) {
 	if w := w.Menu(label.TA("Game", "LC"), 100, nil); w != nil {
 		w.Row(12).Dynamic(1)
 		if w.MenuItem(label.TA("I", "LC")) {
-			state.Game = config.I
+			state.CurrentGame = toPtrGame(config.I)
 			state.CurrentUI = state.LocalMods
 			w.Close()
 		} else if w.MenuItem(label.TA("II", "LC")) {
-			state.Game = config.II
+			state.CurrentGame = toPtrGame(config.II)
 			state.CurrentUI = state.LocalMods
 			w.Close()
 		} else if w.MenuItem(label.TA("III", "LC")) {
-			state.Game = config.III
+			state.CurrentGame = toPtrGame(config.III)
 			state.CurrentUI = state.LocalMods
 			w.Close()
 		} else if w.MenuItem(label.TA("IV", "LC")) {
-			state.Game = config.IV
+			state.CurrentGame = toPtrGame(config.IV)
 			state.CurrentUI = state.LocalMods
 			w.Close()
 		} else if w.MenuItem(label.TA("V", "LC")) {
-			state.Game = config.V
+			state.CurrentGame = toPtrGame(config.V)
 			state.CurrentUI = state.LocalMods
 			w.Close()
 		} else if w.MenuItem(label.TA("VI", "LC")) {
-			state.Game = config.VI
+			state.CurrentGame = toPtrGame(config.VI)
 			state.CurrentUI = state.LocalMods
 			w.Close()
 		}
 	}
 
-	if state.Game != config.None && state.CurrentUI == state.LocalMods {
-		if w.MenuItem(label.TA("Add Mod", "LC")) {
-			w.Close()
+	if state.CurrentGame != nil && state.CurrentUI == state.LocalMods {
+		if w := w.Menu(label.TA("Menu", "LC"), 100, nil); w != nil {
+			w.Row(12).Dynamic(1)
+			if w.MenuItem(label.TA("From File", "LC")) {
+				zenity.SelectFile(
+					zenity.FileFilters{
+						{"Go files", []string{"*.go"}},
+						{"Web files", []string{"*.html", "*.js", "*.css"}},
+						{"Image files", []string{"*.png", "*.gif", "*.ico", "*.jpg", "*.webp"}},
+					})
+				w.Close()
+			} else if w.MenuItem(label.TA("From URL", "LC")) {
+
+				w.Close()
+			}
 		}
 	} else {
 		w.Spacing(1)
@@ -205,15 +222,10 @@ func updateWindow(w *nucular.Window) {
 	}
 	w.MenubarEnd()
 
-	if state.Game != config.None {
+	if state.CurrentGame != nil {
 		switch state.CurrentUI {
 		case state.LocalMods:
-			var gm mods.GameMods
-			if gm, err = mods.GetGameMods(state.Game); err != nil {
-				popupErr(w, err)
-				return
-			}
-			local.Draw(w, gm)
+			local.Draw(w, *state.CurrentGame)
 		case state.Configure:
 			configure.Draw(w)
 		case state.None:
@@ -274,4 +286,8 @@ var customTheme = style.ColorTable{
 
 func toPtr(s string) *string {
 	return &s
+}
+
+func toPtrGame(game config.Game) *config.Game {
+	return &game
 }

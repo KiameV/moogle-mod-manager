@@ -11,7 +11,7 @@ const (
 )
 
 var (
-	Game      config.Game
-	CurrentUI GUI
-	Errors    []error
+	CurrentGame *config.Game
+	CurrentUI   GUI
+	Errors      []error
 )
