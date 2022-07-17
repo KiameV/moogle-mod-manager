@@ -3,37 +3,37 @@ package mods
 import "github.com/kiamev/pr-modsync/config"
 
 type Mod struct {
-	ID               string           `json:"ID" xml:"ID"`
-	Name             string           `json:"Name" xml:"Name"`
-	Author           string           `json:"Author" xml:"Author"`
-	Version          string           `json:"Version" xml:"Version"`
-	ReleaseDate      string           `json:"ReleaseDate" xml:"ReleaseDate"`
-	Category         string           `json:"Category" xml:"Category"`
-	Description      string           `json:"Description" xml:"Description"`
-	ReleaseNotes     string           `json:"ReleaseNotes" xml:"ReleaseNotes"`
-	Link             string           `json:"Link" xml:"Link"`
-	Preview          string           `json:"Preview" xml:"Preview"`
-	ModCompatibility ModCompatibility `json:"Compatibility" xml:"ModCompatibility"`
-	Downloadables    []Download       `json:"Downloadable" xml:"Downloadables"`
-	DonationLinks    []DonationLink   `json:"DonationLink" xml:"DonationLinks"`
-	Game             []Game           `json:"Games" xml:"Games"`
+	ID               string            `json:"ID" xml:"ID"`
+	Name             string            `json:"Name" xml:"Name"`
+	Author           string            `json:"Author" xml:"Author"`
+	Version          string            `json:"Version" xml:"Version"`
+	ReleaseDate      string            `json:"ReleaseDate" xml:"ReleaseDate"`
+	Category         string            `json:"Category" xml:"Category"`
+	Description      string            `json:"Description" xml:"Description"`
+	ReleaseNotes     string            `json:"ReleaseNotes" xml:"ReleaseNotes"`
+	Link             string            `json:"Link" xml:"Link"`
+	Preview          string            `json:"Preview" xml:"Preview"`
+	ModCompatibility *ModCompatibility `json:"Compatibility,omitempty" xml:"ModCompatibility,omitempty"`
+	Downloadables    []*Download       `json:"Downloadable" xml:"Downloadables"`
+	DonationLinks    []*DonationLink   `json:"DonationLink" xml:"DonationLinks"`
+	Game             []*Game           `json:"Games" xml:"Games"`
 
 	// Either Download or Configs for a mod
-	DownloadFiles  *DownloadFiles  `json:"DownloadFile,omitempty" xml:"DownloadFiles"`
-	Configurations []Configuration `json:"Configuration" xml:"Configurations"`
+	DownloadFiles  *DownloadFiles   `json:"DownloadFile,omitempty" xml:"DownloadFiles,omitempty"`
+	Configurations []*Configuration `json:"Configuration" xml:"Configurations"`
 }
 
 type ModCompatibility struct {
-	Requires []ModCompat `json:"Require" xml:"Requires"`
-	Forbids  []ModCompat `json:"Forbid" xml:"Forbids"`
+	Requires []*ModCompat `json:"Require" xml:"Requires"`
+	Forbids  []*ModCompat `json:"Forbid" xml:"Forbids"`
 	//OrderConstraints []ModCompat `json:"OrderConstraint"`
 }
 
 type ModCompat struct {
-	ModID    string         `json:"ModID" xml:"ModID"`
-	Versions []string       `json:"Version" xml:"Versions"`
-	Source   string         `json:"Source" xml:"Source"`
-	Order    ModCompatOrder `json:"Order" xml:"Order"`
+	ModID    string          `json:"ModID" xml:"ModID"`
+	Versions []*string       `json:"Version,omitempty" xml:"Versions,omitempty"`
+	Source   string          `json:"Source" xml:"Source"`
+	Order    *ModCompatOrder `json:"Order,omitempty" xml:"Order,omitempty"`
 }
 
 type ModCompatOrder string

@@ -14,7 +14,7 @@ import (
 
 var (
 	mod     *mods.Mod
-	entries = make(map[string]*widget.Entry)
+	entries = make(map[string]fyne.CanvasObject)
 )
 
 func DrawNewMod(w fyne.Window) {
@@ -59,6 +59,14 @@ func draw(w fyne.Window) {
 		getFormItem("Link"),
 		getFormItem("Preview"),
 	)
+	accordion := widget.NewAccordion(
+		widget.NewAccordionItem("Mod Compatibility", widget.NewForm()),
+		widget.NewAccordionItem("Downloadables", widget.NewForm()),
+		widget.NewAccordionItem("Donation Links", widget.NewForm()),
+		widget.NewAccordionItem("Game", widget.NewForm()),
+		widget.NewAccordionItem("Download Files", widget.NewForm()),
+		widget.NewAccordionItem("Configurations", widget.NewForm()),
+	)
 	xmlButtons := container.NewHBox(
 		widget.NewButton("Copy XML", func() {
 			pasteToClipboard(w, false)
@@ -73,7 +81,7 @@ func draw(w fyne.Window) {
 		widget.NewButton("Save mod.json", func() {
 
 		}))
-	w.SetContent(container.NewVScroll(container.NewVBox(form, xmlButtons, jsonButtons)))
+	w.SetContent(container.NewVScroll(container.NewVBox(form, accordion, xmlButtons, jsonButtons)))
 }
 
 func updateEntries() {
@@ -89,18 +97,40 @@ func updateEntries() {
 	setFormItem("Preview", mod.Preview)
 }
 
-func getFormItem(name string) *widget.FormItem {
-	e, _ := entries[name]
+func getFormItem(name string, customKey ...string) *widget.FormItem {
+	key := name
+	if len(customKey) > 0 {
+		key = customKey[0]
+	}
+	e, _ := entries[key]
 	return widget.NewFormItem(name, e)
 }
 
-func setFormItem(name string, value string) {
-	e, ok := entries[name]
+func setFormItem(key string, value string) {
+	e, ok := entries[key]
 	if !ok {
 		e = widget.NewEntry()
-		entries[name] = e
+		entries[key] = e
 	}
-	e.SetText(value)
+	e.(*widget.Entry).SetText(value)
+}
+
+func setFormSelect(key string, possible []string, value string) {
+	e, ok := entries[key]
+	if !ok {
+		e = widget.NewSelectEntry(possible)
+		entries[key] = e
+	}
+	e.(*widget.SelectEntry).SetText(value)
+}
+
+func setFormMultiLine(key string, value string) {
+	e, ok := entries[key]
+	if !ok {
+		e = widget.NewMultiLineEntry()
+		entries[key] = e
+	}
+	e.(*widget.Entry).SetText(value)
 }
 
 func pasteToClipboard(w fyne.Window, asJson bool) {
