@@ -12,20 +12,22 @@ import (
 )
 
 const (
-	tagUrl = `https://api.github.com/repos/KiameV/final-fantasy-pr-save-editor/tags`
-	relUrl = `https://github.com/KiameV/final-fantasy-pr-save-editor/releases/%s`
+	version = "0.1.0"
+
+	tagUrl = `https://api.github.com/repos/KiameV/ffprModManager/tags`
+	relUrl = `https://github.com/KiameV/ffprModManager/releases/%s`
 )
 
 type tag struct {
 	Name string `json:"name"`
 }
 
-func CheckForUpdate(current string) (hasNewer bool, version string, err error) {
+func CheckForUpdate() (hasNewer bool, version string, err error) {
 	var (
 		r    *http.Response
 		b    []byte
 		tags []tag
-		vn   = versionToInt(current)
+		vn   = versionToInt(version)
 	)
 	if r, err = http.Get(tagUrl); err != nil {
 		return

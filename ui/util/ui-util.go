@@ -1,13 +1,6 @@
 package util
 
-import (
-	"github.com/aarzilli/nucular"
-	"image"
-	"image/draw"
-	"image/png"
-	"os"
-)
-
+/*
 var imgs = make(map[string]*image.RGBA)
 
 func AddFieldValueText(w *nucular.Window, label string, value string) {

@@ -1,5 +1,6 @@
 package configure
 
+/*
 import (
 	"fmt"
 	"github.com/aarzilli/nucular"
@@ -64,3 +65,4 @@ func Draw(w *nucular.Window) {
 		}
 	}
 }
+*/

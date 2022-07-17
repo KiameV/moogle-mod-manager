@@ -1,6 +1,9 @@
 package state
 
-import "github.com/kiamev/pr-modsync/config"
+import (
+	"fyne.io/fyne/v2"
+	"github.com/kiamev/pr-modsync/config"
+)
 
 type GUI byte
 
@@ -13,5 +16,6 @@ const (
 var (
 	CurrentGame *config.Game
 	CurrentUI   GUI
+	App         fyne.App
 	Errors      []error
 )
