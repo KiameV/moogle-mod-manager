@@ -17,5 +17,5 @@ var (
 	CurrentGame *config.Game
 	CurrentUI   GUI
 	App         fyne.App
-	Errors      []error
+	Window      fyne.Window
 )

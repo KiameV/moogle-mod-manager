@@ -11,13 +11,13 @@ import (
 
 func main() {
 	state.App = app.New()
-	w := state.App.NewWindow("Moogle Mod Manager")
-	w.Resize(fyne.NewSize(800, 600))
+	state.Window = state.App.NewWindow("Moogle Mod Manager")
+	state.Window.Resize(fyne.NewSize(800, 600))
 	if err := managed.Initialize(); err != nil {
-		dialog.ShowError(err, w)
-		w.Close()
+		dialog.ShowError(err, state.Window)
+		state.Window.Close()
 		return
 	}
-	game_select.Draw(w)
-	w.ShowAndRun()
+	game_select.Draw(state.Window)
+	state.Window.ShowAndRun()
 }

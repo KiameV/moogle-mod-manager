@@ -31,7 +31,7 @@ type ModCompatibility struct {
 
 type ModCompat struct {
 	ModID    string          `json:"ModID" xml:"ModID"`
-	Versions []*string       `json:"Version,omitempty" xml:"Versions,omitempty"`
+	Versions []string        `json:"Version,omitempty" xml:"Versions,omitempty"`
 	Source   string          `json:"Source" xml:"Source"`
 	Order    *ModCompatOrder `json:"Order,omitempty" xml:"Order,omitempty"`
 }

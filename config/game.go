@@ -24,7 +24,7 @@ const (
 	VI
 )
 
-func GetGameName(game Game) (name string) {
+func String(game Game) (name string) {
 	switch game {
 	case I:
 		name = "I"
@@ -39,8 +39,26 @@ func GetGameName(game Game) (name string) {
 	case VI:
 		name = "VI"
 	}
-	name = fmt.Sprintf("Final Fantasy %s PR Mods", name)
+	name = fmt.Sprintf("Final Fantasy %s", name)
 	return
+}
+
+func FromString(s string) (game Game) {
+	switch s {
+	case "Final Fantasy I":
+		return I
+	case "Final Fantasy II":
+		return II
+	case "Final Fantasy III":
+		return III
+	case "Final Fantasy IV":
+		return IV
+	case "Final Fantasy V":
+		return V
+	case "Final Fantasy VI":
+		return VI
+	}
+	return VI
 }
 
 func NameToGame(n GameName) Game {

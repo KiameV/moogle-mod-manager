@@ -9,12 +9,14 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/pr-modsync/mods"
 	"golang.design/x/clipboard"
+	"strings"
 	"time"
 )
 
 var (
 	mod     *mods.Mod
 	entries = make(map[string]fyne.CanvasObject)
+	gameDef = newGamesDef()
 )
 
 func DrawNewMod(w fyne.Window) {
@@ -29,7 +31,7 @@ func DrawNewMod(w fyne.Window) {
 		ReleaseNotes:     "",
 		Link:             "",
 		Preview:          "",
-		ModCompatibility: mods.ModCompatibility{},
+		ModCompatibility: nil,
 		Downloadables:    nil,
 		DonationLinks:    nil,
 		Game:             nil,
@@ -59,14 +61,16 @@ func draw(w fyne.Window) {
 		getFormItem("Link"),
 		getFormItem("Preview"),
 	)
-	accordion := widget.NewAccordion(
-		widget.NewAccordionItem("Mod Compatibility", widget.NewForm()),
-		widget.NewAccordionItem("Downloadables", widget.NewForm()),
-		widget.NewAccordionItem("Donation Links", widget.NewForm()),
-		widget.NewAccordionItem("Game", widget.NewForm()),
-		widget.NewAccordionItem("Download Files", widget.NewForm()),
-		widget.NewAccordionItem("Configurations", widget.NewForm()),
-	)
+
+	tabs := container.NewAppTabs(
+		container.NewTabItem("Mod", form),
+		container.NewTabItem("Compatibility", createCompatibilities(w)),
+		container.NewTabItem("Downloadables", widget.NewForm()),
+		container.NewTabItem("Donation Links", widget.NewForm()),
+		container.NewTabItem("Game", gameDef.draw(w)),
+		container.NewTabItem("Download Files", widget.NewForm()),
+		container.NewTabItem("Configurations", widget.NewForm()))
+
 	xmlButtons := container.NewHBox(
 		widget.NewButton("Copy XML", func() {
 			pasteToClipboard(w, false)
@@ -81,7 +85,7 @@ func draw(w fyne.Window) {
 		widget.NewButton("Save mod.json", func() {
 
 		}))
-	w.SetContent(container.NewVScroll(container.NewVBox(form, accordion, xmlButtons, jsonButtons)))
+	w.SetContent(container.NewVScroll(container.NewVBox(tabs, xmlButtons, jsonButtons)))
 }
 
 func updateEntries() {
@@ -97,6 +101,28 @@ func updateEntries() {
 	setFormItem("Preview", mod.Preview)
 }
 
+func getFormString(key string) string {
+	e, ok := entries[key]
+	if !ok {
+		return ""
+	}
+	switch t := e.(type) {
+	case *widget.Entry:
+		return t.Text
+	case *widget.SelectEntry:
+		return t.Text
+	}
+	return ""
+}
+
+func getFormStrings(key string) []string {
+	s := getFormString(key)
+	if s != "" {
+		return strings.Split(s, ", ")
+	}
+	return nil
+}
+
 func getFormItem(name string, customKey ...string) *widget.FormItem {
 	key := name
 	if len(customKey) > 0 {
@@ -110,6 +136,7 @@ func setFormItem(key string, value string) {
 	e, ok := entries[key]
 	if !ok {
 		e = widget.NewEntry()
+		//e.Resize(fyne.Size{Width: 200, Height: e.MinSize().Height})
 		entries[key] = e
 	}
 	e.(*widget.Entry).SetText(value)
@@ -119,6 +146,7 @@ func setFormSelect(key string, possible []string, value string) {
 	e, ok := entries[key]
 	if !ok {
 		e = widget.NewSelectEntry(possible)
+		//e.Resize(fyne.Size{Width: 200, Height: e.MinSize().Height})
 		entries[key] = e
 	}
 	e.(*widget.SelectEntry).SetText(value)
@@ -128,6 +156,7 @@ func setFormMultiLine(key string, value string) {
 	e, ok := entries[key]
 	if !ok {
 		e = widget.NewMultiLineEntry()
+		//e.Resize(fyne.Size{Width: 200, Height: e.MinSize().Height})
 		entries[key] = e
 	}
 	e.(*widget.Entry).SetText(value)
@@ -142,14 +171,14 @@ func pasteToClipboard(w fyne.Window, asJson bool) {
 		dialog.ShowError(err, w)
 		return
 	}
-	if b, err = Marshal(w, asJson); err != nil {
+	if b, err = Marshal(asJson); err != nil {
 		dialog.ShowError(err, w)
 		return
 	}
 	clipboard.Write(clipboard.FmtText, b)
 }
 
-func Marshal(w fyne.Window, asJson bool) (b []byte, err error) {
+func Marshal(asJson bool) (b []byte, err error) {
 	if asJson {
 		b, err = json.MarshalIndent(mod, "", "\t")
 	} else {
