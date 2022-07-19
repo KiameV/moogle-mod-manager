@@ -27,7 +27,7 @@ func CheckForUpdate() (hasNewer bool, version string, err error) {
 		r    *http.Response
 		b    []byte
 		tags []tag
-		vn   = versionToInt(version)
+		vn   = versionToInt(Version)
 	)
 	if r, err = http.Get(tagUrl); err != nil {
 		return

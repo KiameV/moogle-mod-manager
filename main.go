@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/dialog"
@@ -16,7 +15,7 @@ import (
 
 func main() {
 	state.App = app.New()
-	state.Window = state.App.NewWindow(fmt.Sprintf("Moogle Mod Manager %d", browser.Version))
+	state.Window = state.App.NewWindow("Moogle Mod Manager " + browser.Version)
 	state.Window.Resize(fyne.NewSize(800, 600))
 	if err := managed.Initialize(); err != nil {
 		dialog.ShowError(err, state.Window)
