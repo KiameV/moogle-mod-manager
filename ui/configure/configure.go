@@ -4,10 +4,10 @@ package configure
 import (
 	"fmt"
 	"github.com/aarzilli/nucular"
-	"github.com/kiamev/pr-modsync/mods"
-	"github.com/kiamev/pr-modsync/mods/managed"
-	"github.com/kiamev/pr-modsync/ui/state"
-	"github.com/kiamev/pr-modsync/ui/util"
+	"github.com/kiamev/moogle-mod-manager/mods"
+	"github.com/kiamev/moogle-mod-manager/mods/managed"
+	"github.com/kiamev/moogle-mod-manager/ui/state"
+	"github.com/kiamev/moogle-mod-manager/ui/util"
 )
 
 var (

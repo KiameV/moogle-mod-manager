@@ -1,14 +1,14 @@
-package author
+package mod_author
 
 import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
-	"github.com/kiamev/pr-modsync/config"
-	"github.com/kiamev/pr-modsync/mods"
-	cw "github.com/kiamev/pr-modsync/ui/custom-widgets"
-	"github.com/kiamev/pr-modsync/ui/state"
+	"github.com/kiamev/moogle-mod-manager/config"
+	"github.com/kiamev/moogle-mod-manager/mods"
+	cw "github.com/kiamev/moogle-mod-manager/ui/custom-widgets"
+	"github.com/kiamev/moogle-mod-manager/ui/state"
 	"strings"
 )
 
@@ -26,7 +26,7 @@ func newGamesDef() *gamesDef {
 	return d
 }
 
-func (d *gamesDef) GetItems() (games []*mods.Game) {
+func (d *gamesDef) compile() (games []*mods.Game) {
 	games = make([]*mods.Game, len(d.list.Items))
 	for i, item := range d.list.Items {
 		games[i] = item.(*mods.Game)
@@ -69,7 +69,7 @@ func (d *gamesDef) editItem(item interface{}, done func(result interface{})) {
 		if ok {
 			done(&mods.Game{
 				Name:     config.GameToName(config.FromString(getFormString("gameDefName"))),
-				Versions: getFormStrings("gameDefVersion"),
+				Versions: getFormStrings("gameDefVersion", ","),
 			})
 		}
 	}, state.Window)
@@ -77,7 +77,7 @@ func (d *gamesDef) editItem(item interface{}, done func(result interface{})) {
 	fd.Show()
 }
 
-func (d *gamesDef) draw(w fyne.Window) fyne.CanvasObject {
+func (d *gamesDef) draw() fyne.CanvasObject {
 	return container.NewVBox(container.NewHBox(
 		widget.NewLabelWithStyle("Games", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
 		widget.NewButton("Add", func() {
@@ -85,5 +85,5 @@ func (d *gamesDef) draw(w fyne.Window) fyne.CanvasObject {
 				d.list.AddItem(result)
 			})
 		})),
-		d.list.Draw(w))
+		d.list.Draw())
 }

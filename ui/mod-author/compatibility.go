@@ -1,11 +1,12 @@
-package author
+package mod_author
 
 import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	"github.com/kiamev/pr-modsync/mods"
+	"github.com/kiamev/moogle-mod-manager/mods"
+	"github.com/kiamev/moogle-mod-manager/ui/state"
 	"strings"
 )
 
@@ -16,7 +17,16 @@ const (
 	forbidden mcType = false
 )
 
-func createCompatibilities(w fyne.Window) fyne.CanvasObject {
+type modCompatsDef struct {
+	requires []*mods.ModCompat
+	forbids  []*mods.ModCompat
+}
+
+func newModCompatibilityDef() *modCompatsDef {
+	return &modCompatsDef{}
+}
+
+func (d *modCompatsDef) draw() fyne.CanvasObject {
 	var (
 		requires *fyne.Container
 		forbids  *fyne.Container
@@ -25,28 +35,26 @@ func createCompatibilities(w fyne.Window) fyne.CanvasObject {
 		container.NewHBox(
 			widget.NewLabelWithStyle("Requires", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
 			widget.NewButtonWithIcon("Add", theme.ContentAddIcon(), func() {
-				showModCompatForm(w, requires, nil, required)
+				d.showModCompatForm(requires, nil, required)
 			})),
 	)
 	forbids = container.NewVBox(
 		container.NewHBox(
 			widget.NewLabelWithStyle("Forbids", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
 			widget.NewButtonWithIcon("Add", theme.ContentAddIcon(), func() {
-				showModCompatForm(w, forbids, nil, forbidden)
+				d.showModCompatForm(forbids, nil, forbidden)
 			})),
 	)
-	if mod.ModCompatibility != nil {
-		for _, mc := range mod.ModCompatibility.Requires {
-			requires.Objects = append(requires.Objects, createEditRemoveModCompatRow(w, requires, mc, required))
-		}
-		for _, mc := range mod.ModCompatibility.Forbids {
-			forbids.Objects = append(forbids.Objects, createEditRemoveModCompatRow(w, forbids, mc, forbidden))
-		}
+	for _, mc := range d.requires {
+		requires.Objects = append(requires.Objects, d.createEditRemoveModCompatRow(requires, mc, required))
+	}
+	for _, mc := range d.forbids {
+		forbids.Objects = append(forbids.Objects, d.createEditRemoveModCompatRow(forbids, mc, forbidden))
 	}
 	return container.NewVScroll(container.NewVBox(requires, forbids))
 }
 
-func showModCompatForm(w fyne.Window, parent *fyne.Container, mc *mods.ModCompat, mct mcType) {
+func (d *modCompatsDef) showModCompatForm(parent *fyne.Container, mc *mods.ModCompat, mct mcType) {
 	var modID, versions, source, order string
 	if mc != nil {
 		modID = mc.ModID
@@ -59,7 +67,7 @@ func showModCompatForm(w fyne.Window, parent *fyne.Container, mc *mods.ModCompat
 	setFormItem("compatModID", modID)
 	setFormItem("compatVersions", versions)
 	setFormItem("compatSources", source)
-	setFormSelect("compatOrder", []string{"", string(mods.Before), string(mods.After)}, order)
+	setFormSelect("compatOrder", mods.ModCompatOrders, order)
 
 	var p *widget.PopUp
 	p = widget.NewModalPopUp(container.NewVScroll(container.NewVBox(
@@ -72,9 +80,6 @@ func showModCompatForm(w fyne.Window, parent *fyne.Container, mc *mods.ModCompat
 		container.NewCenter(container.NewHBox(
 			widget.NewButton("Save", func() {
 				if mc == nil {
-					if mod.ModCompatibility == nil {
-						mod.ModCompatibility = &mods.ModCompatibility{}
-					}
 					mc = &mods.ModCompat{
 						ModID:    getFormString("compatModID"),
 						Versions: strings.Split(getFormString("compatVersions"), ", "),
@@ -84,21 +89,21 @@ func showModCompatForm(w fyne.Window, parent *fyne.Container, mc *mods.ModCompat
 					if order != "" {
 						mc.Order = (*mods.ModCompatOrder)(&order)
 					}
-					mcs := getModCompats(mod, mct)
+					mcs := d.getModCompats(mct)
 					*mcs = append(*mcs, mc)
-					parent.Objects = append(parent.Objects, createEditRemoveModCompatRow(w, parent, mc, mct))
+					parent.Objects = append(parent.Objects, d.createEditRemoveModCompatRow(parent, mc, mct))
 				} else {
 
 				}
 				p.Hide()
 			}),
 			widget.NewButton("Cancel", func() { p.Hide() }))))),
-		w.Canvas())
+		state.Window.Canvas())
 	p.Resize(fyne.Size{Width: 600, Height: 400})
 	p.Show()
 }
 
-func createEditRemoveModCompatRow(w fyne.Window, parent *fyne.Container, mc *mods.ModCompat, mct mcType) fyne.CanvasObject {
+func (d *modCompatsDef) createEditRemoveModCompatRow(parent *fyne.Container, mc *mods.ModCompat, mct mcType) fyne.CanvasObject {
 	sb := strings.Builder{}
 	sb.WriteString("    " + mc.ModID)
 	if len(mc.Versions) > 0 {
@@ -111,10 +116,10 @@ func createEditRemoveModCompatRow(w fyne.Window, parent *fyne.Container, mc *mod
 
 	return container.NewHBox(
 		widget.NewButtonWithIcon("Edit", theme.DocumentCreateIcon(), func() {
-			showModCompatForm(w, parent, mc, mct)
+			d.showModCompatForm(parent, mc, mct)
 		}),
 		widget.NewButtonWithIcon("Remove", theme.ContentRemoveIcon(), func() {
-			mcs := getModCompats(mod, mct)
+			mcs := d.getModCompats(mct)
 			for i, s := range *mcs {
 				if s.ModID == mc.ModID {
 					*mcs = append((*mcs)[:i], (*mcs)[i+1:]...)
@@ -137,11 +142,18 @@ func createEditRemoveModCompatRow(w fyne.Window, parent *fyne.Container, mc *mod
 		widget.NewRichTextFromMarkdown(sb.String()))
 }
 
-func getModCompats(mod *mods.Mod, mct mcType) *[]*mods.ModCompat {
+func (d *modCompatsDef) getModCompats(mct mcType) *[]*mods.ModCompat {
 	if mct == required {
-		return &mod.ModCompatibility.Requires
+		return &d.requires
 	}
-	return &mod.ModCompatibility.Forbids
+	return &d.forbids
+}
+
+func (d *modCompatsDef) compile() *mods.ModCompatibility {
+	return &mods.ModCompatibility{
+		Requires: d.requires,
+		Forbids:  d.forbids,
+	}
 }
 
 /*func newModCompatForm() []*widget.FormItem {

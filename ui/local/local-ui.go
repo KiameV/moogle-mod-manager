@@ -4,13 +4,18 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
-	"github.com/kiamev/pr-modsync/mods/managed"
-	"github.com/kiamev/pr-modsync/ui/menu"
-	"github.com/kiamev/pr-modsync/ui/state"
+	"github.com/kiamev/moogle-mod-manager/mods/managed"
+	"github.com/kiamev/moogle-mod-manager/ui/state"
 )
 
-func Draw(w fyne.Window) {
-	menu.Add(w)
+func New() state.Screen {
+	return &localMods{}
+}
+
+type localMods struct {
+}
+
+func (m *localMods) Draw(w fyne.Window) {
 	modList := container.NewVBox()
 	for _, mod := range managed.GetMods(*state.CurrentGame) {
 		modList.Objects = append(modList.Objects, widget.NewLabel(mod.Mod.Name))

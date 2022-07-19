@@ -1,8 +1,8 @@
 package io
 
 import (
-	"github.com/kiamev/pr-modsync/config"
-	"github.com/kiamev/pr-modsync/mods"
+	"github.com/kiamev/moogle-mod-manager/config"
+	"github.com/kiamev/moogle-mod-manager/mods"
 	"io/ioutil"
 	"os"
 	"path/filepath"

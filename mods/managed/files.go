@@ -3,8 +3,8 @@ package managed
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/kiamev/pr-modsync/config"
-	"github.com/kiamev/pr-modsync/mods/io"
+	"github.com/kiamev/moogle-mod-manager/config"
+	"github.com/kiamev/moogle-mod-manager/mods/io"
 	"io/ioutil"
 	"strings"
 )

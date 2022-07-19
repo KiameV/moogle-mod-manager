@@ -1,6 +1,6 @@
 package mods
 
-import "github.com/kiamev/pr-modsync/config"
+import "github.com/kiamev/moogle-mod-manager/config"
 
 type Mod struct {
 	ID               string            `json:"ID" xml:"ID"`
@@ -39,9 +39,12 @@ type ModCompat struct {
 type ModCompatOrder string
 
 const (
+	None   ModCompatOrder = ""
 	Before ModCompatOrder = "Before"
 	After  ModCompatOrder = "After"
 )
+
+var ModCompatOrders = []string{string(None), string(Before), string(After)}
 
 type InstallType string
 
@@ -55,15 +58,17 @@ const (
 	Compressed InstallType = "Compressed"
 )
 
+var InstallTypes = []string{string(Bundles), string(Memoria), string(Magicite), string(BepInEx), string(DllPatch), string(Compressed)}
+
 type Game struct {
 	Name     config.GameName `json:"Name" xml:"Name"`
 	Versions []string        `json:"Version,omitempty" xml:"GameVersions,omitempty"`
 }
 
 type Download struct {
-	Name        string   `json:"Name" xml:"Name"`
-	Sources     []string `json:"Source" xml:"Sources"`
-	InstallType string   `json:"InstallType" xml:"InstallType"`
+	Name        string      `json:"Name" xml:"Name"`
+	Sources     []string    `json:"Source" xml:"Sources"`
+	InstallType InstallType `json:"InstallType" xml:"InstallType"`
 }
 
 type DownloadFiles struct {

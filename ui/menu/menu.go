@@ -4,20 +4,31 @@ import (
 	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/dialog"
-	"github.com/kiamev/pr-modsync/browser"
-	a "github.com/kiamev/pr-modsync/ui/author"
-	"github.com/kiamev/pr-modsync/ui/state"
+	"github.com/kiamev/moogle-mod-manager/browser"
+	a "github.com/kiamev/moogle-mod-manager/ui/mod-author"
+	"github.com/kiamev/moogle-mod-manager/ui/state"
 )
 
-func Add(w fyne.Window) {
+func New() state.Screen {
+	return &MainMenu{}
+}
+
+type MainMenu struct{}
+
+func (m *MainMenu) Draw(w fyne.Window) {
 	file := fyne.NewMenu("File")
-	if state.CurrentUI == state.LocalMods {
+	var menus []*fyne.Menu
+	if state.GetCurrentGUI() == state.LocalMods {
 		file.Items = append(file.Items,
 			fyne.NewMenuItem("Add Mod From URL", func() {
-
+				// TODO
 			}),
 			fyne.NewMenuItem("Add Mod From File", func() {
-
+				// TODO
+			}),
+			fyne.NewMenuItemSeparator(),
+			fyne.NewMenuItem("Select Game", func() {
+				state.ShowPreviousScreen()
 			}),
 			fyne.NewMenuItemSeparator())
 	}
@@ -44,10 +55,26 @@ func Add(w fyne.Window) {
 				dialog.ShowInformation("No Updates Available", "You are running the latest version.", w)
 			}
 		}))
+	menus = append(menus, file)
+
 	author := fyne.NewMenu("Author")
-	author.Items = append(author.Items,
-		fyne.NewMenuItem("New Mod", func() {
-			a.DrawNewMod(w)
-		}))
-	w.SetMainMenu(fyne.NewMainMenu(file, author))
+	if state.GetCurrentGUI() != state.ModAuthor {
+		author.Items = append(author.Items,
+			fyne.NewMenuItem("New Mod", func() {
+				state.GetScreen(state.ModAuthor).(*a.ModAuthorer).NewMod()
+				state.ShowScreen(state.ModAuthor)
+			}),
+			fyne.NewMenuItem("Edit Mod", func() {
+				// TODO
+				//state.GetScreen(state.ModAuthor).(*a.ModAuthorer).EditMod(w)
+				state.ShowScreen(state.ModAuthor)
+			}))
+	} else {
+		author.Items = append(author.Items,
+			fyne.NewMenuItem("Close", func() {
+				state.ShowPreviousScreen()
+			}))
+	}
+	menus = append(menus, author)
+	w.SetMainMenu(fyne.NewMainMenu(menus...))
 }

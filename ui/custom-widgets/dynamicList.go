@@ -51,7 +51,7 @@ func (l *DynamicList) createRow(item interface{}) {
 	l.list.Objects = append(l.list.Objects, r)
 }
 
-func (l *DynamicList) Draw(w fyne.Window) fyne.CanvasObject {
+func (l *DynamicList) Draw() fyne.CanvasObject {
 	return l.list
 }
 

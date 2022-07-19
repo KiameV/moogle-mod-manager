@@ -1,4 +1,4 @@
-module github.com/kiamev/pr-modsync
+module github.com/kiamev/moogle-mod-manager
 
 go 1.17
 
