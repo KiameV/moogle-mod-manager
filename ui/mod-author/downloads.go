@@ -11,15 +11,15 @@ import (
 	"strings"
 )
 
-type downloadablesDef struct {
+type downloadsDef struct {
 	list *cw.DynamicList
 	//Name        string
 	//Sources     []string
 	//InstallType InstallType
 }
 
-func newDownloadablesDef() *downloadablesDef {
-	d := &downloadablesDef{}
+func newDownloadsDef() *downloadsDef {
+	d := &downloadsDef{}
 	d.list = cw.NewDynamicList(cw.Callbacks{
 		GetItemKey:    d.getItemKey,
 		GetItemFields: d.getItemFields,
@@ -28,7 +28,7 @@ func newDownloadablesDef() *downloadablesDef {
 	return d
 }
 
-func (d *downloadablesDef) compile() []*mods.Download {
+func (d *downloadsDef) compile() []*mods.Download {
 	downloads := make([]*mods.Download, len(d.list.Items))
 	for i, item := range d.list.Items {
 		downloads[i] = item.(*mods.Download)
@@ -36,11 +36,11 @@ func (d *downloadablesDef) compile() []*mods.Download {
 	return downloads
 }
 
-func (d *downloadablesDef) getItemKey(item interface{}) string {
+func (d *downloadsDef) getItemKey(item interface{}) string {
 	return item.(*mods.Download).Name
 }
 
-func (d *downloadablesDef) getItemFields(item interface{}) []string {
+func (d *downloadsDef) getItemFields(item interface{}) []string {
 	return []string{
 		item.(*mods.Download).Name,
 		strings.Join(item.(*mods.Download).Sources, ", "),
@@ -48,21 +48,21 @@ func (d *downloadablesDef) getItemFields(item interface{}) []string {
 	}
 }
 
-func (d *downloadablesDef) onEditItem(item interface{}, done func(result interface{})) {
-	setFormItem("dlableName", item.(*mods.Download).Name)
-	setFormMultiLine("dlableSources", strings.Join(item.(*mods.Download).Sources, "\n"))
-	setFormSelect("dlableInstallType", mods.InstallTypes, string(item.(*mods.Download).InstallType))
+func (d *downloadsDef) onEditItem(item interface{}, done func(result interface{})) {
+	setFormItem("dlName", item.(*mods.Download).Name)
+	setFormMultiLine("dlSources", strings.Join(item.(*mods.Download).Sources, "\n"))
+	setFormSelect("dlInstallType", mods.InstallTypes, string(item.(*mods.Download).InstallType))
 
 	fd := dialog.NewForm("Edit Downloadable", "Save", "Cancel", []*widget.FormItem{
-		getFormItem("Name", "dlableName"),
-		getFormItem("Sources", "dlableSources"),
-		getFormItem("Install Type", "dlableInstallType"),
+		getFormItem("Name", "dlName"),
+		getFormItem("Sources", "dlSources"),
+		getFormItem("Install Type", "dlInstallType"),
 	}, func(ok bool) {
 		if ok {
 			done(&mods.Download{
-				Name:        getFormString("dlableName"),
+				Name:        getFormString("dlName"),
 				Sources:     getFormStrings("gameDefVersion", "\n"),
-				InstallType: mods.InstallType(getFormString("dlableInstallType")),
+				InstallType: mods.InstallType(getFormString("dlInstallType")),
 			})
 		}
 	}, state.Window)
@@ -70,7 +70,7 @@ func (d *downloadablesDef) onEditItem(item interface{}, done func(result interfa
 	fd.Show()
 }
 
-func (d *downloadablesDef) draw() fyne.CanvasObject {
+func (d *downloadsDef) draw() fyne.CanvasObject {
 	return container.NewVBox(container.NewHBox(
 		widget.NewLabelWithStyle("Downloadables", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
 		widget.NewButton("Add", func() {

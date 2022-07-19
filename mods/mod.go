@@ -73,12 +73,19 @@ type Download struct {
 
 type DownloadFiles struct {
 	DownloadName string    `json:"DownloadName" xml:"DownloadName"`
-	Files        []ModFile `json:"File" xml:"Files"`
+	Files        []ModFile `json:"File,omitempty" xml:"Files,omitempty"`
+	Dirs         []ModDir  `json:"Dir,omitempty" xml:"Dirs,omitempty"`
 }
 
 type ModFile struct {
 	From string `json:"From" xml:"From"`
 	To   string `json:"To" xml:"To"`
+}
+
+type ModDir struct {
+	From      string `json:"From" xml:"From"`
+	To        string `json:"To" xml:"To"`
+	Recursive bool   `json:"Recursive" xml:"Recursive"`
 }
 
 type Configuration struct {

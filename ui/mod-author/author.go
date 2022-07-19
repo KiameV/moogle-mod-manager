@@ -14,17 +14,27 @@ import (
 )
 
 func New() state.Screen {
+	dl := newDownloadsDef()
 	return &ModAuthorer{
-		modCompatsDef:    newModCompatibilityDef(),
-		downloadablesDef: newDownloadablesDef(),
-		gamesDef:         newGamesDef(),
+		modCompatsDef: newModCompatibilityDef(),
+		downloadDef:   dl,
+		donationsDef:  newDonationsDef(),
+		gamesDef:      newGamesDef(),
+		dlFilesDef:    newDownloadFilesDef(dl),
 	}
 }
 
 type ModAuthorer struct {
-	modCompatsDef    *modCompatsDef
-	downloadablesDef *downloadablesDef
-	gamesDef         *gamesDef
+	modCompatsDef *modCompatsDef
+	downloadDef   *downloadsDef
+	donationsDef  *donationsDef
+	gamesDef      *gamesDef
+	dlFilesDef    *downloadFilesDef
+
+	tabs       *container.AppTabs
+	dlTab      *container.TabItem
+	configTab  *container.TabItem
+	installTab *container.TabItem
 }
 
 func (a *ModAuthorer) NewMod() {
@@ -38,27 +48,47 @@ func (a *ModAuthorer) EditMod(m *mods.Mod) {
 }
 
 func (a *ModAuthorer) Draw(w fyne.Window) {
-	form := widget.NewForm(
-		getFormItem("ID"),
-		getFormItem("Name"),
-		getFormItem("Author"),
-		getFormItem("Version"),
-		getFormItem("ReleaseDate"),
-		getFormItem("Category"),
-		getFormItem("Description"),
-		getFormItem("ReleaseNotes"),
-		getFormItem("Link"),
-		getFormItem("Preview"),
-	)
+	installType := widget.NewSelect([]string{"Direct Install", "Configuration"}, func(choice string) {
+		title := a.tabs.Items[len(a.tabs.Items)-1].Text
+		if title == "Download Files" || title == "Configurations" {
+			a.tabs.RemoveIndex(len(a.tabs.Items) - 1)
+		}
+		a.installTab = a.configTab
+		if choice == "Direct Install" {
+			a.installTab = a.dlTab
+		}
+		a.tabs.Append(a.installTab)
+	})
 
-	tabs := container.NewAppTabs(
+	form := container.NewVBox(
+		widget.NewForm(
+			getFormItem("ID"),
+			getFormItem("Name"),
+			getFormItem("Author"),
+			getFormItem("Version"),
+			getFormItem("Release Date"),
+			getFormItem("Category"),
+			getFormItem("Description"),
+			getFormItem("Release Notes"),
+			getFormItem("Link"),
+			getFormItem("Preview"),
+			widget.NewFormItem("Install Type", installType)))
+
+	a.tabs = container.NewAppTabs(
 		container.NewTabItem("Mod", form),
 		container.NewTabItem("Compatibility", a.modCompatsDef.draw()),
-		container.NewTabItem("Downloadables", a.downloadablesDef.draw()),
-		container.NewTabItem("Donation Links", widget.NewForm()),
-		container.NewTabItem("Game", a.gamesDef.draw()),
-		container.NewTabItem("Download Files", widget.NewForm()),
-		container.NewTabItem("Configurations", widget.NewForm()))
+		container.NewTabItem("Downloadables", a.downloadDef.draw()),
+		container.NewTabItem("Donation Links", a.donationsDef.draw()),
+		container.NewTabItem("Game", a.gamesDef.draw()))
+	a.dlTab = container.NewTabItem("Download Files", a.dlFilesDef.draw())
+	a.configTab = container.NewTabItem("Configurations", widget.NewForm())
+	a.tabs.OnSelected = func(tab *container.TabItem) {
+		if tab == a.dlTab {
+			tab.Content = a.dlFilesDef.draw()
+		}
+	}
+
+	installType.SetSelected("Direct Install")
 
 	xmlButtons := container.NewHBox(
 		widget.NewButton("Copy XML", func() {
@@ -74,7 +104,7 @@ func (a *ModAuthorer) Draw(w fyne.Window) {
 		widget.NewButton("Save mod.json", func() {
 
 		}))
-	w.SetContent(container.NewVScroll(container.NewVBox(tabs, xmlButtons, jsonButtons)))
+	w.SetContent(container.NewVScroll(container.NewVBox(a.tabs, widget.NewSeparator(), xmlButtons, jsonButtons)))
 }
 
 func (a *ModAuthorer) updateEntries(mod *mods.Mod) {
@@ -82,10 +112,10 @@ func (a *ModAuthorer) updateEntries(mod *mods.Mod) {
 	setFormItem("Name", mod.Name)
 	setFormItem("Author", mod.Author)
 	setFormItem("Version", mod.Version)
-	setFormItem("ReleaseDate", mod.ReleaseDate)
+	setFormItem("Release Date", mod.ReleaseDate)
 	setFormItem("Category", mod.Category)
 	setFormItem("Description", mod.Description)
-	setFormItem("ReleaseNotes", mod.ReleaseNotes)
+	setFormMultiLine("Release Notes", mod.ReleaseNotes)
 	setFormItem("Link", mod.Link)
 	setFormItem("Preview", mod.Preview)
 }
@@ -116,7 +146,7 @@ func (a *ModAuthorer) Marshal(asJson bool) (b []byte, err error) {
 }
 
 func (a *ModAuthorer) compileMod() (mod *mods.Mod) {
-	return &mods.Mod{
+	m := &mods.Mod{
 		ID:               getFormString("ID"),
 		Name:             getFormString("Name"),
 		Author:           getFormString("Author"),
@@ -128,10 +158,10 @@ func (a *ModAuthorer) compileMod() (mod *mods.Mod) {
 		Link:             getFormString("Link"),
 		Preview:          getFormString("Preview"),
 		ModCompatibility: a.modCompatsDef.compile(),
-		Downloadables:    a.downloadablesDef.compile(),
-		DonationLinks:    nil,
+		Downloadables:    a.downloadDef.compile(),
+		DonationLinks:    a.donationsDef.compile(),
 		Game:             a.gamesDef.compile(),
-		DownloadFiles:    nil,
-		Configurations:   nil,
 	}
+
+	return m
 }
