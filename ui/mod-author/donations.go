@@ -11,14 +11,14 @@ import (
 )
 
 type donationsDef struct {
+	*entryManager
 	list *cw.DynamicList
-	//Name        string
-	//Sources     []string
-	//InstallType InstallType
 }
 
 func newDonationsDef() *donationsDef {
-	d := &donationsDef{}
+	d := &donationsDef{
+		entryManager: newEntryManager(),
+	}
 	d.list = cw.NewDynamicList(cw.Callbacks{
 		GetItemKey:    d.getItemKey,
 		GetItemFields: d.getItemFields,
@@ -40,24 +40,26 @@ func (d *donationsDef) getItemKey(item interface{}) string {
 }
 
 func (d *donationsDef) getItemFields(item interface{}) []string {
+	m := item.(*mods.DonationLink)
 	return []string{
-		item.(*mods.DonationLink).Name,
-		item.(*mods.DonationLink).Link,
+		m.Name,
+		m.Link,
 	}
 }
 
 func (d *donationsDef) onEditItem(item interface{}, done func(result interface{})) {
-	setFormItem("donationName", item.(*mods.DonationLink).Name)
-	setFormMultiLine("donationLink", item.(*mods.DonationLink).Link)
+	m := item.(*mods.DonationLink)
+	d.createFormItem("Name", m.Name)
+	d.createFormItem("Link", m.Link)
 
 	fd := dialog.NewForm("Edit Donation", "Save", "Cancel", []*widget.FormItem{
-		getFormItem("Name", "donationName"),
-		getFormItem("Link", "donationLink"),
+		d.getFormItem("Name"),
+		d.getFormItem("Link"),
 	}, func(ok bool) {
 		if ok {
 			done(&mods.DonationLink{
-				Name: getFormString("donationName"),
-				Link: getFormString("donationLink"),
+				Name: d.getString("Name"),
+				Link: d.getString("Link"),
 			})
 		}
 	}, state.Window)

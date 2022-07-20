@@ -16,20 +16,25 @@ import (
 func New() state.Screen {
 	dl := newDownloadsDef()
 	return &ModAuthorer{
+		entryManager:  newEntryManager(),
 		modCompatsDef: newModCompatibilityDef(),
 		downloadDef:   dl,
 		donationsDef:  newDonationsDef(),
 		gamesDef:      newGamesDef(),
 		dlFilesDef:    newDownloadFilesDef(dl),
+		configsDef:    newConfigurationsDef(dl),
 	}
 }
 
 type ModAuthorer struct {
-	modCompatsDef *modCompatsDef
+	*entryManager
+
+	modCompatsDef *modCompatabilityDef
 	downloadDef   *downloadsDef
 	donationsDef  *donationsDef
 	gamesDef      *gamesDef
 	dlFilesDef    *downloadFilesDef
+	configsDef    *configurationsDef
 
 	tabs       *container.AppTabs
 	dlTab      *container.TabItem
@@ -48,7 +53,7 @@ func (a *ModAuthorer) EditMod(m *mods.Mod) {
 }
 
 func (a *ModAuthorer) Draw(w fyne.Window) {
-	installType := widget.NewSelect([]string{"Direct Install", "Configuration"}, func(choice string) {
+	installType := widget.NewRadioGroup([]string{"Direct Install", "Configuration"}, func(choice string) {
 		title := a.tabs.Items[len(a.tabs.Items)-1].Text
 		if title == "Download Files" || title == "Configurations" {
 			a.tabs.RemoveIndex(len(a.tabs.Items) - 1)
@@ -62,16 +67,16 @@ func (a *ModAuthorer) Draw(w fyne.Window) {
 
 	form := container.NewVBox(
 		widget.NewForm(
-			getFormItem("ID"),
-			getFormItem("Name"),
-			getFormItem("Author"),
-			getFormItem("Version"),
-			getFormItem("Release Date"),
-			getFormItem("Category"),
-			getFormItem("Description"),
-			getFormItem("Release Notes"),
-			getFormItem("Link"),
-			getFormItem("Preview"),
+			a.getFormItem("ID"),
+			a.getFormItem("Name"),
+			a.getFormItem("Author"),
+			a.getFormItem("Version"),
+			a.getFormItem("Release Date"),
+			a.getFormItem("Category"),
+			a.getFormItem("Description"),
+			a.getFormItem("Release Notes"),
+			a.getFormItem("Link"),
+			a.getFormItem("Preview"),
 			widget.NewFormItem("Install Type", installType)))
 
 	a.tabs = container.NewAppTabs(
@@ -81,10 +86,12 @@ func (a *ModAuthorer) Draw(w fyne.Window) {
 		container.NewTabItem("Donation Links", a.donationsDef.draw()),
 		container.NewTabItem("Game", a.gamesDef.draw()))
 	a.dlTab = container.NewTabItem("Download Files", a.dlFilesDef.draw())
-	a.configTab = container.NewTabItem("Configurations", widget.NewForm())
+	a.configTab = container.NewTabItem("Configurations", a.configsDef.draw())
 	a.tabs.OnSelected = func(tab *container.TabItem) {
 		if tab == a.dlTab {
 			tab.Content = a.dlFilesDef.draw()
+		} else if tab == a.configTab {
+			tab.Content = a.configsDef.draw()
 		}
 	}
 
@@ -108,16 +115,16 @@ func (a *ModAuthorer) Draw(w fyne.Window) {
 }
 
 func (a *ModAuthorer) updateEntries(mod *mods.Mod) {
-	setFormItem("ID", mod.ID)
-	setFormItem("Name", mod.Name)
-	setFormItem("Author", mod.Author)
-	setFormItem("Version", mod.Version)
-	setFormItem("Release Date", mod.ReleaseDate)
-	setFormItem("Category", mod.Category)
-	setFormItem("Description", mod.Description)
-	setFormMultiLine("Release Notes", mod.ReleaseNotes)
-	setFormItem("Link", mod.Link)
-	setFormItem("Preview", mod.Preview)
+	a.createFormItem("ID", mod.ID)
+	a.createFormItem("Name", mod.Name)
+	a.createFormItem("Author", mod.Author)
+	a.createFormItem("Version", mod.Version)
+	a.createFormItem("Release Date", mod.ReleaseDate)
+	a.createFormItem("Category", mod.Category)
+	a.createFormItem("Description", mod.Description)
+	a.createFormMultiLine("Release Notes", mod.ReleaseNotes)
+	a.createFormItem("Link", mod.Link)
+	a.createFormItem("Preview", mod.Preview)
 }
 
 func (a *ModAuthorer) pasteToClipboard(asJson bool) {
@@ -147,21 +154,32 @@ func (a *ModAuthorer) Marshal(asJson bool) (b []byte, err error) {
 
 func (a *ModAuthorer) compileMod() (mod *mods.Mod) {
 	m := &mods.Mod{
-		ID:               getFormString("ID"),
-		Name:             getFormString("Name"),
-		Author:           getFormString("Author"),
-		Version:          getFormString("Version"),
-		ReleaseDate:      getFormString("ReleaseDate"),
-		Category:         getFormString("Category"),
-		Description:      getFormString("Description"),
-		ReleaseNotes:     getFormString("ReleaseNotes"),
-		Link:             getFormString("Link"),
-		Preview:          getFormString("Preview"),
+		ID:               a.getString("ID"),
+		Name:             a.getString("Name"),
+		Author:           a.getString("Author"),
+		Version:          a.getString("Version"),
+		ReleaseDate:      a.getString("ReleaseDate"),
+		Category:         a.getString("Category"),
+		Description:      a.getString("Description"),
+		ReleaseNotes:     a.getString("ReleaseNotes"),
+		Link:             a.getString("Link"),
+		Preview:          a.getString("Preview"),
 		ModCompatibility: a.modCompatsDef.compile(),
 		Downloadables:    a.downloadDef.compile(),
 		DonationLinks:    a.donationsDef.compile(),
 		Game:             a.gamesDef.compile(),
 	}
-
+	if a.installTab == a.dlTab {
+		m.DownloadFiles = a.dlFilesDef.compile()
+		if m.DownloadFiles == nil ||
+			(m.Name == "" && len(m.DownloadFiles.Files) == 0 && (len(m.DonationLinks) == 0)) {
+			m.DownloadFiles = nil
+		}
+	} else {
+		m.Configurations = a.configsDef.compile()
+		if len(m.Configurations) == 0 {
+			m.Configurations = nil
+		}
+	}
 	return m
 }

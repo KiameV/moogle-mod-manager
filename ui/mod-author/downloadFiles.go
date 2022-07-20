@@ -8,21 +8,25 @@ import (
 )
 
 type downloadFilesDef struct {
-	selected  string
+	*entryManager
 	downloads *downloadsDef
+	dlName    string
 	files     *filesDef
 	dirs      *dirsDef
 }
 
 func newDownloadFilesDef(downloads *downloadsDef) *downloadFilesDef {
 	return &downloadFilesDef{
-		downloads: downloads,
+		entryManager: newEntryManager(),
+		downloads:    downloads,
+		files:        newFilesDef(),
+		dirs:         newDirsDef(),
 	}
 }
 
 func (d *downloadFilesDef) compile() *mods.DownloadFiles {
 	return &mods.DownloadFiles{
-		DownloadName: getFormString("dfDlName"),
+		DownloadName: d.getString("Download Name"),
 		Files:        d.files.compile(),
 		Dirs:         d.dirs.compile(),
 	}
@@ -34,11 +38,23 @@ func (d *downloadFilesDef) draw() fyne.CanvasObject {
 		possible = append(possible, dl.Name)
 	}
 
-	setFormSelect("dfDlName", possible, d.selected)
+	d.createFormSelect("Download Name", possible, d.dlName)
 
 	return container.NewVBox(
-		widget.NewForm(getFormItem("Name", "dfDlName")),
+		widget.NewForm(d.getFormItem("Download Name")),
 		d.files.draw(),
 		d.dirs.draw(),
 	)
+}
+
+func (d *downloadFilesDef) clear() {
+	d.dlName = ""
+	d.files.clear()
+	d.dirs.clear()
+}
+
+func (d *downloadFilesDef) populate(dlf *mods.DownloadFiles) {
+	d.dlName = dlf.DownloadName
+	d.files.populate(dlf.Files)
+	d.dirs.populate(dlf.Dirs)
 }

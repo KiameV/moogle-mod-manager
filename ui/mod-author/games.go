@@ -13,11 +13,14 @@ import (
 )
 
 type gamesDef struct {
+	*entryManager
 	list *cw.DynamicList
 }
 
 func newGamesDef() *gamesDef {
-	d := &gamesDef{}
+	d := &gamesDef{
+		entryManager: newEntryManager(),
+	}
 	d.list = cw.NewDynamicList(cw.Callbacks{
 		GetItemKey:    d.getItemKey,
 		GetItemFields: d.getItemFields,
@@ -47,7 +50,7 @@ func (d *gamesDef) getItemFields(item interface{}) []string {
 }
 
 func (d *gamesDef) editItem(item interface{}, done func(result interface{})) {
-	setFormSelect("gameDefName", []string{
+	d.createFormSelect("Game", []string{
 		config.String(config.I),
 		config.String(config.II),
 		config.String(config.III),
@@ -60,16 +63,16 @@ func (d *gamesDef) editItem(item interface{}, done func(result interface{})) {
 	if versions != nil {
 		v = strings.Join(versions, ", ")
 	}
-	setFormItem("gameDefVersion", v)
+	d.createFormItem("Versions", v)
 
 	fd := dialog.NewForm("Edit Game", "Save", "Cancel", []*widget.FormItem{
-		getFormItem("Game", "gameDefName"),
-		getFormItem("Versions", "gameDefVersion"),
+		d.getFormItem("Game"),
+		d.getFormItem("Versions"),
 	}, func(ok bool) {
 		if ok {
 			done(&mods.Game{
-				Name:     config.GameToName(config.FromString(getFormString("gameDefName"))),
-				Versions: getFormStrings("gameDefVersion", ","),
+				Name:     config.GameToName(config.FromString(d.getString("Game"))),
+				Versions: d.getStrings("Version", ","),
 			})
 		}
 	}, state.Window)

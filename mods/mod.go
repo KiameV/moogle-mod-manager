@@ -20,7 +20,7 @@ type Mod struct {
 
 	// Either Download or Configs for a mod
 	DownloadFiles  *DownloadFiles   `json:"DownloadFile,omitempty" xml:"DownloadFiles,omitempty"`
-	Configurations []*Configuration `json:"Configuration" xml:"Configurations"`
+	Configurations []*Configuration `json:"Configuration,omitempty" xml:"Configurations,omitempty"`
 }
 
 type ModCompatibility struct {
@@ -72,9 +72,9 @@ type Download struct {
 }
 
 type DownloadFiles struct {
-	DownloadName string    `json:"DownloadName" xml:"DownloadName"`
-	Files        []ModFile `json:"File,omitempty" xml:"Files,omitempty"`
-	Dirs         []ModDir  `json:"Dir,omitempty" xml:"Dirs,omitempty"`
+	DownloadName string     `json:"DownloadName" xml:"DownloadName"`
+	Files        []*ModFile `json:"File,omitempty" xml:"Files,omitempty"`
+	Dirs         []*ModDir  `json:"Dir,omitempty" xml:"Dirs,omitempty"`
 }
 
 type ModFile struct {
@@ -89,17 +89,17 @@ type ModDir struct {
 }
 
 type Configuration struct {
-	Name        string   `json:"Name" xml:"Name"`
-	Description string   `json:"Description" xml:"Description"`
-	Preview     string   `json:"Preview" xml:"Preview"`
-	Choices     []Choice `json:"Choice" xml:"Choices"`
+	Name        string    `json:"Name" xml:"Name"`
+	Description string    `json:"Description" xml:"Description"`
+	Preview     string    `json:"Preview" xml:"Preview"`
+	Choices     []*Choice `json:"Choice" xml:"Choices"`
 }
 
 type Choice struct {
-	Description           string        `json:"Description" xml:"Description"`
-	Preview               string        `json:"Preview" xml:"Preview"`
-	DownloadFiles         DownloadFiles `json:"DownloadFiles" xml:"DownloadFiles"`
-	NextConfigurationName *string       `json:"NextConfigurationName,omitempty" xml:"NextConfigurationName"`
+	Description           string         `json:"Description" xml:"Description"`
+	Preview               string         `json:"Preview" xml:"Preview"`
+	DownloadFiles         *DownloadFiles `json:"DownloadFiles,omitempty" xml:"DownloadFiles,omitempty"`
+	NextConfigurationName *string        `json:"NextConfigurationName,omitempty" xml:"NextConfigurationName"`
 }
 
 type DonationLink struct {

@@ -12,14 +12,14 @@ import (
 )
 
 type downloadsDef struct {
+	*entryManager
 	list *cw.DynamicList
-	//Name        string
-	//Sources     []string
-	//InstallType InstallType
 }
 
 func newDownloadsDef() *downloadsDef {
-	d := &downloadsDef{}
+	d := &downloadsDef{
+		entryManager: newEntryManager(),
+	}
 	d.list = cw.NewDynamicList(cw.Callbacks{
 		GetItemKey:    d.getItemKey,
 		GetItemFields: d.getItemFields,
@@ -49,20 +49,21 @@ func (d *downloadsDef) getItemFields(item interface{}) []string {
 }
 
 func (d *downloadsDef) onEditItem(item interface{}, done func(result interface{})) {
-	setFormItem("dlName", item.(*mods.Download).Name)
-	setFormMultiLine("dlSources", strings.Join(item.(*mods.Download).Sources, "\n"))
-	setFormSelect("dlInstallType", mods.InstallTypes, string(item.(*mods.Download).InstallType))
+	m := item.(*mods.Download)
+	d.createFormItem("Name", m.Name)
+	d.createFormMultiLine("Sources", strings.Join(m.Sources, "\n"))
+	d.createFormSelect("Install Type", mods.InstallTypes, string(m.InstallType))
 
 	fd := dialog.NewForm("Edit Downloadable", "Save", "Cancel", []*widget.FormItem{
-		getFormItem("Name", "dlName"),
-		getFormItem("Sources", "dlSources"),
-		getFormItem("Install Type", "dlInstallType"),
+		d.getFormItem("Name"),
+		d.getFormItem("Sources"),
+		d.getFormItem("Install Type"),
 	}, func(ok bool) {
 		if ok {
 			done(&mods.Download{
-				Name:        getFormString("dlName"),
-				Sources:     getFormStrings("gameDefVersion", "\n"),
-				InstallType: mods.InstallType(getFormString("dlInstallType")),
+				Name:        d.getString("Name"),
+				Sources:     d.getStrings("Sources", "\n"),
+				InstallType: mods.InstallType(d.getString("Install Type")),
 			})
 		}
 	}, state.Window)
