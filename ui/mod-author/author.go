@@ -9,7 +9,11 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
+	"github.com/ncruces/zenity"
 	"golang.design/x/clipboard"
+	"io/ioutil"
+	"os"
+	"strings"
 	"time"
 )
 
@@ -102,14 +106,14 @@ func (a *ModAuthorer) Draw(w fyne.Window) {
 			a.pasteToClipboard(false)
 		}),
 		widget.NewButton("Save mod.xml", func() {
-
+			a.saveFile(false)
 		}))
 	jsonButtons := container.NewHBox(
 		widget.NewButton("Copy Json", func() {
 			a.pasteToClipboard(true)
 		}),
 		widget.NewButton("Save mod.json", func() {
-
+			a.saveFile(true)
 		}))
 	w.SetContent(container.NewVScroll(container.NewVBox(a.tabs, widget.NewSeparator(), xmlButtons, jsonButtons)))
 }
@@ -182,4 +186,47 @@ func (a *ModAuthorer) compileMod() (mod *mods.Mod) {
 		}
 	}
 	return m
+}
+
+func (a *ModAuthorer) saveFile(asJson bool) {
+	var (
+		b, err = a.Marshal(asJson)
+		ext    string
+		file   string
+		save   = true
+	)
+	if err != nil {
+		dialog.ShowError(err, state.Window)
+		return
+	}
+
+	if asJson {
+		ext = ".json"
+	} else {
+		ext = ".xml"
+	}
+
+	if file, err = zenity.SelectFileSave(
+		zenity.Title("Save mod"+ext),
+		zenity.Filename("mod"+ext),
+		zenity.FileFilter{
+			Name:     "*" + ext,
+			Patterns: []string{"*" + ext},
+		}); err != nil {
+		dialog.ShowError(err, state.Window)
+		return
+	}
+	if strings.Index(file, ext) == -1 {
+		file = file + ext
+	}
+	if _, err = os.Stat(file); err == nil {
+		dialog.ShowConfirm("Replace File?", "Replace "+file+"?", func(b bool) {
+			save = b
+		}, state.Window)
+	}
+	if save {
+		if err = ioutil.WriteFile(file, b, 0755); err != nil {
+			dialog.ShowError(err, state.Window)
+		}
+	}
 }

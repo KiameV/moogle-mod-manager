@@ -82,4 +82,5 @@ func (l *DynamicList) removeItem(item interface{}) {
 
 func (l *DynamicList) Clear() {
 	l.Items = nil
+	l.list.Objects = nil
 }

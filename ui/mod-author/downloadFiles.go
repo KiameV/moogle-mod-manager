@@ -42,9 +42,24 @@ func (d *downloadFilesDef) draw() fyne.CanvasObject {
 
 	return container.NewVBox(
 		widget.NewForm(d.getFormItem("Download Name")),
-		d.files.draw(),
-		d.dirs.draw(),
+		d.files.draw(true),
+		d.dirs.draw(true),
 	)
+}
+
+func (d *downloadFilesDef) drawAsFormItems() []*widget.FormItem {
+	var possible []string
+	for _, dl := range d.downloads.compile() {
+		possible = append(possible, dl.Name)
+	}
+
+	d.createFormSelect("Download Name", possible, d.dlName)
+
+	return []*widget.FormItem{
+		d.getFormItem("Download Name"),
+		widget.NewFormItem("Files", d.files.draw(false)),
+		widget.NewFormItem("Dirs", d.dirs.draw(false)),
+	}
 }
 
 func (d *downloadFilesDef) clear() {
@@ -54,7 +69,11 @@ func (d *downloadFilesDef) clear() {
 }
 
 func (d *downloadFilesDef) populate(dlf *mods.DownloadFiles) {
-	d.dlName = dlf.DownloadName
-	d.files.populate(dlf.Files)
-	d.dirs.populate(dlf.Dirs)
+	if dlf == nil {
+		d.clear()
+	} else {
+		d.dlName = dlf.DownloadName
+		d.files.populate(dlf.Files)
+		d.dirs.populate(dlf.Dirs)
+	}
 }
