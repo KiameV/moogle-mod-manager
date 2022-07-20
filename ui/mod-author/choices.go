@@ -1,0 +1,133 @@
+package mod_author
+
+import (
+	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/widget"
+	"github.com/kiamev/moogle-mod-manager/mods"
+	cw "github.com/kiamev/moogle-mod-manager/ui/custom-widgets"
+	"github.com/kiamev/moogle-mod-manager/ui/state"
+)
+
+type choicesDef struct {
+	*entryManager
+	list      *cw.DynamicList
+	dlfDef    *downloadFilesDef
+	configDef *configurationsDef
+}
+
+func newChoicesDef(dlDef *downloadsDef, configDef *configurationsDef) *choicesDef {
+	d := &choicesDef{
+		entryManager: newEntryManager(),
+		dlfDef:       newDownloadFilesDef(dlDef),
+		configDef:    configDef,
+	}
+	d.list = cw.NewDynamicList(cw.Callbacks{
+		GetItemKey:    d.getItemKey,
+		GetItemFields: d.getItemFields,
+		OnEditItem:    d.onEditItem,
+	})
+	return d
+}
+
+func (d *choicesDef) compile() []*mods.Choice {
+	downloads := make([]*mods.Choice, len(d.list.Items))
+	for i, item := range d.list.Items {
+		downloads[i] = item.(*mods.Choice)
+	}
+	return downloads
+}
+
+func (d *choicesDef) getItemKey(item interface{}) string {
+	return item.(*mods.Choice).Description
+}
+
+func (d *choicesDef) getItemFields(item interface{}) []string {
+	c := item.(*mods.Choice)
+	sl := []string{
+		c.Description,
+		c.Preview,
+	}
+	if c.NextConfigurationName != nil {
+		sl = append(sl, *c.NextConfigurationName)
+	}
+	if c.DownloadFiles != nil {
+		sl = append(sl, c.DownloadFiles.DownloadName)
+	}
+	return sl
+}
+
+func (d *choicesDef) onEditItem(item interface{}, done func(result interface{})) {
+	var (
+		c          = item.(*mods.Choice)
+		configs    = d.configDef.compile()
+		possible   = d.getPossibleConfigs(configs)
+		nextConfig = ""
+	)
+	d.dlfDef.populate(c.DownloadFiles)
+
+	if c.NextConfigurationName != nil {
+		nextConfig = *c.NextConfigurationName
+	}
+
+	d.createFormItem("Description", c.Description)
+	d.createFormItem("Preview", c.Preview)
+	d.createFormSelect("Next Configuration", possible, nextConfig)
+	if c.DownloadFiles != nil {
+		d.dlfDef.populate(c.DownloadFiles)
+	}
+
+	form := []*widget.FormItem{
+		d.getFormItem("Description"),
+		d.getFormItem("Preview"),
+		d.getFormItem("Next Configuration"),
+	}
+	form = append(form, d.dlfDef.drawAsFormItems()...)
+
+	fd := dialog.NewForm("Edit Choice", "Save", "Cancel", form, func(ok bool) {
+		if ok {
+			ch := &mods.Choice{
+				Description:   d.getString("Description"),
+				Preview:       d.getString("Preview"),
+				DownloadFiles: d.dlfDef.compile(),
+			}
+			if d.getString("Next Configuration") != "" {
+				s := d.getString("Next Configuration")
+				ch.NextConfigurationName = &s
+			}
+			done(ch)
+		}
+	}, state.Window)
+	fd.Resize(fyne.NewSize(400, 400))
+	fd.Show()
+}
+
+func (d *choicesDef) draw(includeLabel bool) fyne.CanvasObject {
+	c := container.NewVBox()
+	if includeLabel {
+		c.Add(widget.NewLabelWithStyle("Choices", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}))
+	}
+	c.Add(widget.NewButton("Add", func() {
+		d.onEditItem(&mods.Choice{}, func(result interface{}) {
+			d.list.AddItem(result)
+		})
+	}))
+	c.Add(d.list.Draw())
+	return c
+}
+
+func (d *choicesDef) getPossibleConfigs(configs []*mods.Configuration) []string {
+	possible := make([]string, len(configs))
+	for i, cfg := range d.configDef.compile() {
+		possible[i] = cfg.Name
+	}
+	return possible
+}
+
+func (d *choicesDef) populate(choices []*mods.Choice) {
+	d.list.Clear()
+	for _, c := range choices {
+		d.list.AddItem(c)
+	}
+}
