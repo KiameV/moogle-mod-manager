@@ -5,12 +5,11 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
-	"strings"
+	"github.com/kiamev/moogle-mod-manager/ui/util"
 )
 
 type ConfigInstaller interface {
@@ -70,27 +69,8 @@ func (i *configInstallerUI) Draw(w fyne.Window) {
 			i.prevConfigs = append(i.prevConfigs, i.currentConfig)
 			i.toInstall = append(i.toInstall, i.currentChoice.DownloadFiles)
 			if i.currentChoice.NextConfigurationName == nil {
-				dlfs := i.compileDownloadFiles()
 				if i.isSandbox {
-					sb := strings.Builder{}
-					for dl, dlf := range dlfs {
-						sb.WriteString(fmt.Sprintf("Download: %s\n\n", dl.Name))
-						sb.WriteString("  Sources:\n\n")
-						for _, s := range dl.Sources {
-							sb.WriteString(fmt.Sprintf("  - %s\n\n", s))
-						}
-						sb.WriteString("  Files:\n\n")
-						for _, f := range dlf.Files {
-							sb.WriteString(fmt.Sprintf("  - %s -> %s\n\n", f.From, f.To))
-						}
-						sb.WriteString("  Dirs:\n\n")
-						for _, dir := range dlf.Dirs {
-							sb.WriteString(fmt.Sprintf("  - %s -> %s | Recursive %v\n\n", dir.From, dir.To, dir.Recursive))
-						}
-						break
-					}
-					dialog.ShowCustom("Downloads and File/Dir Copies", "ok", widget.NewRichTextFromMarkdown(sb.String()), state.Window)
-					state.ShowPreviousScreen()
+					util.DisplayDownloadsAndFiles(i.mod, i.toInstall)
 				} else {
 					// TODO
 				}
@@ -168,26 +148,4 @@ func (i *configInstallerUI) popChoice() (c *mods.Configuration) {
 	i.prevConfigs[l] = nil
 	i.prevConfigs = i.prevConfigs[:l]
 	return
-}
-
-func (i *configInstallerUI) compileDownloadFiles() map[*mods.Download]*mods.DownloadFiles {
-	dlf := make(map[*mods.Download]*mods.DownloadFiles)
-	dl := make(map[string]*mods.Download)
-	for _, d := range i.mod.Downloadables {
-		dl[d.Name] = d
-	}
-	for _, ti := range i.toInstall {
-		d := dl[ti.DownloadName]
-		f, ok := dlf[d]
-		if !ok {
-			dlf[d] = &mods.DownloadFiles{DownloadName: ti.DownloadName}
-		}
-		for _, df := range ti.Files {
-			f.Files = append(f.Files, df)
-		}
-		for _, dd := range ti.Dirs {
-			f.Dirs = append(f.Dirs, dd)
-		}
-	}
-	return dlf
 }

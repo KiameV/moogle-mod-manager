@@ -12,6 +12,7 @@ import (
 	"github.com/kiamev/moogle-mod-manager/mods"
 	config_installer "github.com/kiamev/moogle-mod-manager/ui/config-installer"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
+	"github.com/kiamev/moogle-mod-manager/ui/util"
 	"github.com/ncruces/zenity"
 	"golang.design/x/clipboard"
 	"io/ioutil"
@@ -128,11 +129,11 @@ func (a *ModAuthorer) Draw(w fyne.Window) {
 			a.validate()
 		}),
 		widget.NewButton("Test", func() {
+			mod := a.compileMod()
 			if len(a.configsDef.list.Items) == 0 {
-				dialog.ShowInformation("", "Test is only for mods with a configuration", state.Window)
-				return
+				util.DisplayDownloadsAndFiles(mod, nil)
 			}
-			if err := state.GetScreen(state.ConfigInstaller).(config_installer.ConfigInstaller).Setup(a.compileMod(), true); err != nil {
+			if err := state.GetScreen(state.ConfigInstaller).(config_installer.ConfigInstaller).Setup(mod, true); err != nil {
 				dialog.ShowError(err, state.Window)
 				return
 			}
