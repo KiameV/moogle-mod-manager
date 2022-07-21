@@ -53,11 +53,7 @@ type ModAuthorer struct {
 	dlFilesDef    *downloadFilesDef
 	configsDef    *configurationsDef
 
-	tabs        *container.AppTabs
-	dlTab       *container.TabItem
-	configTab   *container.TabItem
-	installTab  *container.TabItem
-	installType string
+	tabs *container.AppTabs
 }
 
 func (a *ModAuthorer) NewMod() {
@@ -65,7 +61,6 @@ func (a *ModAuthorer) NewMod() {
 		ReleaseDate:         time.Now().Format("Jan 02 2006"),
 		ConfigSelectionType: mods.Auto,
 	})
-	a.installType = string(directInstall)
 }
 
 func (a *ModAuthorer) EditMod() (successfullyLoadedMod bool) {
@@ -96,28 +91,6 @@ func (a *ModAuthorer) EditMod() (successfullyLoadedMod bool) {
 }
 
 func (a *ModAuthorer) Draw(w fyne.Window) {
-	var it *widget.RadioGroup
-	it = widget.NewRadioGroup(possibleInstallTypes, func(choice string) {
-		if choice == "" {
-			it.SetSelected(a.installType)
-			return
-		}
-		a.installType = choice
-		title := a.tabs.Items[len(a.tabs.Items)-1].Text
-		if title == "Download Files" || title == "Configurations" {
-			a.tabs.RemoveIndex(len(a.tabs.Items) - 1)
-		}
-
-		if choice == string(configurations) {
-			a.installTab = a.configTab
-			a.getFormItem("Select Type").Widget.(*widget.Select).Enable()
-		} else {
-			a.installTab = a.dlTab
-			a.getFormItem("Select Type").Widget.(*widget.Select).Disable()
-		}
-		a.tabs.Append(a.installTab)
-	})
-
 	form := container.NewVBox(
 		widget.NewForm(
 			a.getFormItem("ID"),
@@ -131,36 +104,31 @@ func (a *ModAuthorer) Draw(w fyne.Window) {
 			a.getFormItem("Link"),
 			a.getFormItem("Mod File Links"),
 			a.getFormItem("Preview"),
-			a.getFormItem("Select Type"),
-			widget.NewFormItem("Install Type", it)))
+			a.getFormItem("Select Type")))
 
 	a.tabs = container.NewAppTabs(
 		container.NewTabItem("Mod", form),
 		container.NewTabItem("Compatibility", a.modCompatsDef.draw()),
 		container.NewTabItem("Downloadables", a.downloadDef.draw()),
 		container.NewTabItem("Donation Links", a.donationsDef.draw()),
-		container.NewTabItem("Game", a.gamesDef.draw()))
-	a.dlTab = container.NewTabItem("Download Files", a.dlFilesDef.draw())
-	a.configTab = container.NewTabItem("Configurations", a.configsDef.draw())
+		container.NewTabItem("Game", a.gamesDef.draw()),
+		container.NewTabItem("Always Install", a.dlFilesDef.draw()),
+		container.NewTabItem("Configurations", a.configsDef.draw()))
 	a.tabs.OnSelected = func(tab *container.TabItem) {
-		if tab == a.dlTab {
-			tab.Content = a.dlFilesDef.draw()
-			tab.Content.Refresh()
-		} else if tab == a.configTab {
-			tab.Content = a.configsDef.draw()
-			tab.Content.Refresh()
+		if len(a.configsDef.list.Items) > 0 {
+			a.getFormItem("Select Type").Widget.(*widget.Select).Enable()
+		} else {
+			a.getFormItem("Select Type").Widget.(*widget.Select).Disable()
 		}
+		tab.Content.Refresh()
 	}
-
-	it.SetSelected(a.installType)
 
 	validateButton := container.NewHBox(
 		widget.NewButton("Validate", func() {
 			a.validate()
 		}),
 		widget.NewButton("Test", func() {
-			if a.installType == string(directInstall) ||
-				len(a.configsDef.list.Items) == 0 {
+			if len(a.configsDef.list.Items) == 0 {
 				dialog.ShowInformation("", "Test is only for mods with a configuration", state.Window)
 				return
 			}
@@ -206,16 +174,8 @@ func (a *ModAuthorer) updateEntries(mod *mods.Mod) {
 	a.downloadDef.set(mod.Downloadables)
 	a.donationsDef.set(mod.DonationLinks)
 	a.gamesDef.set(mod.Game)
-
-	a.installType = "Direct Install"
-	if mod.DownloadFiles != nil {
-		a.dlFilesDef.set(mod.DownloadFiles)
-
-	}
-	if mod.Configurations != nil {
-		a.installType = "Configuration"
-		a.configsDef.set(mod.Configurations)
-	}
+	a.dlFilesDef.set(mod.DownloadFiles)
+	a.configsDef.set(mod.Configurations)
 }
 
 func (a *ModAuthorer) pasteToClipboard(asJson bool) {
@@ -262,17 +222,14 @@ func (a *ModAuthorer) compileMod() (mod *mods.Mod) {
 		DonationLinks:       a.donationsDef.compile(),
 		Game:                a.gamesDef.compile(),
 	}
-	if a.installType == string(directInstall) {
-		m.DownloadFiles = a.dlFilesDef.compile()
-		if m.DownloadFiles == nil ||
-			(m.Name == "" && len(m.DownloadFiles.Files) == 0 && (len(m.DonationLinks) == 0)) {
-			m.DownloadFiles = nil
-		}
-	} else {
-		m.Configurations = a.configsDef.compile()
-		if len(m.Configurations) == 0 {
-			m.Configurations = nil
-		}
+	m.DownloadFiles = a.dlFilesDef.compile()
+	if m.DownloadFiles == nil ||
+		(m.Name == "" && len(m.DownloadFiles.Files) == 0 && (len(m.DonationLinks) == 0)) {
+		m.DownloadFiles = nil
+	}
+	m.Configurations = a.configsDef.compile()
+	if len(m.Configurations) == 0 {
+		m.Configurations = nil
 	}
 	return m
 }
@@ -351,27 +308,31 @@ func (a *ModAuthorer) validate() {
 			sb.WriteString(fmt.Sprintf("Mod File Link [%s] must be json or xml\n", mfl))
 		}
 	}
-	if a.installType == string(directInstall) {
-		if a.downloadDef == nil {
-			sb.WriteString("Download Files is required\n")
-		} else {
-			dlf := a.downloadDef.compile()
-			if len(dlf) == 0 {
-				sb.WriteString("Must have at least one Download File\n")
+
+	if (a.configsDef == nil || len(a.configsDef.list.Items) == 0) &&
+		(a.downloadDef == nil || len(a.downloadDef.list.Items) == 0) {
+		sb.WriteString("One \"Always Download\", at least one \"Configuration\" or both are required\n")
+	}
+
+	if a.downloadDef != nil {
+		dlf := a.downloadDef.compile()
+		if len(dlf) == 0 {
+			sb.WriteString("Must have at least one Download File\n")
+		}
+		for _, df := range dlf {
+			if df.Name == "" {
+				sb.WriteString("Download Files' name is required\n")
 			}
-			for _, df := range dlf {
-				if df.Name == "" {
-					sb.WriteString("Download Files' name is required\n")
-				}
-				if len(df.Sources) == 0 {
-					sb.WriteString(fmt.Sprintf("Download Files' [%s] Source is required\n", df.Name))
-				}
-				if df.InstallType == "" {
-					sb.WriteString(fmt.Sprintf("Download Files' [%s] Install Type is required\n", df.Name))
-				}
+			if len(df.Sources) == 0 {
+				sb.WriteString(fmt.Sprintf("Download Files' [%s] Source is required\n", df.Name))
+			}
+			if df.InstallType == "" {
+				sb.WriteString(fmt.Sprintf("Download Files' [%s] Install Type is required\n", df.Name))
 			}
 		}
-	} else { // Configurations
+	}
+
+	if a.configsDef != nil {
 		cfg := a.configsDef.compile()
 		if len(cfg) == 0 {
 			sb.WriteString("Must have at least one Configuration\n")
@@ -396,6 +357,7 @@ func (a *ModAuthorer) validate() {
 			}
 		}
 	}
+
 	if sb.Len() > 0 {
 		dialog.ShowError(errors.New(sb.String()), state.Window)
 	} else {
