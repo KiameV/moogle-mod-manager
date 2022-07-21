@@ -64,6 +64,9 @@ func (i *configInstallerUI) Draw(w fyne.Window) {
 	}))
 	buttons := container.NewHBox(
 		widget.NewButton("Select", func() {
+			if i.currentChoice == nil {
+				return
+			}
 			i.prevConfigs = append(i.prevConfigs, i.currentConfig)
 			i.toInstall = append(i.toInstall, i.currentChoice.DownloadFiles)
 			if i.currentChoice.NextConfigurationName == nil {
