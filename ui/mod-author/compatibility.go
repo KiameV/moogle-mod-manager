@@ -31,3 +31,16 @@ func (d *modCompatabilityDef) compile() *mods.ModCompatibility {
 		Forbids:  d.forbids.compile(),
 	}
 }
+
+func (d *modCompatabilityDef) set(compatibility *mods.ModCompatibility) {
+	d.requires.clear()
+	d.forbids.clear()
+	if compatibility != nil {
+		for _, i := range compatibility.Requires {
+			d.requires.list.AddItem(i)
+		}
+		for _, i := range compatibility.Forbids {
+			d.forbids.list.AddItem(i)
+		}
+	}
+}

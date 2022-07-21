@@ -65,9 +65,9 @@ func (m *MainMenu) Draw(w fyne.Window) {
 				state.ShowScreen(state.ModAuthor)
 			}),
 			fyne.NewMenuItem("Edit Mod", func() {
-				// TODO
-				//state.GetScreen(state.ModAuthor).(*a.ModAuthorer).EditMod(w)
-				state.ShowScreen(state.ModAuthor)
+				if state.GetScreen(state.ModAuthor).(*a.ModAuthorer).EditMod() {
+					state.ShowScreen(state.ModAuthor)
+				}
 			}))
 	} else {
 		author.Items = append(author.Items,

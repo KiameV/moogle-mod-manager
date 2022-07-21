@@ -12,6 +12,7 @@ const (
 	LocalMods
 	Configure
 	ModAuthor
+	ConfigInstaller
 )
 
 var (

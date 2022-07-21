@@ -40,12 +40,13 @@ func (d *choicesDef) compile() []*mods.Choice {
 }
 
 func (d *choicesDef) getItemKey(item interface{}) string {
-	return item.(*mods.Choice).Description
+	return item.(*mods.Choice).Name
 }
 
 func (d *choicesDef) getItemFields(item interface{}) []string {
 	c := item.(*mods.Choice)
 	sl := []string{
+		c.Name,
 		c.Description,
 		c.Preview,
 	}
@@ -71,6 +72,7 @@ func (d *choicesDef) onEditItem(item interface{}, done func(result interface{}))
 		nextConfig = *c.NextConfigurationName
 	}
 
+	d.createFormItem("Name", c.Name)
 	d.createFormItem("Description", c.Description)
 	d.createFormItem("Preview", c.Preview)
 	d.createFormSelect("Next Configuration", possible, nextConfig)
@@ -79,6 +81,7 @@ func (d *choicesDef) onEditItem(item interface{}, done func(result interface{}))
 	}
 
 	form := []*widget.FormItem{
+		d.getFormItem("Name"),
 		d.getFormItem("Description"),
 		d.getFormItem("Preview"),
 		d.getFormItem("Next Configuration"),
@@ -88,6 +91,7 @@ func (d *choicesDef) onEditItem(item interface{}, done func(result interface{}))
 	fd := dialog.NewForm("Edit Choice", "Save", "Cancel", form, func(ok bool) {
 		if ok {
 			ch := &mods.Choice{
+				Name:          d.getString("Name"),
 				Description:   d.getString("Description"),
 				Preview:       d.getString("Preview"),
 				DownloadFiles: d.dlfDef.compile(),

@@ -77,3 +77,14 @@ func (d *downloadFilesDef) populate(dlf *mods.DownloadFiles) {
 		d.dirs.populate(dlf.Dirs)
 	}
 }
+
+func (d *downloadFilesDef) set(df *mods.DownloadFiles) {
+	d.dlName = ""
+	d.files.clear()
+	d.dirs.clear()
+	if df != nil {
+		d.dlName = df.DownloadName
+		d.files.populate(df.Files)
+		d.dirs.populate(df.Dirs)
+	}
+}

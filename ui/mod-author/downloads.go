@@ -81,3 +81,10 @@ func (d *downloadsDef) draw() fyne.CanvasObject {
 		})),
 		d.list.Draw())
 }
+
+func (d *downloadsDef) set(downloadables []*mods.Download) {
+	d.list.Clear()
+	for _, i := range downloadables {
+		d.list.AddItem(i)
+	}
+}

@@ -101,3 +101,7 @@ func (d *modCompatsDef) draw() fyne.CanvasObject {
 		})),
 		d.list.Draw())
 }
+
+func (d *modCompatsDef) clear() {
+	d.list.Clear()
+}

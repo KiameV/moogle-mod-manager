@@ -86,3 +86,12 @@ func (d *configurationsDef) draw() fyne.CanvasObject {
 		})),
 		d.list.Draw())
 }
+
+func (d *configurationsDef) set(configurations []*mods.Configuration) {
+	d.list.Clear()
+	if configurations != nil {
+		for _, c := range configurations {
+			d.list.AddItem(c)
+		}
+	}
+}

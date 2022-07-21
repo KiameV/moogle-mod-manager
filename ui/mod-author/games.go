@@ -72,7 +72,7 @@ func (d *gamesDef) editItem(item interface{}, done func(result interface{})) {
 		if ok {
 			done(&mods.Game{
 				Name:     config.GameToName(config.FromString(d.getString("Game"))),
-				Versions: d.getStrings("Version", ","),
+				Versions: d.getStrings("Versions", ","),
 			})
 		}
 	}, state.Window)
@@ -89,4 +89,11 @@ func (d *gamesDef) draw() fyne.CanvasObject {
 			})
 		})),
 		d.list.Draw())
+}
+
+func (d *gamesDef) set(game []*mods.Game) {
+	d.list.Clear()
+	for _, i := range game {
+		d.list.AddItem(i)
+	}
 }

@@ -77,3 +77,10 @@ func (d *donationsDef) draw() fyne.CanvasObject {
 		})),
 		d.list.Draw())
 }
+
+func (d *donationsDef) set(links []*mods.DonationLink) {
+	d.list.Clear()
+	for _, i := range links {
+		d.list.AddItem(i)
+	}
+}

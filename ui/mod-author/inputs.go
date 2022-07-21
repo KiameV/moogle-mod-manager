@@ -37,8 +37,8 @@ func (m *entryManager) getString(key string) string {
 	switch t := e.(type) {
 	case *widget.Entry:
 		return t.Text
-	case *widget.SelectEntry:
-		return t.Text
+	case *widget.Select:
+		return t.Selected
 	case *widget.Check:
 		return fmt.Sprintf("%v", t.Checked)
 	}
@@ -57,11 +57,8 @@ func (m *entryManager) getStrings(key string, split string) []string {
 	return nil
 }
 
-func (m *entryManager) getFormItem(name string, customKey ...string) *widget.FormItem {
+func (m *entryManager) getFormItem(name string) *widget.FormItem {
 	key := name
-	if len(customKey) > 0 {
-		key = customKey[0]
-	}
 	e, _ := m.entries[key]
 	return widget.NewFormItem(name, e)
 }
@@ -76,12 +73,9 @@ func (m *entryManager) createFormItem(key string, value string) {
 }
 
 func (m *entryManager) createFormSelect(key string, possible []string, value string) {
-	e, ok := m.entries[key]
-	if !ok {
-		e = widget.NewSelectEntry(possible)
-		m.entries[key] = e
-	}
-	e.(*widget.SelectEntry).SetText(value)
+	e := widget.NewSelect(possible, func(string) {})
+	m.entries[key] = e
+	e.SetSelected(value)
 }
 
 func (m *entryManager) createFormMultiLine(key string, value string) {

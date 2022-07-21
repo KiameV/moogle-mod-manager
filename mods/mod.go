@@ -2,25 +2,35 @@ package mods
 
 import "github.com/kiamev/moogle-mod-manager/config"
 
-type Mod struct {
-	ID               string            `json:"ID" xml:"ID"`
-	Name             string            `json:"Name" xml:"Name"`
-	Author           string            `json:"Author" xml:"Author"`
-	Version          string            `json:"Version" xml:"Version"`
-	ReleaseDate      string            `json:"ReleaseDate" xml:"ReleaseDate"`
-	Category         string            `json:"Category" xml:"Category"`
-	Description      string            `json:"Description" xml:"Description"`
-	ReleaseNotes     string            `json:"ReleaseNotes" xml:"ReleaseNotes"`
-	Link             string            `json:"Link" xml:"Link"`
-	Preview          string            `json:"Preview" xml:"Preview"`
-	ModCompatibility *ModCompatibility `json:"Compatibility,omitempty" xml:"ModCompatibility,omitempty"`
-	Downloadables    []*Download       `json:"Downloadable" xml:"Downloadables"`
-	DonationLinks    []*DonationLink   `json:"DonationLink" xml:"DonationLinks"`
-	Game             []*Game           `json:"Games" xml:"Games"`
+type SelectType string
 
-	// Either Download or Configs for a mod
-	DownloadFiles  *DownloadFiles   `json:"DownloadFile,omitempty" xml:"DownloadFiles,omitempty"`
-	Configurations []*Configuration `json:"Configuration,omitempty" xml:"Configurations,omitempty"`
+const (
+	Auto   SelectType = "Auto"
+	Select SelectType = "Select"
+	Radio  SelectType = "Radio"
+)
+
+var SelectTypes = []string{string(Auto), string(Select), string(Radio)}
+
+type Mod struct {
+	ID                  string            `json:"ID" xml:"ID"`
+	Name                string            `json:"Name" xml:"Name"`
+	Author              string            `json:"Author" xml:"Author"`
+	Version             string            `json:"Version" xml:"Version"`
+	ReleaseDate         string            `json:"ReleaseDate" xml:"ReleaseDate"`
+	Category            string            `json:"Category" xml:"Category"`
+	Description         string            `json:"Description" xml:"Description"`
+	ReleaseNotes        string            `json:"ReleaseNotes" xml:"ReleaseNotes"`
+	Link                string            `json:"Link" xml:"Link"`
+	ModFileLinks        []string          `json:"ModFileLink" xml:"ModFileLink"`
+	Preview             string            `json:"Preview" xml:"Preview"`
+	ModCompatibility    *ModCompatibility `json:"Compatibility,omitempty" xml:"ModCompatibility,omitempty"`
+	Downloadables       []*Download       `json:"Downloadable" xml:"Downloadables"`
+	DonationLinks       []*DonationLink   `json:"DonationLink" xml:"DonationLinks"`
+	Game                []*Game           `json:"Games" xml:"Games"`
+	DownloadFiles       *DownloadFiles    `json:"DownloadFile,omitempty" xml:"DownloadFiles,omitempty"`
+	Configurations      []*Configuration  `json:"Configuration,omitempty" xml:"Configurations,omitempty"`
+	ConfigSelectionType SelectType        `json:"ConfigSelectionType" xml:"ConfigSelectionType"`
 }
 
 type ModCompatibility struct {
@@ -54,11 +64,11 @@ const (
 	Magicite InstallType = "Magicite"
 	BepInEx  InstallType = "BepInEx"
 	// DLL Patcher https://discord.com/channels/371784427162042368/518331294858608650/863930606446182420
-	DllPatch   InstallType = "DllPatch"
+	//DllPatch   InstallType = "DllPatch"
 	Compressed InstallType = "Compressed"
 )
 
-var InstallTypes = []string{string(Bundles), string(Memoria), string(Magicite), string(BepInEx), string(DllPatch), string(Compressed)}
+var InstallTypes = []string{string(Bundles), string(Memoria), string(Magicite), string(BepInEx) /*string(DllPatch),*/, string(Compressed)}
 
 type Game struct {
 	Name     config.GameName `json:"Name" xml:"Name"`
@@ -96,6 +106,7 @@ type Configuration struct {
 }
 
 type Choice struct {
+	Name                  string         `json:"Name" xml:"Name"`
 	Description           string         `json:"Description" xml:"Description"`
 	Preview               string         `json:"Preview" xml:"Preview"`
 	DownloadFiles         *DownloadFiles `json:"DownloadFiles,omitempty" xml:"DownloadFiles,omitempty"`
