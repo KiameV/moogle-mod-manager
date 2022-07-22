@@ -4,6 +4,7 @@ go 1.17
 
 require (
 	fyne.io/fyne/v2 v2.2.3
+	github.com/Xuanwo/go-locale v1.1.0
 	github.com/bodgit/sevenzip v1.2.2
 	github.com/ncruces/zenity v0.8.9
 	golang.design/x/clipboard v0.6.2

@@ -4,6 +4,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/dialog"
+	"github.com/Xuanwo/go-locale"
 	"github.com/kiamev/moogle-mod-manager/browser"
 	"github.com/kiamev/moogle-mod-manager/mods/managed"
 	config_installer "github.com/kiamev/moogle-mod-manager/ui/config-installer"
@@ -20,6 +21,16 @@ func main() {
 	state.Window.Resize(fyne.NewSize(800, 850))
 	if err := managed.Initialize(); err != nil {
 		dialog.ShowError(err, state.Window)
+	}
+
+	if tag, err := locale.Detect(); err != nil {
+		dialog.ShowError(err, state.Window)
+	} else {
+		// TODO
+		println(tag.String())
+		//https://github.com/nicksnyder/go-i18n/
+		//https://en.wikipedia.org/wiki/IETF_language_tag
+		//en-US
 	}
 
 	state.RegisterMainMenu(menu.New())
