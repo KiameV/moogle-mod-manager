@@ -50,13 +50,13 @@ func (d *gamesDef) getItemFields(item interface{}) []string {
 }
 
 func (d *gamesDef) editItem(item interface{}, done func(result interface{})) {
-	d.createFormSelect("Game", []string{
-		config.String(config.I),
-		config.String(config.II),
-		config.String(config.III),
-		config.String(config.IV),
-		config.String(config.V),
-		config.String(config.VI),
+	d.createFormSelect("Games", []string{
+		config.GameNameString(config.I),
+		config.GameNameString(config.II),
+		config.GameNameString(config.III),
+		config.GameNameString(config.IV),
+		config.GameNameString(config.V),
+		config.GameNameString(config.VI),
 	}, config.String(config.NameToGame(item.(*mods.Game).Name)))
 	var v string
 	versions := item.(*mods.Game).Versions
@@ -65,13 +65,13 @@ func (d *gamesDef) editItem(item interface{}, done func(result interface{})) {
 	}
 	d.createFormItem("Versions", v)
 
-	fd := dialog.NewForm("Edit Game", "Save", "Cancel", []*widget.FormItem{
-		d.getFormItem("Game"),
+	fd := dialog.NewForm("Edit Games", "Save", "Cancel", []*widget.FormItem{
+		d.getFormItem("Games"),
 		d.getFormItem("Versions"),
 	}, func(ok bool) {
 		if ok {
 			done(&mods.Game{
-				Name:     config.GameToName(config.FromString(d.getString("Game"))),
+				Name:     config.GameToName(config.FromString(d.getString("Games"))),
 				Versions: d.getStrings("Versions", ","),
 			})
 		}

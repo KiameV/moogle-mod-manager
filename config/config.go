@@ -65,27 +65,6 @@ func Save() {
 	}
 }
 
-func GetGameDir(game Game) (dir string) {
-	switch game {
-	case I:
-		dir = Get().DirI
-	case II:
-		dir = Get().DirII
-	case III:
-		dir = Get().DirIII
-	case IV:
-		dir = Get().DirIV
-	case V:
-		dir = Get().DirV
-	case VI:
-		dir = Get().DirVI
-	}
-	if dir == "" {
-		dir = "."
-	}
-	return
-}
-
 func (c *ConfigData) SetGameDir(dir string, game Game) {
 	switch game {
 	case I:
@@ -103,22 +82,40 @@ func (c *ConfigData) SetGameDir(dir string, game Game) {
 	}
 }
 
-func GetModDir(game Game) (s string) {
+func GetModDir(game Game) (dir string) {
 	switch game {
 	case I:
-		s = "I"
+		dir = Get().DirI
+		if dir == "" {
+			dir = "I"
+		}
 	case II:
-		s = "II"
+		dir = Get().DirII
+		if dir == "" {
+			dir = "II"
+		}
 	case III:
-		s = "III"
+		dir = Get().DirIII
+		if dir == "" {
+			dir = "III"
+		}
 	case IV:
-		s = "IV"
+		dir = Get().DirIV
+		if dir == "" {
+			dir = "IV"
+		}
 	case V:
-		s = "V"
+		dir = Get().DirV
+		if dir == "" {
+			dir = "V"
+		}
 	case VI:
-		s = "VI"
+		dir = Get().DirVI
+		if dir == "" {
+			dir = "VI"
+		}
 	}
-	s = filepath.Join(PWD, "mods", s)
+	dir = filepath.Join(PWD, "mods", dir)
 	return
 }
 

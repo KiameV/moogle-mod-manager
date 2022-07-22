@@ -8,7 +8,7 @@ import (
 	"github.com/kiamev/moogle-mod-manager/mods/managed"
 	config_installer "github.com/kiamev/moogle-mod-manager/ui/config-installer"
 	"github.com/kiamev/moogle-mod-manager/ui/game-select"
-	"github.com/kiamev/moogle-mod-manager/ui/manage"
+	"github.com/kiamev/moogle-mod-manager/ui/local"
 	"github.com/kiamev/moogle-mod-manager/ui/menu"
 	mod_author "github.com/kiamev/moogle-mod-manager/ui/mod-author"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
@@ -20,8 +20,6 @@ func main() {
 	state.Window.Resize(fyne.NewSize(800, 850))
 	if err := managed.Initialize(); err != nil {
 		dialog.ShowError(err, state.Window)
-		state.Window.Close()
-		return
 	}
 
 	state.RegisterMainMenu(menu.New())

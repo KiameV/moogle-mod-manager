@@ -1,6 +1,7 @@
 package browser
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"net/http"
@@ -11,25 +12,10 @@ import (
 
 func Download(url, toDir string) (string, error) {
 	var (
-		resp, err = http.Get(url)
-		out       *os.File
-		sp        = strings.Split(url, "/")
-		file      string
+		buf, name, err = download(url)
+		out            *os.File
+		file           = filepath.Join(toDir, name)
 	)
-	if err != nil {
-		return "", err
-	}
-	defer func() { resp.Body.Close() }()
-
-	if len(sp) == 0 {
-		return "", fmt.Errorf("invalid url: %s", url)
-	}
-
-	if resp.StatusCode != 200 {
-		return "", fmt.Errorf("failed to download the mod's source at %s, url")
-	}
-
-	file = filepath.Join(toDir, sp[len(sp)-1])
 	// Create the file
 	if out, err = os.Create(file); err != nil {
 		return "", err
@@ -37,8 +23,49 @@ func Download(url, toDir string) (string, error) {
 	defer func() { _ = out.Close() }()
 
 	// Write the body to file
-	if _, err = io.Copy(out, resp.Body); err != nil {
+	_, err = io.Copy(out, buf)
+	return file, err
+}
+
+func DownloadAsString(url string) (string, error) {
+	buf, _, err := download(url)
+	if err != nil {
 		return "", err
 	}
-	return file, nil
+	return buf.String(), nil
+}
+
+func DownloadAsBytes(url string) ([]byte, error) {
+	buf, _, err := download(url)
+	if err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
+func download(url string) (buf *bytes.Buffer, name string, err error) {
+	var (
+		resp *http.Response
+		sp   = strings.Split(url, "/")
+	)
+	if resp, err = http.Get(url); err != nil {
+		return
+	}
+	defer func() { resp.Body.Close() }()
+
+	if len(sp) == 0 {
+		err = fmt.Errorf("invalid url: %s", url)
+		return
+	}
+
+	if resp.StatusCode != 200 {
+		err = fmt.Errorf("failed to download the mod's source at %s", url)
+		return
+	}
+	defer resp.Body.Close()
+
+	buf = new(bytes.Buffer)
+	_, err = buf.ReadFrom(resp.Body)
+	name = sp[len(sp)-1]
+	return
 }

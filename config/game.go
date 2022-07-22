@@ -1,7 +1,5 @@
 package config
 
-import "fmt"
-
 type GameName string
 
 const (
@@ -39,8 +37,11 @@ func String(game Game) (name string) {
 	case VI:
 		name = "VI"
 	}
-	name = fmt.Sprintf("Final Fantasy %s", name)
 	return
+}
+
+func GameNameString(game Game) string {
+	return "Final Fantasy " + String(game)
 }
 
 func FromString(s string) (game Game) {

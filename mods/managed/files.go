@@ -83,7 +83,7 @@ func detectCollisions(managedFiles map[string]bool, modFiles []string) (collisio
 }
 
 func saveManagedJson() error {
-	b, err := json.Marshal(managed)
+	b, err := json.MarshalIndent(managed, "", "\t")
 	if err != nil {
 		return err
 	}

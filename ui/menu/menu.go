@@ -27,7 +27,7 @@ func (m *MainMenu) Draw(w fyne.Window) {
 				// TODO
 			}),
 			fyne.NewMenuItemSeparator(),
-			fyne.NewMenuItem("Select Game", func() {
+			fyne.NewMenuItem("Select Games", func() {
 				state.ShowPreviousScreen()
 			}),
 			fyne.NewMenuItemSeparator())

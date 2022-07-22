@@ -10,7 +10,7 @@ import (
 
 func MoveFiles(files []mods.ModFile, modDir string, game config.Game) (err error) {
 	var (
-		toDir     = config.GetGameDir(game)
+		toDir     = config.GetModDir(game)
 		backupDir = config.GetBackupDir(game)
 	)
 	for _, f := range files {
@@ -26,7 +26,7 @@ func MoveFiles(files []mods.ModFile, modDir string, game config.Game) (err error
 
 func RevertMoveFiles(files []string, game config.Game) (err error) {
 	var (
-		toDir     = config.GetGameDir(game)
+		toDir     = config.GetModDir(game)
 		backupDir = config.GetBackupDir(game)
 	)
 	for _, f := range files {

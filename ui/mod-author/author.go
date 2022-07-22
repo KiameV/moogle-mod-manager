@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"errors"
-	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
@@ -112,7 +111,7 @@ func (a *ModAuthorer) Draw(w fyne.Window) {
 		container.NewTabItem("Compatibility", a.modCompatsDef.draw()),
 		container.NewTabItem("Downloadables", a.downloadDef.draw()),
 		container.NewTabItem("Donation Links", a.donationsDef.draw()),
-		container.NewTabItem("Game", a.gamesDef.draw()),
+		container.NewTabItem("Games", a.gamesDef.draw()),
 		container.NewTabItem("Always Install", a.dlFilesDef.draw()),
 		container.NewTabItem("Configurations", a.configsDef.draw()))
 	a.tabs.OnSelected = func(tab *container.TabItem) {
@@ -174,7 +173,7 @@ func (a *ModAuthorer) updateEntries(mod *mods.Mod) {
 	a.modCompatsDef.set(mod.ModCompatibility)
 	a.downloadDef.set(mod.Downloadables)
 	a.donationsDef.set(mod.DonationLinks)
-	a.gamesDef.set(mod.Game)
+	a.gamesDef.set(mod.Games)
 	a.dlFilesDef.set(mod.DownloadFiles)
 	a.configsDef.set(mod.Configurations)
 }
@@ -221,7 +220,7 @@ func (a *ModAuthorer) compileMod() (mod *mods.Mod) {
 		ModCompatibility:    a.modCompatsDef.compile(),
 		Downloadables:       a.downloadDef.compile(),
 		DonationLinks:       a.donationsDef.compile(),
-		Game:                a.gamesDef.compile(),
+		Games:               a.gamesDef.compile(),
 	}
 	m.DownloadFiles = a.dlFilesDef.compile()
 	if m.DownloadFiles == nil ||
@@ -278,89 +277,9 @@ func (a *ModAuthorer) saveFile(asJson bool) {
 }
 
 func (a *ModAuthorer) validate() {
-	mod := a.compileMod()
-	sb := strings.Builder{}
-	if mod.ID == "" {
-		sb.WriteString("ID is required\n")
-	}
-	if mod.Name == "" {
-		sb.WriteString("Name is required\n")
-	}
-	if mod.Author == "" {
-		sb.WriteString("Author is required\n")
-	}
-	if mod.ReleaseDate == "" {
-		sb.WriteString("Release Date is required\n")
-	}
-	if mod.Category == "" {
-		sb.WriteString("Category is required\n")
-	}
-	if mod.Description == "" {
-		sb.WriteString("Description is required\n")
-	}
-	if mod.Link == "" {
-		sb.WriteString("Link is required\n")
-	}
-	if len(mod.ModFileLinks) == 0 {
-		sb.WriteString("ModFileLinks is required\n")
-	}
-	for _, mfl := range mod.ModFileLinks {
-		if strings.HasSuffix(mfl, ".json") == false && strings.HasSuffix(mfl, ".xml") == false {
-			sb.WriteString(fmt.Sprintf("Mod File Link [%s] must be json or xml\n", mfl))
-		}
-	}
-
-	if (a.configsDef == nil || len(a.configsDef.list.Items) == 0) &&
-		(a.downloadDef == nil || len(a.downloadDef.list.Items) == 0) {
-		sb.WriteString("One \"Always Download\", at least one \"Configuration\" or both are required\n")
-	}
-
-	if a.downloadDef != nil {
-		dlf := a.downloadDef.compile()
-		if len(dlf) == 0 {
-			sb.WriteString("Must have at least one Download File\n")
-		}
-		for _, df := range dlf {
-			if df.Name == "" {
-				sb.WriteString("Download Files' name is required\n")
-			}
-			if len(df.Sources) == 0 {
-				sb.WriteString(fmt.Sprintf("Download Files' [%s] Source is required\n", df.Name))
-			}
-			if df.InstallType == "" {
-				sb.WriteString(fmt.Sprintf("Download Files' [%s] Install Type is required\n", df.Name))
-			}
-		}
-	}
-
-	if a.configsDef != nil {
-		cfg := a.configsDef.compile()
-		if len(cfg) == 0 {
-			sb.WriteString("Must have at least one Configuration\n")
-		}
-		for _, c := range cfg {
-			if c.Name == "" {
-				sb.WriteString("Configuration's Name is required\n")
-			}
-			if c.Description == "" {
-				sb.WriteString(fmt.Sprintf("Configuration's [%s] Description is required\n", c.Name))
-			}
-			if len(c.Choices) == 0 {
-				sb.WriteString(fmt.Sprintf("Configuration's [%s] must have Choices\n", c.Name))
-			}
-			for _, ch := range c.Choices {
-				if ch.Description == "" {
-					sb.WriteString(fmt.Sprintf("Configuration's [%s] Choice's Description is required\n", c.Name))
-				}
-				if ch.NextConfigurationName != nil && *ch.NextConfigurationName == c.Name {
-					sb.WriteString(fmt.Sprintf("Configuration's [%s] Choice's Next Configuration Name must not be the same as the Configuration's Name\n", c.Name))
-				}
-			}
-		}
-	}
-
-	if sb.Len() > 0 {
-		dialog.ShowError(errors.New(sb.String()), state.Window)
+	s := a.compileMod().Validate()
+	if s != "" {
+		dialog.ShowError(errors.New(s), state.Window)
 	} else {
 		dialog.ShowInformation("", "Mod is valid", state.Window)
 	}
