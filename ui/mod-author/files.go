@@ -49,7 +49,11 @@ func (d *filesDef) getItemFields(item interface{}) []string {
 	}
 }
 
-func (d *filesDef) onEditItem(item interface{}, done func(result interface{})) {
+func (d *filesDef) onEditItem(item interface{}) {
+	d.createItem(item)
+}
+
+func (d *filesDef) createItem(item interface{}, done ...func(interface{})) {
 	f := item.(*mods.ModFile)
 	d.createFormItem("From", f.From)
 	d.createFormItem("To", f.To)
@@ -59,10 +63,11 @@ func (d *filesDef) onEditItem(item interface{}, done func(result interface{})) {
 		d.getFormItem("To"),
 	}, func(ok bool) {
 		if ok {
-			done(&mods.ModFile{
-				From: d.getString("From"),
-				To:   d.getString("To"),
-			})
+			f.From = d.getString("From")
+			f.To = d.getString("To")
+			if len(done) > 0 {
+				done[0](f)
+			}
 		}
 	}, state.Window)
 	fd.Resize(fyne.NewSize(400, 400))
@@ -75,7 +80,7 @@ func (d *filesDef) draw(label bool) fyne.CanvasObject {
 		c.Add(widget.NewLabelWithStyle("Files", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}))
 	}
 	c.Add(widget.NewButton("Add", func() {
-		d.onEditItem(&mods.ModFile{}, func(result interface{}) {
+		d.createItem(&mods.ModFile{}, func(result interface{}) {
 			d.list.AddItem(result)
 		})
 	}))

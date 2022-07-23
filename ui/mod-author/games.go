@@ -49,7 +49,12 @@ func (d *gamesDef) getItemFields(item interface{}) []string {
 	return []string{strings.Join(v, ", ")}
 }
 
-func (d *gamesDef) editItem(item interface{}, done func(result interface{})) {
+func (d *gamesDef) editItem(item interface{}) {
+	d.createItem(item)
+}
+
+func (d *gamesDef) createItem(item interface{}, done ...func(interface{})) {
+	m := item.(*mods.Game)
 	d.createFormSelect("Games", []string{
 		config.GameNameString(config.I),
 		config.GameNameString(config.II),
@@ -57,9 +62,9 @@ func (d *gamesDef) editItem(item interface{}, done func(result interface{})) {
 		config.GameNameString(config.IV),
 		config.GameNameString(config.V),
 		config.GameNameString(config.VI),
-	}, config.String(config.NameToGame(item.(*mods.Game).Name)))
+	}, config.String(config.NameToGame(m.Name)))
 	var v string
-	versions := item.(*mods.Game).Versions
+	versions := m.Versions
 	if versions != nil {
 		v = strings.Join(versions, ", ")
 	}
@@ -70,10 +75,11 @@ func (d *gamesDef) editItem(item interface{}, done func(result interface{})) {
 		d.getFormItem("Versions"),
 	}, func(ok bool) {
 		if ok {
-			done(&mods.Game{
-				Name:     config.GameToName(config.FromString(d.getString("Games"))),
-				Versions: d.getStrings("Versions", ","),
-			})
+			m.Name = config.GameToName(config.FromString(d.getString("Games")))
+			m.Versions = d.getStrings("Versions", ",")
+			if len(done) > 0 {
+				done[0](m)
+			}
 		}
 	}, state.Window)
 	fd.Resize(fyne.NewSize(400, 400))
@@ -84,7 +90,7 @@ func (d *gamesDef) draw() fyne.CanvasObject {
 	return container.NewVBox(container.NewHBox(
 		widget.NewLabelWithStyle("Games", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
 		widget.NewButton("Add", func() {
-			d.editItem(&mods.Game{}, func(result interface{}) {
+			d.createItem(&mods.Game{}, func(result interface{}) {
 				d.list.AddItem(result)
 			})
 		})),

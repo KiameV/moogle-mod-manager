@@ -47,10 +47,25 @@ func (m *localMods) Draw(w fyne.Window) {
 				object.(*fyne.Container).Objects[0].(*widget.Label).SetText(selectable[id].Mod.Name)
 			})
 		addButton = cw.NewButtonWithPopups("Add",
-			fyne.NewMenuItem("From File", func() { m.addFromFile() }),
-			fyne.NewMenuItem("From URL", func() { m.addFromUrl() }))
-		removeButton = widget.NewButton("Remove", func() {})
-		modDetails   = container.NewScroll(container.NewMax())
+			fyne.NewMenuItem("From File", func() {
+				m.addFromFile()
+				m.Draw(w)
+			}),
+			fyne.NewMenuItem("From URL", func() {
+				m.addFromUrl()
+				m.Draw(w)
+			}))
+		removeButton = widget.NewButton("Remove", func() {
+			if m.selectedMod != nil {
+				if err := managed.RemoveMod(*state.CurrentGame, m.selectedMod.GetModID()); err != nil {
+					dialog.ShowError(err, state.Window)
+					return
+				}
+				m.selectedMod = nil
+				m.Draw(w)
+			}
+		})
+		modDetails = container.NewScroll(container.NewMax())
 	)
 	removeButton.Disable()
 	modList.OnSelected = func(id widget.ListItemID) {
@@ -68,7 +83,7 @@ func (m *localMods) Draw(w fyne.Window) {
 	buttons := container.NewHBox(addButton, widget.NewSeparator(), removeButton)
 
 	split := container.NewHSplit(
-		container.NewVScroll(modList),
+		modList,
 		modDetails)
 	split.SetOffset(0.3)
 
@@ -148,7 +163,6 @@ func (m *localMods) addFromFile() {
 			dialog.ShowError(err, state.Window)
 			return
 		}
-		state.Window.Content().Refresh()
 	}
 }
 
@@ -162,7 +176,6 @@ func (m *localMods) addFromUrl() {
 					dialog.ShowError(err, state.Window)
 					return
 				}
-				state.Window.Content().Refresh()
 			}
 		}, state.Window)
 }

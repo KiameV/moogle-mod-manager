@@ -47,7 +47,11 @@ func (d *donationsDef) getItemFields(item interface{}) []string {
 	}
 }
 
-func (d *donationsDef) onEditItem(item interface{}, done func(result interface{})) {
+func (d *donationsDef) onEditItem(item interface{}) {
+	d.createItem(item)
+}
+
+func (d *donationsDef) createItem(item interface{}, done ...func(interface{})) {
 	m := item.(*mods.DonationLink)
 	d.createFormItem("Name", m.Name)
 	d.createFormItem("Link", m.Link)
@@ -57,10 +61,11 @@ func (d *donationsDef) onEditItem(item interface{}, done func(result interface{}
 		d.getFormItem("Link"),
 	}, func(ok bool) {
 		if ok {
-			done(&mods.DonationLink{
-				Name: d.getString("Name"),
-				Link: d.getString("Link"),
-			})
+			m.Name = d.getString("Name")
+			m.Link = d.getString("Link")
+			if len(done) > 0 {
+				done[0](m)
+			}
 		}
 	}, state.Window)
 	fd.Resize(fyne.NewSize(400, 400))
@@ -71,7 +76,7 @@ func (d *donationsDef) draw() fyne.CanvasObject {
 	return container.NewVBox(container.NewHBox(
 		widget.NewLabelWithStyle("Donation Links", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
 		widget.NewButton("Add", func() {
-			d.onEditItem(&mods.DonationLink{}, func(result interface{}) {
+			d.createItem(&mods.DonationLink{}, func(result interface{}) {
 				d.list.AddItem(result)
 			})
 		})),

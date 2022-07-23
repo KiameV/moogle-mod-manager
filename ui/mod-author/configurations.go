@@ -40,7 +40,11 @@ func (d *configurationsDef) compile() []*mods.Configuration {
 }
 
 func (d *configurationsDef) getItemKey(item interface{}) string {
-	return item.(*mods.Configuration).Name
+	c := item.(*mods.Configuration)
+	if c.Root {
+		return c.Name + " (root)"
+	}
+	return c.Name
 }
 
 func (d *configurationsDef) getItemFields(item interface{}) []string {
@@ -51,28 +55,36 @@ func (d *configurationsDef) getItemFields(item interface{}) []string {
 	}
 }
 
-func (d *configurationsDef) onEditItem(item interface{}, done func(result interface{})) {
+func (d *configurationsDef) onEditItem(item interface{}) {
+	d.createItem(item)
+}
+
+func (d *configurationsDef) createItem(item interface{}, done ...func(interface{})) {
 	c := item.(*mods.Configuration)
 	d.createFormItem("Name", c.Name)
 	d.createFormMultiLine("Description", c.Description)
+	d.createFormBool("Root", c.Root)
 	d.previewDef.set(c.Preview)
 	d.choicesDef.populate(c.Choices)
 
 	items := []*widget.FormItem{
 		d.getFormItem("Name"),
 		d.getFormItem("Description"),
+		d.getFormItem("Root"),
 	}
 	items = append(items, d.previewDef.getFormItems()...)
 	items = append(items, widget.NewFormItem("Choices", d.choicesDef.draw(false)))
 
 	fd := dialog.NewForm("Edit Configuration", "Save", "Cancel", items, func(ok bool) {
 		if ok {
-			done(&mods.Configuration{
-				Name:        d.getString("Name"),
-				Description: d.getString("Description"),
-				Preview:     d.previewDef.compile(),
-				Choices:     d.choicesDef.compile(),
-			})
+			c.Name = d.getString("Name")
+			c.Description = d.getString("Description")
+			c.Root = d.getBool("Root")
+			c.Preview = d.previewDef.compile()
+			c.Choices = d.choicesDef.compile()
+			if len(done) > 0 {
+				done[0](c)
+			}
 		}
 	}, state.Window)
 	fd.Resize(fyne.NewSize(400, 400))
@@ -83,7 +95,7 @@ func (d *configurationsDef) draw() fyne.CanvasObject {
 	return container.NewVBox(container.NewHBox(
 		widget.NewLabelWithStyle("Configurations", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
 		widget.NewButton("Add", func() {
-			d.onEditItem(&mods.Configuration{}, func(result interface{}) {
+			d.createItem(&mods.Configuration{}, func(result interface{}) {
 				d.list.AddItem(result)
 			})
 		})),

@@ -60,7 +60,11 @@ func (d *choicesDef) getItemFields(item interface{}) []string {
 	return sl
 }
 
-func (d *choicesDef) onEditItem(item interface{}, done func(result interface{})) {
+func (d *choicesDef) onEditItem(item interface{}) {
+	d.createItem(item)
+}
+
+func (d *choicesDef) createItem(item interface{}, done ...func(interface{})) {
 	var (
 		c          = item.(*mods.Choice)
 		configs    = d.configDef.compile()
@@ -84,7 +88,6 @@ func (d *choicesDef) onEditItem(item interface{}, done func(result interface{}))
 	form := []*widget.FormItem{
 		d.getFormItem("Name"),
 		d.getFormItem("Description"),
-		d.getFormItem("Preview"),
 		d.getFormItem("Next Configuration"),
 	}
 	form = append(form, d.previewDef.getFormItems()...)
@@ -92,17 +95,19 @@ func (d *choicesDef) onEditItem(item interface{}, done func(result interface{}))
 
 	fd := dialog.NewForm("Edit Choice", "Save", "Cancel", form, func(ok bool) {
 		if ok {
-			ch := &mods.Choice{
-				Name:          d.getString("Name"),
-				Description:   d.getString("Description"),
-				Preview:       d.previewDef.compile(),
-				DownloadFiles: d.dlfDef.compile(),
-			}
+			c.Name = d.getString("Name")
+			c.Description = d.getString("Description")
+			c.Preview = d.previewDef.compile()
+			c.DownloadFiles = d.dlfDef.compile()
 			if d.getString("Next Configuration") != "" {
 				s := d.getString("Next Configuration")
-				ch.NextConfigurationName = &s
+				c.NextConfigurationName = &s
+			} else {
+				c.NextConfigurationName = nil
 			}
-			done(ch)
+			if len(done) > 0 {
+				done[0](c)
+			}
 		}
 	}, state.Window)
 	fd.Resize(fyne.NewSize(400, 400))
@@ -115,7 +120,7 @@ func (d *choicesDef) draw(includeLabel bool) fyne.CanvasObject {
 		c.Add(widget.NewLabelWithStyle("Choices", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}))
 	}
 	c.Add(widget.NewButton("Add", func() {
-		d.onEditItem(&mods.Choice{}, func(result interface{}) {
+		d.createItem(&mods.Choice{}, func(result interface{}) {
 			d.list.AddItem(result)
 		})
 	}))

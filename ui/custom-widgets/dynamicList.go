@@ -10,7 +10,7 @@ import (
 type Callbacks struct {
 	GetItemKey    func(item interface{}) string
 	GetItemFields func(item interface{}) []string
-	OnEditItem    func(item interface{}, done func(result interface{}))
+	OnEditItem    func(item interface{})
 }
 
 type DynamicList struct {
@@ -38,10 +38,7 @@ func (l *DynamicList) createRow(item interface{}) {
 		widget.NewToolbar(
 			// Edit
 			newAction(item, theme.DocumentCreateIcon(), func(item interface{}) {
-				l.callbacks.OnEditItem(item, func(result interface{}) {
-					l.removeItem(item)
-					l.AddItem(result)
-				})
+				l.callbacks.OnEditItem(item)
 			}),
 			// Remove
 			newAction(item, theme.ContentRemoveIcon(), func(item interface{}) {

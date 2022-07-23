@@ -73,6 +73,7 @@ func (p *Preview) Get() *canvas.Image {
 		size := fyne.Size{Width: float32(p.Size.X), Height: float32(p.Size.Y)}
 		p.img.SetMinSize(size)
 		p.img.Resize(size)
+		p.img.FillMode = canvas.ImageFillContain
 	}
 	return p.img
 }
@@ -155,6 +156,7 @@ type Configuration struct {
 	Name        string    `json:"Name" xml:"Name"`
 	Description string    `json:"Description" xml:"Description"`
 	Preview     *Preview  `json:"Preview,omitempty" xml:"Preview, omitempty"`
+	Root        bool      `json:"Root" xml:"Root"`
 	Choices     []*Choice `json:"Choice" xml:"Choices"`
 }
 
@@ -235,6 +237,7 @@ func (m Mod) Validate() string {
 		}
 	}
 
+	roots := 0
 	for _, c := range m.Configurations {
 		if c.Name == "" {
 			sb.WriteString("Configuration's Name is required\n")
@@ -253,6 +256,14 @@ func (m Mod) Validate() string {
 				sb.WriteString(fmt.Sprintf("Configuration's [%s] Choice's Next Configuration Name must not be the same as the Configuration's Name\n", c.Name))
 			}
 		}
+		if c.Root {
+			roots++
+		}
+	}
+	if len(m.Configurations) > 1 && roots == 0 {
+		sb.WriteString("Must have at least one 'Root' Configuration\n")
+	} else if roots > 1 {
+		sb.WriteString("Only one 'Root' Configuration is allowed\n")
 	}
 	return sb.String()
 }

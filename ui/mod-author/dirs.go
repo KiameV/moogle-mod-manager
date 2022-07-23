@@ -49,7 +49,11 @@ func (d *dirsDef) getItemFields(item interface{}) []string {
 	}
 }
 
-func (d *dirsDef) onEditItem(item interface{}, done func(result interface{})) {
+func (d *dirsDef) onEditItem(item interface{}) {
+	d.createItem(item)
+}
+
+func (d *dirsDef) createItem(item interface{}, done ...func(interface{})) {
 	f := item.(*mods.ModDir)
 	d.createFormItem("From", f.From)
 	d.createFormItem("To", f.To)
@@ -61,11 +65,12 @@ func (d *dirsDef) onEditItem(item interface{}, done func(result interface{})) {
 		d.getFormItem("Recursive"),
 	}, func(ok bool) {
 		if ok {
-			done(&mods.ModDir{
-				From:      d.getString("From"),
-				To:        d.getString("To"),
-				Recursive: d.getBool("Recursive"),
-			})
+			f.From = d.getString("From")
+			f.To = d.getString("To")
+			f.Recursive = d.getBool("Recursive")
+			if len(done) > 0 {
+				done[0](f)
+			}
 		}
 	}, state.Window)
 	fd.Resize(fyne.NewSize(400, 400))
@@ -78,7 +83,7 @@ func (d *dirsDef) draw(label bool) fyne.CanvasObject {
 		c.Add(widget.NewLabelWithStyle("Dirs", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}))
 	}
 	c.Add(widget.NewButton("Add", func() {
-		d.onEditItem(&mods.ModDir{}, func(result interface{}) {
+		d.createItem(&mods.ModDir{}, func(result interface{}) {
 			d.list.AddItem(result)
 		})
 	}))

@@ -48,7 +48,11 @@ func (d *downloadsDef) getItemFields(item interface{}) []string {
 	}
 }
 
-func (d *downloadsDef) onEditItem(item interface{}, done func(result interface{})) {
+func (d *downloadsDef) onEditItem(item interface{}) {
+	d.createItem(item)
+}
+
+func (d *downloadsDef) createItem(item interface{}, done ...func(interface{})) {
 	m := item.(*mods.Download)
 	d.createFormItem("Name", m.Name)
 	d.createFormMultiLine("Sources", strings.Join(m.Sources, "\n"))
@@ -60,11 +64,12 @@ func (d *downloadsDef) onEditItem(item interface{}, done func(result interface{}
 		d.getFormItem("Install Type"),
 	}, func(ok bool) {
 		if ok {
-			done(&mods.Download{
-				Name:        d.getString("Name"),
-				Sources:     d.getStrings("Sources", "\n"),
-				InstallType: mods.InstallType(d.getString("Install Type")),
-			})
+			m.Name = d.getString("Name")
+			m.Sources = d.getStrings("Sources", "\n")
+			m.InstallType = mods.InstallType(d.getString("Install Type"))
+			if len(done) > 0 {
+				done[0](m)
+			}
 		}
 	}, state.Window)
 	fd.Resize(fyne.NewSize(400, 400))
@@ -75,7 +80,7 @@ func (d *downloadsDef) draw() fyne.CanvasObject {
 	return container.NewVBox(container.NewHBox(
 		widget.NewLabelWithStyle("Downloadables", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
 		widget.NewButton("Add", func() {
-			d.onEditItem(&mods.Download{}, func(result interface{}) {
+			d.createItem(&mods.Download{}, func(result interface{}) {
 				d.list.AddItem(result)
 			})
 		})),

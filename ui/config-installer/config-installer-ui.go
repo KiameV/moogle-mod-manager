@@ -1,6 +1,7 @@
 package config_installer
 
 import (
+	"errors"
 	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -41,14 +42,21 @@ func (i *configInstallerUI) Setup(mod *mods.Mod, isSandbox bool) error {
 		return fmt.Errorf("no configurations for %s", mod.Name)
 	}
 	i.mod = mod
-	i.currentConfig = mod.Configurations[0]
+	for _, i.currentConfig = range mod.Configurations {
+		if i.currentConfig.Root {
+			break
+		}
+	}
+	if i.currentConfig == nil || !i.currentConfig.Root {
+		return errors.New("could not find root configuration")
+	}
 	i.isSandbox = isSandbox
 	return nil
 }
 
 func (i *configInstallerUI) Draw(w fyne.Window) {
 	c := container.NewVBox(
-		widget.NewLabelWithStyle(i.currentConfig.Name, fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
+		widget.NewLabelWithStyle(i.currentConfig.Name, fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
 		widget.NewRichTextFromMarkdown(i.currentConfig.Description),
 		i.getChoiceSelector(func(name string) {
 			for _, i.currentChoice = range i.currentConfig.Choices {
@@ -59,9 +67,6 @@ func (i *configInstallerUI) Draw(w fyne.Window) {
 				}
 			}
 		}))
-	if img := i.currentConfig.Preview.Get(); img != nil {
-		c = container.NewBorder(img, nil, nil, nil, c)
-	}
 	buttons := container.NewHBox(
 		widget.NewButton("Select", func() {
 			if i.currentChoice == nil {
@@ -95,6 +100,9 @@ func (i *configInstallerUI) Draw(w fyne.Window) {
 		}))
 	}
 	c.Add(buttons)
+	if img := i.currentConfig.Preview.Get(); img != nil {
+		c = container.NewBorder(img, nil, nil, nil, c)
+	}
 	w.SetContent(container.NewBorder(c, nil, nil, nil, container.NewVScroll(i.choiceDesc)))
 }
 
@@ -120,7 +128,6 @@ func (i *configInstallerUI) getChoiceSelector(onChange func(choice string)) fyne
 
 func (i *configInstallerUI) drawChoiceInfo() {
 	c := container.NewVBox(
-		widget.NewSeparator(),
 		widget.NewLabelWithStyle(i.currentChoice.Name, fyne.TextAlignLeading, fyne.TextStyle{Bold: true}))
 	if i.currentChoice.Description != "" {
 		c.Add(widget.NewRichTextFromMarkdown(i.currentChoice.Description))

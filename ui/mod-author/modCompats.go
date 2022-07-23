@@ -57,7 +57,11 @@ func (d *modCompatsDef) getItemFields(item interface{}) []string {
 	return s
 }
 
-func (d *modCompatsDef) onEditItem(item interface{}, done func(result interface{})) {
+func (d *modCompatsDef) onEditItem(item interface{}) {
+	d.createItem(item)
+}
+
+func (d *modCompatsDef) createItem(item interface{}, done ...func(interface{})) {
 	m := item.(*mods.ModCompat)
 	d.createFormItem("Mod ID", m.ModID)
 	d.createFormItem("Source", m.Source)
@@ -75,16 +79,15 @@ func (d *modCompatsDef) onEditItem(item interface{}, done func(result interface{
 		d.getFormItem("Order"),
 	}, func(ok bool) {
 		if ok {
-			mc := &mods.ModCompat{
-				ModID:    d.getString("Mod ID"),
-				Source:   d.getString("Source"),
-				Versions: d.getStrings("Versions", ","),
-			}
+			m.ModID = d.getString("Mod ID")
+			m.Source = d.getString("Source")
+			m.Versions = d.getStrings("Versions", ",")
 			o := d.getString("Order")
 			if o != "" && o != string(mods.None) {
-				mc.Order = (*mods.ModCompatOrder)(&o)
+				m.Order = (*mods.ModCompatOrder)(&o)
+			} else {
+				m.Order = nil
 			}
-			done(mc)
 		}
 	}, state.Window)
 	fd.Resize(fyne.NewSize(400, 400))
@@ -95,7 +98,7 @@ func (d *modCompatsDef) draw() fyne.CanvasObject {
 	return container.NewVBox(container.NewHBox(
 		widget.NewLabelWithStyle(d.name, fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
 		widget.NewButton("Add", func() {
-			d.onEditItem(&mods.ModCompat{}, func(result interface{}) {
+			d.createItem(&mods.ModCompat{}, func(result interface{}) {
 				d.list.AddItem(result)
 			})
 		})),

@@ -10,6 +10,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	config_installer "github.com/kiamev/moogle-mod-manager/ui/config-installer"
+	cw "github.com/kiamev/moogle-mod-manager/ui/custom-widgets"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
 	"github.com/kiamev/moogle-mod-manager/ui/util"
 	"github.com/ncruces/zenity"
@@ -61,7 +62,6 @@ type ModAuthorer struct {
 
 func (a *ModAuthorer) OnClose() {
 	if a.modBeingEdited != nil {
-		*a.modBeingEdited = *a.compileMod()
 		a.modBeingEdited = nil
 	}
 }
@@ -138,7 +138,22 @@ func (a *ModAuthorer) Draw(w fyne.Window) {
 		tab.Content.Refresh()
 	}
 
-	validateButton := container.NewHBox(
+	smi := make([]*fyne.MenuItem, 0, 3)
+	smi = append(smi,
+		fyne.NewMenuItem("as json", func() {
+			a.saveFile(true)
+		}),
+		fyne.NewMenuItem("as xml", func() {
+			a.saveFile(false)
+		}))
+	if a.modBeingEdited != nil {
+		smi = append(smi, fyne.NewMenuItem("modify and back", func() {
+			*a.modBeingEdited = *a.compileMod()
+			state.ShowPreviousScreen()
+		}))
+	}
+
+	buttons := container.NewHBox(
 		widget.NewButton("Validate", func() {
 			a.validate()
 		}),
@@ -152,23 +167,16 @@ func (a *ModAuthorer) Draw(w fyne.Window) {
 				return
 			}
 			state.ShowScreen(state.ConfigInstaller)
-		}))
-
-	xmlButtons := container.NewHBox(
-		widget.NewButton("Copy XML", func() {
-			a.pasteToClipboard(false)
 		}),
-		widget.NewButton("Save mod.xml", func() {
-			a.saveFile(false)
-		}))
-	jsonButtons := container.NewHBox(
-		widget.NewButton("Copy Json", func() {
-			a.pasteToClipboard(true)
-		}),
-		widget.NewButton("Save mod.json", func() {
-			a.saveFile(true)
-		}))
-	w.SetContent(container.NewVScroll(container.NewVBox(a.tabs, widget.NewSeparator(), validateButton, xmlButtons, jsonButtons)))
+		widget.NewSeparator(),
+		cw.NewButtonWithPopups("Copy",
+			fyne.NewMenuItem("as json", func() {
+				a.pasteToClipboard(true)
+			}), fyne.NewMenuItem("as xml", func() {
+				a.pasteToClipboard(false)
+			})),
+		cw.NewButtonWithPopups("Save", smi...))
+	w.SetContent(container.NewVScroll(container.NewVBox(a.tabs, widget.NewSeparator(), buttons)))
 }
 
 func (a *ModAuthorer) updateEntries(mod *mods.Mod) {

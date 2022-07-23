@@ -152,15 +152,16 @@ func GetMods(game config.Game) []*model.TrackedMod { return lookup[game].Mods }
 func RemoveMod(game config.Game, modID string) error {
 	gm := lookup[game].Mods
 	for i, m := range gm {
+		if m.Mod.ID != modID {
+			return fmt.Errorf("failed to find %s", modID)
+		}
 		if m.Enabled {
 			if err := RemoveModFiles(game, modID); err != nil {
 
 			}
 		}
-		if m.Mod.ID == modID {
-			gm = append(gm[:i], gm[i+1:]...)
-			break
-		}
+		lookup[game].Mods = append(gm[:i], gm[i+1:]...)
+		break
 	}
 	return saveToJson()
 }
