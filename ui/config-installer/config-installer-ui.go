@@ -3,9 +3,7 @@ package config_installer
 import (
 	"fmt"
 	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
@@ -51,20 +49,19 @@ func (i *configInstallerUI) Setup(mod *mods.Mod, isSandbox bool) error {
 func (i *configInstallerUI) Draw(w fyne.Window) {
 	c := container.NewVBox(
 		widget.NewLabelWithStyle(i.currentConfig.Name, fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
-	)
-	if i.currentConfig.Preview != "" {
-		c.Add(canvas.NewImageFromURI(storage.NewFileURI(i.currentConfig.Preview)))
-	}
-	c.Add(widget.NewRichTextFromMarkdown(i.currentConfig.Description))
-	c.Add(i.getChoiceSelector(func(name string) {
-		for _, i.currentChoice = range i.currentConfig.Choices {
-			if i.currentChoice.Name == name {
-				i.choiceDesc.RemoveAll()
-				i.drawChoiceInfo()
-				break
+		widget.NewRichTextFromMarkdown(i.currentConfig.Description),
+		i.getChoiceSelector(func(name string) {
+			for _, i.currentChoice = range i.currentConfig.Choices {
+				if i.currentChoice.Name == name {
+					i.choiceDesc.RemoveAll()
+					i.drawChoiceInfo()
+					break
+				}
 			}
-		}
-	}))
+		}))
+	if img := i.currentConfig.Preview.Get(); img != nil {
+		c = container.NewBorder(img, nil, nil, nil, c)
+	}
 	buttons := container.NewHBox(
 		widget.NewButton("Select", func() {
 			if i.currentChoice == nil {
@@ -122,16 +119,16 @@ func (i *configInstallerUI) getChoiceSelector(onChange func(choice string)) fyne
 }
 
 func (i *configInstallerUI) drawChoiceInfo() {
-	c := container.NewVBox()
-	c.Add(widget.NewSeparator())
-	c.Add(widget.NewLabelWithStyle(i.currentChoice.Name, fyne.TextAlignLeading, fyne.TextStyle{Bold: true}))
+	c := container.NewVBox(
+		widget.NewSeparator(),
+		widget.NewLabelWithStyle(i.currentChoice.Name, fyne.TextAlignLeading, fyne.TextStyle{Bold: true}))
 	if i.currentChoice.Description != "" {
 		c.Add(widget.NewRichTextFromMarkdown(i.currentChoice.Description))
 	}
-	if i.currentChoice.Preview != "" {
-		c.Add(canvas.NewImageFromURI(storage.NewFileURI(i.currentChoice.Preview)))
+	if img := i.currentChoice.Preview.Get(); img != nil {
+		c = container.NewBorder(img, nil, nil, nil, c)
 	}
-	i.choiceDesc.Add(container.NewMax(c))
+	i.choiceDesc.Add(c)
 }
 
 func (i *configInstallerUI) popToInstall() {

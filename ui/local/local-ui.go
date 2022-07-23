@@ -2,7 +2,6 @@ package local
 
 import (
 	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
@@ -98,12 +97,9 @@ func (m *localMods) createPreview(mod *mods.Mod) fyne.CanvasObject {
 	if mod.ModCompatibility != nil && mod.ModCompatibility.HasItems() {
 		c.Add(m.createCompatibility(mod.ModCompatibility))
 	}
-	if mod.Preview != "" {
-		if r, err := fyne.LoadResourceFromURLString(mod.Preview); err == nil {
-			return container.NewBorder(
-				canvas.NewImageFromResource(r), nil, nil, nil,
-				c)
-		}
+
+	if img := mod.Preview.Get(); img != nil {
+		c = container.NewBorder(img, nil, nil, nil, c)
 	}
 	return c
 }
@@ -150,7 +146,9 @@ func (m *localMods) addFromFile() {
 		}); err == nil {
 		if err = managed.AddModFromFile(*state.CurrentGame, file); err != nil {
 			dialog.ShowError(err, state.Window)
+			return
 		}
+		state.Window.Content().Refresh()
 	}
 }
 
@@ -164,6 +162,7 @@ func (m *localMods) addFromUrl() {
 					dialog.ShowError(err, state.Window)
 					return
 				}
+				state.Window.Content().Refresh()
 			}
 		}, state.Window)
 }

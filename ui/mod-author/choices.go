@@ -12,9 +12,10 @@ import (
 
 type choicesDef struct {
 	*entryManager
-	list      *cw.DynamicList
-	dlfDef    *downloadFilesDef
-	configDef *configurationsDef
+	list       *cw.DynamicList
+	dlfDef     *downloadFilesDef
+	configDef  *configurationsDef
+	previewDef *previewDef
 }
 
 func newChoicesDef(dlDef *downloadsDef, configDef *configurationsDef) *choicesDef {
@@ -22,6 +23,7 @@ func newChoicesDef(dlDef *downloadsDef, configDef *configurationsDef) *choicesDe
 		entryManager: newEntryManager(),
 		dlfDef:       newDownloadFilesDef(dlDef),
 		configDef:    configDef,
+		previewDef:   newPreviewDef(),
 	}
 	d.list = cw.NewDynamicList(cw.Callbacks{
 		GetItemKey:    d.getItemKey,
@@ -48,7 +50,6 @@ func (d *choicesDef) getItemFields(item interface{}) []string {
 	sl := []string{
 		c.Name,
 		c.Description,
-		c.Preview,
 	}
 	if c.NextConfigurationName != nil {
 		sl = append(sl, *c.NextConfigurationName)
@@ -74,8 +75,8 @@ func (d *choicesDef) onEditItem(item interface{}, done func(result interface{}))
 
 	d.createFormItem("Name", c.Name)
 	d.createFormItem("Description", c.Description)
-	d.createFormItem("Preview", c.Preview)
 	d.createFormSelect("Next Configuration", possible, nextConfig)
+	d.previewDef.set(c.Preview)
 	if c.DownloadFiles != nil {
 		d.dlfDef.populate(c.DownloadFiles)
 	}
@@ -86,14 +87,15 @@ func (d *choicesDef) onEditItem(item interface{}, done func(result interface{}))
 		d.getFormItem("Preview"),
 		d.getFormItem("Next Configuration"),
 	}
-	form = append(form, d.dlfDef.drawAsFormItems()...)
+	form = append(form, d.previewDef.getFormItems()...)
+	form = append(form, d.dlfDef.getFormItems()...)
 
 	fd := dialog.NewForm("Edit Choice", "Save", "Cancel", form, func(ok bool) {
 		if ok {
 			ch := &mods.Choice{
 				Name:          d.getString("Name"),
 				Description:   d.getString("Description"),
-				Preview:       d.getString("Preview"),
+				Preview:       d.previewDef.compile(),
 				DownloadFiles: d.dlfDef.compile(),
 			}
 			if d.getString("Next Configuration") != "" {

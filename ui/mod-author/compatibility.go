@@ -26,6 +26,9 @@ func (d *modCompatabilityDef) draw() fyne.CanvasObject {
 }
 
 func (d *modCompatabilityDef) compile() *mods.ModCompatibility {
+	if d.requires == nil && d.forbids == nil {
+		return nil
+	}
 	return &mods.ModCompatibility{
 		Requires: d.requires.compile(),
 		Forbids:  d.forbids.compile(),

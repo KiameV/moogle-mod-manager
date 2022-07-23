@@ -34,6 +34,7 @@ func New() state.Screen {
 	dl := newDownloadsDef()
 	return &ModAuthorer{
 		entryManager:  newEntryManager(),
+		previewDef:    newPreviewDef(),
 		modCompatsDef: newModCompatibilityDef(),
 		downloadDef:   dl,
 		donationsDef:  newDonationsDef(),
@@ -47,6 +48,7 @@ type ModAuthorer struct {
 	*entryManager
 	modBeingEdited *mods.Mod
 
+	previewDef    *previewDef
 	modCompatsDef *modCompatabilityDef
 	downloadDef   *downloadsDef
 	donationsDef  *donationsDef
@@ -104,23 +106,23 @@ func (a *ModAuthorer) EditMod(mod *mods.Mod) {
 }
 
 func (a *ModAuthorer) Draw(w fyne.Window) {
-	form := container.NewVBox(
-		widget.NewForm(
-			a.getFormItem("ID"),
-			a.getFormItem("Name"),
-			a.getFormItem("Author"),
-			a.getFormItem("Version"),
-			a.getFormItem("Release Date"),
-			a.getFormItem("Category"),
-			a.getFormItem("Description"),
-			a.getFormItem("Release Notes"),
-			a.getFormItem("Link"),
-			a.getFormItem("Mod File Links"),
-			a.getFormItem("Preview"),
-			a.getFormItem("Select Type")))
+	items := []*widget.FormItem{
+		a.getFormItem("ID"),
+		a.getFormItem("Name"),
+		a.getFormItem("Author"),
+		a.getFormItem("Version"),
+		a.getFormItem("Release Date"),
+		a.getFormItem("Category"),
+		a.getFormItem("Description"),
+		a.getFormItem("Release Notes"),
+		a.getFormItem("Link"),
+		a.getFormItem("Mod File Links"),
+		a.getFormItem("Select Type"),
+	}
+	items = append(items, a.previewDef.getFormItems()...)
 
 	a.tabs = container.NewAppTabs(
-		container.NewTabItem("Mod", form),
+		container.NewTabItem("Mod", container.NewVBox(widget.NewForm(items...))),
 		container.NewTabItem("Compatibility", a.modCompatsDef.draw()),
 		container.NewTabItem("Downloadables", a.downloadDef.draw()),
 		container.NewTabItem("Donation Links", a.donationsDef.draw()),
@@ -180,9 +182,9 @@ func (a *ModAuthorer) updateEntries(mod *mods.Mod) {
 	a.createFormMultiLine("Release Notes", mod.ReleaseNotes)
 	a.createFormItem("Link", mod.Link)
 	a.createFormMultiLine("Mod File Links", strings.Join(mod.ModFileLinks, "\n"))
-	a.createFormItem("Preview", mod.Preview)
 	a.createFormSelect("Select Type", mods.SelectTypes, string(mod.ConfigSelectionType))
 
+	a.previewDef.set(mod.Preview)
 	a.modCompatsDef.set(mod.ModCompatibility)
 	a.downloadDef.set(mod.Downloadables)
 	a.donationsDef.set(mod.DonationLinks)
@@ -228,7 +230,7 @@ func (a *ModAuthorer) compileMod() (mod *mods.Mod) {
 		ReleaseNotes:        a.getString("Release Notes"),
 		Link:                a.getString("Link"),
 		ModFileLinks:        strings.Split(a.getString("Mod File Links"), "\n"),
-		Preview:             a.getString("Preview"),
+		Preview:             a.previewDef.compile(),
 		ConfigSelectionType: mods.SelectType(a.getString("Select Type")),
 		ModCompatibility:    a.modCompatsDef.compile(),
 		Downloadables:       a.downloadDef.compile(),

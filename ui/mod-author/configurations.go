@@ -14,11 +14,13 @@ type configurationsDef struct {
 	*entryManager
 	list       *cw.DynamicList
 	choicesDef *choicesDef
+	previewDef *previewDef
 }
 
 func newConfigurationsDef(dlDef *downloadsDef) *configurationsDef {
 	d := &configurationsDef{
 		entryManager: newEntryManager(),
+		previewDef:   newPreviewDef(),
 	}
 	d.choicesDef = newChoicesDef(dlDef, d)
 	d.list = cw.NewDynamicList(cw.Callbacks{
@@ -46,7 +48,6 @@ func (d *configurationsDef) getItemFields(item interface{}) []string {
 	return []string{
 		c.Name,
 		c.Description,
-		c.Preview,
 	}
 }
 
@@ -54,20 +55,22 @@ func (d *configurationsDef) onEditItem(item interface{}, done func(result interf
 	c := item.(*mods.Configuration)
 	d.createFormItem("Name", c.Name)
 	d.createFormMultiLine("Description", c.Description)
-	d.createFormItem("Preview", c.Preview)
+	d.previewDef.set(c.Preview)
 	d.choicesDef.populate(c.Choices)
 
-	fd := dialog.NewForm("Edit Configuration", "Save", "Cancel", []*widget.FormItem{
+	items := []*widget.FormItem{
 		d.getFormItem("Name"),
 		d.getFormItem("Description"),
-		d.getFormItem("Preview"),
-		widget.NewFormItem("Choices", d.choicesDef.draw(false)),
-	}, func(ok bool) {
+	}
+	items = append(items, d.previewDef.getFormItems()...)
+	items = append(items, widget.NewFormItem("Choices", d.choicesDef.draw(false)))
+
+	fd := dialog.NewForm("Edit Configuration", "Save", "Cancel", items, func(ok bool) {
 		if ok {
 			done(&mods.Configuration{
 				Name:        d.getString("Name"),
 				Description: d.getString("Description"),
-				Preview:     d.getString("Preview"),
+				Preview:     d.previewDef.compile(),
 				Choices:     d.choicesDef.compile(),
 			})
 		}

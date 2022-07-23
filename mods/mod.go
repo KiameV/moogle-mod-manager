@@ -2,7 +2,10 @@ package mods
 
 import (
 	"fmt"
+	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/canvas"
 	"github.com/kiamev/moogle-mod-manager/config"
+	"os"
 	"strings"
 )
 
@@ -27,7 +30,7 @@ type Mod struct {
 	ReleaseNotes        string            `json:"ReleaseNotes" xml:"ReleaseNotes"`
 	Link                string            `json:"Link" xml:"Link"`
 	ModFileLinks        []string          `json:"ModFileLink" xml:"ModFileLink"`
-	Preview             string            `json:"Preview" xml:"Preview"`
+	Preview             *Preview          `json:"Preview,omitempty" xml:"Preview,omitempty"`
 	ModCompatibility    *ModCompatibility `json:"Compatibility,omitempty" xml:"ModCompatibility,omitempty"`
 	Downloadables       []*Download       `json:"Downloadable" xml:"Downloadables"`
 	DonationLinks       []*DonationLink   `json:"DonationLink" xml:"DonationLinks"`
@@ -35,6 +38,43 @@ type Mod struct {
 	DownloadFiles       *DownloadFiles    `json:"DownloadFile,omitempty" xml:"DownloadFiles,omitempty"`
 	Configurations      []*Configuration  `json:"Configuration,omitempty" xml:"Configurations,omitempty"`
 	ConfigSelectionType SelectType        `json:"ConfigSelectionType" xml:"ConfigSelectionType"`
+}
+
+type Preview struct {
+	Url   *string       `json:"Url,omitempty" xml:"Url,omitempty"`
+	Local *string       `json:"Local,omitempty" xml:"Local,omitempty"`
+	Size  Size          `json:"Size,omitempty" xml:"Size,omitempty"`
+	img   *canvas.Image `json:"-" xml:"-"`
+}
+
+type Size struct {
+	X int `json:"X" xml:"X"`
+	Y int `json:"Y" xml:"Y"`
+}
+
+func (p *Preview) Get() *canvas.Image {
+	if p.img == nil {
+		var (
+			r   fyne.Resource
+			err error
+		)
+		if p.Local != nil {
+			if _, err = os.Stat(*p.Local); err == nil {
+				r, err = fyne.LoadResourceFromPath(*p.Local)
+			}
+		}
+		if r == nil && p.Url != nil {
+			r, err = fyne.LoadResourceFromURLString(*p.Url)
+		}
+		if r == nil || err != nil {
+			return nil
+		}
+		p.img = canvas.NewImageFromResource(r)
+		size := fyne.Size{Width: float32(p.Size.X), Height: float32(p.Size.Y)}
+		p.img.SetMinSize(size)
+		p.img.Resize(size)
+	}
+	return p.img
 }
 
 type ModCompatibility struct {
@@ -114,14 +154,14 @@ type ModDir struct {
 type Configuration struct {
 	Name        string    `json:"Name" xml:"Name"`
 	Description string    `json:"Description" xml:"Description"`
-	Preview     string    `json:"Preview" xml:"Preview"`
+	Preview     *Preview  `json:"Preview,omitempty" xml:"Preview, omitempty"`
 	Choices     []*Choice `json:"Choice" xml:"Choices"`
 }
 
 type Choice struct {
 	Name                  string         `json:"Name" xml:"Name"`
 	Description           string         `json:"Description" xml:"Description"`
-	Preview               string         `json:"Preview" xml:"Preview"`
+	Preview               *Preview       `json:"Preview,omitempty" xml:"Preview,omitempty"`
 	DownloadFiles         *DownloadFiles `json:"DownloadFiles,omitempty" xml:"DownloadFiles,omitempty"`
 	NextConfigurationName *string        `json:"NextConfigurationName,omitempty" xml:"NextConfigurationName"`
 }
@@ -157,6 +197,13 @@ func (m Mod) Validate() string {
 	if len(m.ModFileLinks) == 0 {
 		sb.WriteString("ModFileLinks is required\n")
 	}
+
+	if m.Preview != nil {
+		if m.Preview.Size.X <= 50 || m.Preview.Size.Y <= 50 {
+			sb.WriteString("Preview size must be greater than 50\n")
+		}
+	}
+
 	for _, mfl := range m.ModFileLinks {
 		if strings.HasSuffix(mfl, ".json") == false && strings.HasSuffix(mfl, ".xml") == false {
 			sb.WriteString(fmt.Sprintf("Mod File Link [%s] must be json or xml\n", mfl))

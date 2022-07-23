@@ -47,7 +47,7 @@ func (d *downloadFilesDef) draw() fyne.CanvasObject {
 	)
 }
 
-func (d *downloadFilesDef) drawAsFormItems() []*widget.FormItem {
+func (d *downloadFilesDef) getFormItems() []*widget.FormItem {
 	var possible []string
 	for _, dl := range d.downloads.compile() {
 		possible = append(possible, dl.Name)

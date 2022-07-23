@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/widget"
+	"strconv"
 	"strings"
 )
 
@@ -43,6 +44,15 @@ func (m *entryManager) getString(key string) string {
 		return fmt.Sprintf("%v", t.Checked)
 	}
 	return ""
+}
+
+func (m *entryManager) getInt(key string) (i int) {
+	if s := m.getString(key); s != "" {
+		if j, err := strconv.ParseUint(s, 10, 32); err == nil {
+			i = int(j)
+		}
+	}
+	return
 }
 
 func (m *entryManager) getStrings(key string, split string) []string {
