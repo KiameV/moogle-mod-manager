@@ -34,6 +34,10 @@ type configInstallerUI struct {
 	currentChoice *mods.Choice
 }
 
+func (i *configInstallerUI) OnClose() {
+
+}
+
 func (i *configInstallerUI) Setup(mod *mods.Mod, isSandbox bool) error {
 	if len(mod.Configurations) == 0 || len(mod.Configurations[0].Choices) == 0 {
 		return fmt.Errorf("no configurations for %s", mod.Name)

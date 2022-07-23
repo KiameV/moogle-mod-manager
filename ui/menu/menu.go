@@ -5,6 +5,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/dialog"
 	"github.com/kiamev/moogle-mod-manager/browser"
+	"github.com/kiamev/moogle-mod-manager/ui/local"
 	a "github.com/kiamev/moogle-mod-manager/ui/mod-author"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
 )
@@ -14,6 +15,10 @@ func New() state.Screen {
 }
 
 type MainMenu struct{}
+
+func (m *MainMenu) OnClose() {
+
+}
 
 func (m *MainMenu) Draw(w fyne.Window) {
 	file := fyne.NewMenu("File")
@@ -65,13 +70,22 @@ func (m *MainMenu) Draw(w fyne.Window) {
 				state.ShowScreen(state.ModAuthor)
 			}),
 			fyne.NewMenuItem("Edit Mod", func() {
-				if state.GetScreen(state.ModAuthor).(*a.ModAuthorer).EditMod() {
+				if state.GetScreen(state.ModAuthor).(*a.ModAuthorer).LoadModToEdit() {
 					state.ShowScreen(state.ModAuthor)
+				}
+			}),
+			fyne.NewMenuItem("Edit Current Mod", func() {
+				if state.GetCurrentGUI() == state.LocalMods {
+					if tm := state.GetScreen(state.LocalMods).(local.LocalUI).GetSelected(); tm != nil {
+						state.GetScreen(state.ModAuthor).(*a.ModAuthorer).EditMod(tm.Mod)
+						state.ShowScreen(state.ModAuthor)
+					}
 				}
 			}))
 	} else {
 		author.Items = append(author.Items,
 			fyne.NewMenuItem("Close", func() {
+				state.GetScreen(state.ModAuthor).OnClose()
 				state.ShowPreviousScreen()
 			}))
 	}

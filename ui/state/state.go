@@ -27,6 +27,7 @@ var (
 
 type Screen interface {
 	Draw(w fyne.Window)
+	OnClose()
 }
 
 func GetCurrentGUI() GUI {
@@ -65,4 +66,8 @@ func RegisterScreen(gui GUI, screen Screen) {
 
 func RegisterMainMenu(m Screen) {
 	mainMenu = m
+}
+
+func RefreshMenu() {
+	Window.MainMenu().Refresh()
 }

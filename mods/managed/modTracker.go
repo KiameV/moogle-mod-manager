@@ -24,7 +24,7 @@ const (
 
 type trackedModsForGame struct {
 	Game config.Game         `json:"game"`
-	Mods []*model.TrackerMod `json:"mods"`
+	Mods []*model.TrackedMod `json:"mods"`
 }
 
 // lookup first slice is the game, second slice is the mod
@@ -107,7 +107,7 @@ func AddModFromUrl(game config.Game, url string) error {
 	return AddMod(game, model.NewTrackerMod(game, mod))
 }
 
-func AddMod(game config.Game, tm *model.TrackerMod) (err error) {
+func AddMod(game config.Game, tm *model.TrackedMod) (err error) {
 	if err = tm.GetMod().Supports(game); err != nil {
 		return
 	}
@@ -147,7 +147,7 @@ func AddMod(game config.Game, tm *model.TrackerMod) (err error) {
 	return saveToJson()
 }
 
-func GetMods(game config.Game) []*model.TrackerMod { return lookup[game].Mods }
+func GetMods(game config.Game) []*model.TrackedMod { return lookup[game].Mods }
 
 func RemoveMod(game config.Game, modID string) error {
 	gm := lookup[game].Mods

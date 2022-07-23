@@ -45,6 +45,7 @@ func New() state.Screen {
 
 type ModAuthorer struct {
 	*entryManager
+	modBeingEdited *mods.Mod
 
 	modCompatsDef *modCompatabilityDef
 	downloadDef   *downloadsDef
@@ -56,6 +57,13 @@ type ModAuthorer struct {
 	tabs *container.AppTabs
 }
 
+func (a *ModAuthorer) OnClose() {
+	if a.modBeingEdited != nil {
+		*a.modBeingEdited = *a.compileMod()
+		a.modBeingEdited = nil
+	}
+}
+
 func (a *ModAuthorer) NewMod() {
 	a.updateEntries(&mods.Mod{
 		ReleaseDate:         time.Now().Format("Jan 02 2006"),
@@ -63,7 +71,7 @@ func (a *ModAuthorer) NewMod() {
 	})
 }
 
-func (a *ModAuthorer) EditMod() (successfullyLoadedMod bool) {
+func (a *ModAuthorer) LoadModToEdit() (successfullyLoadedMod bool) {
 	var (
 		file, err = zenity.SelectFile(
 			zenity.Title("Load mod"),
@@ -88,6 +96,11 @@ func (a *ModAuthorer) EditMod() (successfullyLoadedMod bool) {
 	}
 	a.updateEntries(&mod)
 	return true
+}
+
+func (a *ModAuthorer) EditMod(mod *mods.Mod) {
+	a.modBeingEdited = mod
+	a.updateEntries(mod)
 }
 
 func (a *ModAuthorer) Draw(w fyne.Window) {

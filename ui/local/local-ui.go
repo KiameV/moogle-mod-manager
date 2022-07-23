@@ -5,20 +5,35 @@ import (
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
-	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/mods/managed"
+	"github.com/kiamev/moogle-mod-manager/mods/managed/model"
+	cw "github.com/kiamev/moogle-mod-manager/ui/custom-widgets"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
 	"github.com/ncruces/zenity"
 )
 
-func New() state.Screen {
+type LocalUI interface {
+	state.Screen
+	GetSelected() *model.TrackedMod
+}
+
+func New() LocalUI {
 	return &localMods{}
 }
 
 type localMods struct {
+	selectedMod *model.TrackedMod
+}
+
+func (m *localMods) OnClose() {
+
+}
+
+func (m *localMods) GetSelected() *model.TrackedMod {
+	return m.selectedMod
 }
 
 func (m *localMods) Draw(w fyne.Window) {
@@ -26,54 +41,45 @@ func (m *localMods) Draw(w fyne.Window) {
 		selectable = managed.GetMods(*state.CurrentGame)
 		modList    = widget.NewList(
 			func() int { return len(selectable) },
-			func() fyne.CanvasObject { return widget.NewLabel("") },
+			func() fyne.CanvasObject {
+				return container.NewHBox(widget.NewLabelWithStyle("", fyne.TextAlignLeading, fyne.TextStyle{}))
+			},
 			func(id widget.ListItemID, object fyne.CanvasObject) {
-				object.(*widget.Label).SetText(selectable[id].Mod.Name)
+				object.(*fyne.Container).Objects[0].(*widget.Label).SetText(selectable[id].Mod.Name)
 			})
-		removeButton = widget.NewButton("Remove", func() {
-
-		})
-		modDetails = container.NewScroll(container.NewMax())
+		addButton = cw.NewButtonWithPopups("Add",
+			fyne.NewMenuItem("From File", func() { m.addFromFile() }),
+			fyne.NewMenuItem("From URL", func() { m.addFromUrl() }))
+		removeButton = widget.NewButton("Remove", func() {})
+		modDetails   = container.NewScroll(container.NewMax())
 	)
+	removeButton.Disable()
 	modList.OnSelected = func(id widget.ListItemID) {
+		m.selectedMod = selectable[id]
 		removeButton.Enable()
-		modDetails.Content = m.createPreview(selectable[id].Mod)
+		modDetails.Content = m.createPreview(m.selectedMod.Mod)
+		modDetails.Refresh()
+	}
+	modList.OnUnselected = func(id widget.ListItemID) {
+		m.selectedMod = nil
+		removeButton.Disable()
+		modDetails.Hide()
 	}
 
+	buttons := container.NewHBox(addButton, widget.NewSeparator(), removeButton)
+
 	split := container.NewHSplit(
-		container.NewBorder(container.NewVBox(
-			widget.NewLabelWithStyle(config.GameNameString(*state.CurrentGame), fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
-			container.NewHBox(
-				widget.NewButton("Add File", func() {
-					if file, err := zenity.SelectFile(
-						zenity.Title("Select a mod file"),
-						zenity.FileFilter{
-							Name:     "mod file",
-							Patterns: []string{"*.xml", "*.json"},
-						}); err == nil {
-						if err = managed.AddModFromFile(*state.CurrentGame, file); err != nil {
-							dialog.ShowError(err, w)
-						}
-					}
-				}),
-				widget.NewButton("Add Remote", func() {
-					e := widget.NewEntry()
-					dialog.ShowForm("Add Remote mod file", "Add", "Cancel",
-						[]*widget.FormItem{widget.NewFormItem("URL", e)},
-						func(ok bool) {
-							if ok && e.Text != "" {
-								if err := managed.AddModFromUrl(*state.CurrentGame, e.Text); err != nil {
-									dialog.ShowError(err, w)
-									return
-								}
-							}
-						}, w)
-				}),
-				removeButton)), nil, nil,
-			container.NewVScroll(modList)),
+		container.NewVScroll(modList),
 		modDetails)
-	//split.Offset
-	w.SetContent(split)
+	split.SetOffset(0.3)
+
+	w.SetContent(container.NewBorder(
+		container.NewVBox(
+			widget.NewLabelWithStyle(config.GameNameString(*state.CurrentGame), fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
+			widget.NewSeparator(),
+			buttons,
+		), nil, nil, nil,
+		split))
 }
 
 func (m *localMods) createPreview(mod *mods.Mod) fyne.CanvasObject {
@@ -89,11 +95,15 @@ func (m *localMods) createPreview(mod *mods.Mod) fyne.CanvasObject {
 	if mod.ReleaseNotes != "" {
 		c.Add(m.createMultiLineField("Release Notes", mod.ReleaseDate))
 	}
-	if mod.Preview != "" {
-		c.Add(canvas.NewImageFromURI(storage.NewFileURI(mod.Preview)))
-	}
 	if mod.ModCompatibility != nil && mod.ModCompatibility.HasItems() {
 		c.Add(m.createCompatibility(mod.ModCompatibility))
+	}
+	if mod.Preview != "" {
+		if r, err := fyne.LoadResourceFromURLString(mod.Preview); err == nil {
+			return container.NewBorder(
+				canvas.NewImageFromResource(r), nil, nil, nil,
+				c)
+		}
 	}
 	return c
 }
@@ -129,4 +139,31 @@ func (m *localMods) createCompatibility(compatibility *mods.ModCompatibility) fy
 		}
 	}
 	return c
+}
+
+func (m *localMods) addFromFile() {
+	if file, err := zenity.SelectFile(
+		zenity.Title("Select a mod file"),
+		zenity.FileFilter{
+			Name:     "mod file",
+			Patterns: []string{"*.xml", "*.json"},
+		}); err == nil {
+		if err = managed.AddModFromFile(*state.CurrentGame, file); err != nil {
+			dialog.ShowError(err, state.Window)
+		}
+	}
+}
+
+func (m *localMods) addFromUrl() {
+	e := widget.NewEntry()
+	dialog.ShowForm("Add Remote mod file", "Add", "Cancel",
+		[]*widget.FormItem{widget.NewFormItem("URL", e)},
+		func(ok bool) {
+			if ok && e.Text != "" {
+				if err := managed.AddModFromUrl(*state.CurrentGame, e.Text); err != nil {
+					dialog.ShowError(err, state.Window)
+					return
+				}
+			}
+		}, state.Window)
 }

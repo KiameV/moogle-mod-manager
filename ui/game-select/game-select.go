@@ -14,6 +14,10 @@ func New() state.Screen {
 
 type GameSelect struct{}
 
+func (s *GameSelect) OnClose() {
+	
+}
+
 func (s *GameSelect) Draw(w fyne.Window) {
 	w.SetContent(container.NewGridWithColumns(2,
 		container.NewVBox(
