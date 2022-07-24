@@ -1,6 +1,6 @@
 # Example Mod
 
-![Alt text](https://github.com/KiameV/moogle-mod-manager/blob/main/example/preview.png?raw=true)
+![Alt text](https://github.com/KiameV/moogle-mod-manager/blob/main/example/mod/preview.png?raw=true)
 
 This example mod demonstrates how to have multiple sources for a single mod. 
 

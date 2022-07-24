@@ -7,12 +7,12 @@
 	"Category": "manager",
 	"Description": "Adds new moogles to manager!",
 	"ReleaseNotes": "Adds the following moogles to manager:\n- **Mog**\n- *Molulu*\n- `Mugmug`\n- Cosmog",
-	"Link": "https://github.com/KiameV/moogle-mod-manager/blob/main/example/",
+	"Link": "https://github.com/KiameV/moogle-mod-manager/blob/main/example/mod/",
 	"ModFileLink": [
-		"https://github.com/KiameV/moogle-mod-manager/tree/main/example/mod.json"
+		"https://raw.githubusercontent.com/KiameV/moogle-mod-manager/main/example/mod.json"
 	],
 	"Preview": {
-		"Url": "https://github.com/KiameV/moogle-mod-manager/raw/main/example/preview.png?raw=true",
+		"Url": "https://github.com/KiameV/moogle-mod-manager/raw/main/example/mod/preview.png?raw=true",
 		"Local": "./preview.png",
 		"Size": {
 			"X": 300,
@@ -27,21 +27,21 @@
 		{
 			"Name": "base",
 			"Source": [
-				"https://github.com/KiameV/moogle-mod-manager/blob/main/example/base_mod.zip"
+				"https://github.com/KiameV/moogle-mod-manager/blob/main/example/mod/base_mod.zip"
 			],
 			"InstallType": "Compressed"
 		},
 		{
 			"Name": "normal cosmog",
 			"Source": [
-				"https://github.com/KiameV/moogle-mod-manager/blob/main/example/normal_cosmog.zip"
+				"https://github.com/KiameV/moogle-mod-manager/blob/main/example/mod/normal_cosmog.zip"
 			],
 			"InstallType": "Compressed"
 		},
 		{
 			"Name": "invert cosmog",
 			"Source": [
-				"https://github.com/KiameV/moogle-mod-manager/blob/main/example/invert_cosmog.zip"
+				"https://github.com/KiameV/moogle-mod-manager/blob/main/example/mod/invert_cosmog.zip"
 			],
 			"InstallType": "Compressed"
 		}
@@ -78,7 +78,7 @@
 			"Name": "Cosmog Colors",
 			"Description": "Change Cosmog's colors",
 			"Preview": {
-				"Url": "https://github.com/KiameV/moogle-mod-manager/raw/main/example/config.png?raw=true",
+				"Url": "https://github.com/KiameV/moogle-mod-manager/raw/main/example/mod/config.png?raw=true",
 				"Local": "./config.png",
 				"Size": {
 					"X": 200,
@@ -91,7 +91,7 @@
 					"Name": "Normal",
 					"Description": "Keep Cosmog looking like a moogle",
 					"Preview": {
-						"Url": "https://github.com/KiameV/moogle-mod-manager/raw/main/example/normal_cosmog.png?raw=true",
+						"Url": "https://github.com/KiameV/moogle-mod-manager/raw/main/example/mod/normal_cosmog.png?raw=true",
 						"Local": "./normal_cosmog.png",
 						"Size": {
 							"X": 100,
@@ -112,7 +112,7 @@
 					"Name": "Invert",
 					"Description": "Make Cosmog look awesome!",
 					"Preview": {
-						"Url": "https://github.com/KiameV/moogle-mod-manager/raw/main/example/invert_cosmog.png?raw=true",
+						"Url": "https://github.com/KiameV/moogle-mod-manager/raw/main/example/mod/invert_cosmog.png?raw=true",
 						"Local": "./invert_cosmog.png",
 						"Size": {
 							"X": 100,

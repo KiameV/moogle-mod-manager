@@ -25,13 +25,6 @@ func (m *MainMenu) Draw(w fyne.Window) {
 	var menus []*fyne.Menu
 	if state.GetCurrentGUI() == state.LocalMods {
 		file.Items = append(file.Items,
-			fyne.NewMenuItem("Add Mod From URL", func() {
-				// TODO
-			}),
-			fyne.NewMenuItem("Add Mod From File", func() {
-				// TODO
-			}),
-			fyne.NewMenuItemSeparator(),
 			fyne.NewMenuItem("Select Games", func() {
 				state.ShowPreviousScreen()
 			}),
