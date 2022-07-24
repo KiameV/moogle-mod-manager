@@ -6,9 +6,11 @@ This example mod demonstrates how to have multiple sources for a single mod.
 
 ## Downloadables
 Contains names and sources for 3 different sources (downloads):
-- base mod | base_mod.zip
-- normal cosmog | normal_cosmog.zip
-- invert cosmog | invert_cosmog.zip
+Name | Source
+--- | ---
+base mod | base_mod.zip
+normal cosmog | normal_cosmog.zip
+invert cosmog | invert_cosmog.zip
 
 ## Usage
 When this mod is enabled, the user will be taken to a configuration screen asking how they'd like Cosmog to look. 
