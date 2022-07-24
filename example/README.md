@@ -17,6 +17,7 @@ When this mod is enabled, the user will be taken to a configuration screen askin
 The user has two options:
 - Normal
 - Invert
+
 In both cases the user is given a description of their choice as well as an image of their selection.
 
 Once the choice is made, the mod manager will download:
