@@ -61,7 +61,7 @@
 		"DownloadName": "base",
 		"File": [
 			{
-				"From": "./assets/file/moogles_to_manager.txt",
+				"From": "./assets/file/moogles_to_manage.txt",
 				"To": "./assets"
 			}
 		],
