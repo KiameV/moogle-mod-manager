@@ -43,17 +43,94 @@
 			"Source": [
 				"https://github.com/KiameV/moogle-mod-manager/blob/main/example/invert_cosmog.zip"
 			],
-			"InstallType": ""
+			"InstallType": "Compressed"
 		}
 	],
-	"DonationLink": [],
+	"DonationLink": [
+		{
+			"Name": "ko-fi",
+			"Link": "https://ko-fi.com/kiamev#"
+		}
+	],
 	"Games": [
 		{
 			"Name": "FF PR VI"
 		}
 	],
 	"DownloadFile": {
-		"DownloadName": ""
+		"DownloadName": "base",
+		"File": [
+			{
+				"From": "./assets/file/moogles_to_manager.txt",
+				"To": "./assets"
+			}
+		],
+		"Dir": [
+			{
+				"From": "./assets/dir",
+				"To": "./assets",
+				"Recursive": false
+			}
+		]
 	},
+	"Configuration": [
+		{
+			"Name": "Cosmog Colors",
+			"Description": "Change Cosmog's colors",
+			"Preview": {
+				"Url": "https://github.com/KiameV/moogle-mod-manager/blob/main/example/config.png",
+				"Local": "./config.png",
+				"Size": {
+					"X": 200,
+					"Y": 200
+				}
+			},
+			"Root": true,
+			"Choice": [
+				{
+					"Name": "Normal",
+					"Description": "Keep Cosmog looking like a moogle",
+					"Preview": {
+						"Url": "https://github.com/KiameV/moogle-mod-manager/blob/main/example/normal_cosmog.png",
+						"Local": "./normal_cosmog.png",
+						"Size": {
+							"X": 100,
+							"Y": 100
+						}
+					},
+					"DownloadFiles": {
+						"DownloadName": "normal cosmog",
+						"File": [
+							{
+								"From": "Cosmog.png",
+								"To": "./assets"
+							}
+						]
+					}
+				},
+				{
+					"Name": "Invert",
+					"Description": "Make Cosmog look awesome!",
+					"Preview": {
+						"Url": "https://github.com/KiameV/moogle-mod-manager/blob/main/example/invert_cosmog.png",
+						"Local": "./invert_cosmog.png",
+						"Size": {
+							"X": 100,
+							"Y": 100
+						}
+					},
+					"DownloadFiles": {
+						"DownloadName": "invert cosmog",
+						"File": [
+							{
+								"From": "Cosmog.png",
+								"To": "./assets"
+							}
+						]
+					}
+				}
+			]
+		}
+	],
 	"ConfigSelectionType": "Auto"
 }
