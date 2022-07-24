@@ -52,8 +52,9 @@ func (m *localMods) Draw(w fyne.Window) {
 				m.Draw(w)
 			}),
 			fyne.NewMenuItem("From URL", func() {
-				m.addFromUrl()
-				m.Draw(w)
+				m.addFromUrl(func() {
+					m.Draw(w)
+				})
 			}))
 		removeButton = widget.NewButton("Remove", func() {
 			if m.selectedMod != nil {
@@ -71,6 +72,8 @@ func (m *localMods) Draw(w fyne.Window) {
 	modList.OnSelected = func(id widget.ListItemID) {
 		m.selectedMod = selectable[id]
 		removeButton.Enable()
+		modDetails.Content = container.NewCenter(widget.NewLabel("Loading..."))
+		modDetails.Refresh()
 		modDetails.Content = m.createPreview(m.selectedMod.Mod)
 		modDetails.Refresh()
 	}
@@ -166,7 +169,7 @@ func (m *localMods) addFromFile() {
 	}
 }
 
-func (m *localMods) addFromUrl() {
+func (m *localMods) addFromUrl(callback func()) {
 	e := widget.NewEntry()
 	dialog.ShowForm("Add Remote mod file", "Add", "Cancel",
 		[]*widget.FormItem{widget.NewFormItem("URL", e)},
@@ -176,6 +179,7 @@ func (m *localMods) addFromUrl() {
 					dialog.ShowError(err, state.Window)
 					return
 				}
+				callback()
 			}
 		}, state.Window)
 }
