@@ -5,30 +5,30 @@ import (
 	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
-	"github.com/kiamev/moogle-mod-manager/ui/util"
 )
 
 type ConfigInstaller interface {
 	state.Screen
-	Setup(mod *mods.Mod, isSandbox bool, baseDir string) error
+	Setup(mod *mods.Mod, baseDir string, callback func([]*mods.ToInstall)) error
 }
 
 func New() ConfigInstaller {
 	return &configInstallerUI{
-		choiceDesc: container.NewVBox(),
+		choiceContainer: container.NewVBox(),
 	}
 }
 
 type configInstallerUI struct {
-	mod         *mods.Mod
-	isSandbox   bool
-	toInstall   []*mods.DownloadFiles
-	prevConfigs []*mods.Configuration
-	choiceDesc  *fyne.Container
-	baseDir     string
+	mod             *mods.Mod
+	toInstall       []*mods.DownloadFiles
+	prevConfigs     []*mods.Configuration
+	choiceContainer *fyne.Container
+	baseDir         string
+	callback        func([]*mods.ToInstall)
 
 	currentConfig *mods.Configuration
 	currentChoice *mods.Choice
@@ -38,7 +38,7 @@ func (i *configInstallerUI) OnClose() {
 
 }
 
-func (i *configInstallerUI) Setup(mod *mods.Mod, isSandbox bool, baseDir string) error {
+func (i *configInstallerUI) Setup(mod *mods.Mod, baseDir string, callback func([]*mods.ToInstall)) error {
 	if len(mod.Configurations) == 0 || len(mod.Configurations[0].Choices) == 0 {
 		return fmt.Errorf("no configurations for %s", mod.Name)
 	}
@@ -51,9 +51,14 @@ func (i *configInstallerUI) Setup(mod *mods.Mod, isSandbox bool, baseDir string)
 	if i.currentConfig == nil || !i.currentConfig.Root {
 		return errors.New("could not find root configuration")
 	}
-	i.isSandbox = isSandbox
 	i.prevConfigs = make([]*mods.Configuration, 0)
 	i.baseDir = baseDir
+	i.callback = callback
+	i.toInstall = make([]*mods.DownloadFiles, 0)
+	i.choiceContainer.RemoveAll()
+	for _, dl := range mod.AlwaysDownload {
+		i.toInstall = append(i.toInstall, dl)
+	}
 	return nil
 }
 
@@ -65,7 +70,7 @@ func (i *configInstallerUI) Draw(w fyne.Window) {
 		i.getChoiceSelector(func(name string) {
 			for _, i.currentChoice = range i.currentConfig.Choices {
 				if i.currentChoice.Name == name {
-					i.choiceDesc.RemoveAll()
+					i.choiceContainer.RemoveAll()
 					i.drawChoiceInfo()
 					break
 				}
@@ -79,11 +84,14 @@ func (i *configInstallerUI) Draw(w fyne.Window) {
 			i.prevConfigs = append(i.prevConfigs, i.currentConfig)
 			i.toInstall = append(i.toInstall, i.currentChoice.DownloadFiles)
 			if i.currentChoice.NextConfigurationName == nil {
-				if i.isSandbox {
-					util.DisplayDownloadsAndFiles(i.mod, i.toInstall)
-				} else {
-					// TODO
+				tis, err := mods.NewToInstallForMod(i.mod, i.toInstall)
+				if err != nil {
+					dialog.ShowError(err, w)
+					state.ShowPreviousScreen()
+					return
 				}
+				i.callback(tis)
+				state.ShowPreviousScreen()
 			} else {
 				for _, i.currentConfig = range i.mod.Configurations {
 					if i.currentConfig.Name == *i.currentChoice.NextConfigurationName {
@@ -91,7 +99,7 @@ func (i *configInstallerUI) Draw(w fyne.Window) {
 					}
 				}
 				i.currentChoice = nil
-				i.choiceDesc.RemoveAll()
+				i.choiceContainer.RemoveAll()
 				i.Draw(w)
 			}
 		}))
@@ -99,7 +107,7 @@ func (i *configInstallerUI) Draw(w fyne.Window) {
 		buttons.Add(widget.NewButton("Back", func() {
 			i.popToInstall()
 			i.currentConfig = i.popChoice()
-			i.choiceDesc.RemoveAll()
+			i.choiceContainer.RemoveAll()
 			i.Draw(w)
 		}))
 	}
@@ -107,7 +115,7 @@ func (i *configInstallerUI) Draw(w fyne.Window) {
 	if img := i.currentConfig.Preview.Get(); img != nil {
 		c = container.NewBorder(img, nil, nil, nil, c)
 	}
-	w.SetContent(container.NewBorder(c, nil, nil, nil, container.NewVScroll(i.choiceDesc)))
+	w.SetContent(container.NewBorder(c, nil, nil, nil, container.NewVScroll(i.choiceContainer)))
 }
 
 func (i *configInstallerUI) getChoiceSelector(onChange func(choice string)) fyne.CanvasObject {
@@ -139,7 +147,7 @@ func (i *configInstallerUI) drawChoiceInfo() {
 	if img := i.currentChoice.Preview.Get(); img != nil {
 		c = container.NewBorder(img, nil, nil, nil, c)
 	}
-	i.choiceDesc.Add(c)
+	i.choiceContainer.Add(c)
 }
 
 func (i *configInstallerUI) popToInstall() {

@@ -19,7 +19,7 @@ import (
 func main() {
 	state.App = app.New()
 	state.Window = state.App.NewWindow("Moogle Mod Manager " + browser.Version)
-	state.Window.Resize(fyne.NewSize(800, 850))
+	state.Window.Resize(fyne.NewSize(1000, 850))
 	if err := managed.Initialize(); err != nil {
 		dialog.ShowError(err, state.Window)
 	}

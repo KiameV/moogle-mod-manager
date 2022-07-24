@@ -57,7 +57,7 @@
 			"Name": "FF PR VI"
 		}
 	],
-	"DownloadFile": {
+	"AlwaysDownload": [{
 		"DownloadName": "base",
 		"File": [
 			{
@@ -72,7 +72,7 @@
 				"Recursive": false
 			}
 		]
-	},
+	}],
 	"Configuration": [
 		{
 			"Name": "Cosmog Colors",

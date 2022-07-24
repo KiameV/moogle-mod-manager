@@ -26,14 +26,14 @@ import (
 func New() state.Screen {
 	dl := newDownloadsDef()
 	return &ModAuthorer{
-		entryManager:  newEntryManager(),
-		previewDef:    newPreviewDef(),
-		modCompatsDef: newModCompatibilityDef(),
-		downloadDef:   dl,
-		donationsDef:  newDonationsDef(),
-		gamesDef:      newGamesDef(),
-		dlFilesDef:    newDownloadFilesDef(dl),
-		configsDef:    newConfigurationsDef(dl),
+		entryManager:   newEntryManager(),
+		previewDef:     newPreviewDef(),
+		modCompatsDef:  newModCompatibilityDef(),
+		downloadDef:    dl,
+		donationsDef:   newDonationsDef(),
+		gamesDef:       newGamesDef(),
+		alwaysDownload: newAlwaysDownloadDef(dl),
+		configsDef:     newConfigurationsDef(dl),
 	}
 }
 
@@ -41,13 +41,13 @@ type ModAuthorer struct {
 	*entryManager
 	modBeingEdited *mods.Mod
 
-	previewDef    *previewDef
-	modCompatsDef *modCompatabilityDef
-	downloadDef   *downloadsDef
-	donationsDef  *donationsDef
-	gamesDef      *gamesDef
-	dlFilesDef    *downloadFilesDef
-	configsDef    *configurationsDef
+	previewDef     *previewDef
+	modCompatsDef  *modCompatabilityDef
+	downloadDef    *downloadsDef
+	donationsDef   *donationsDef
+	gamesDef       *gamesDef
+	alwaysDownload *alwaysDownloadDef
+	configsDef     *configurationsDef
 
 	tabs *container.AppTabs
 }
@@ -123,7 +123,7 @@ func (a *ModAuthorer) Draw(w fyne.Window) {
 		container.NewTabItem("Downloadables", container.NewVScroll(a.downloadDef.draw())),
 		container.NewTabItem("Donation Links", container.NewVScroll(a.donationsDef.draw())),
 		container.NewTabItem("Games", container.NewVScroll(a.gamesDef.draw())),
-		container.NewTabItem("Always Install", container.NewVScroll(a.dlFilesDef.draw())),
+		container.NewTabItem("Always Install", container.NewVScroll(a.alwaysDownload.draw())),
 		container.NewTabItem("Configurations", container.NewVScroll(a.configsDef.draw())))
 	a.tabs.OnSelected = func(tab *container.TabItem) {
 		if len(a.configsDef.list.Items) > 0 {
@@ -150,15 +150,25 @@ func (a *ModAuthorer) Draw(w fyne.Window) {
 	}
 
 	buttons := container.NewHBox(
+		widget.NewButton("Back", func() {
+			state.ShowPreviousScreen()
+		}),
 		widget.NewButton("Validate", func() {
 			a.validate()
 		}),
 		widget.NewButton("Test", func() {
 			mod := a.compileMod()
 			if len(a.configsDef.list.Items) == 0 {
-				util.DisplayDownloadsAndFiles(mod, nil)
+				tis, err := mods.NewToInstallForMod(mod, mod.AlwaysDownload)
+				if err != nil {
+					dialog.ShowError(err, state.Window)
+					return
+				}
+				util.DisplayDownloadsAndFiles(tis)
 			}
-			if err := state.GetScreen(state.ConfigInstaller).(config_installer.ConfigInstaller).Setup(mod, true, state.GetBaseDir()); err != nil {
+			if err := state.GetScreen(state.ConfigInstaller).(config_installer.ConfigInstaller).Setup(mod, state.GetBaseDir(), func(tis []*mods.ToInstall) {
+				util.DisplayDownloadsAndFiles(tis)
+			}); err != nil {
 				dialog.ShowError(err, state.Window)
 				return
 			}
@@ -199,7 +209,7 @@ func (a *ModAuthorer) updateEntries(mod *mods.Mod) {
 	a.downloadDef.set(mod.Downloadables)
 	a.donationsDef.set(mod.DonationLinks)
 	a.gamesDef.set(mod.Games)
-	a.dlFilesDef.set(mod.DownloadFiles)
+	a.alwaysDownload.set(mod.AlwaysDownload)
 	a.configsDef.set(mod.Configurations)
 }
 
@@ -247,11 +257,12 @@ func (a *ModAuthorer) compileMod() (mod *mods.Mod) {
 		DonationLinks:       a.donationsDef.compile(),
 		Games:               a.gamesDef.compile(),
 	}
-	m.DownloadFiles = a.dlFilesDef.compile()
-	if m.DownloadFiles == nil ||
-		(m.Name == "" && len(m.DownloadFiles.Files) == 0 && (len(m.DonationLinks) == 0)) {
-		m.DownloadFiles = nil
+
+	m.AlwaysDownload = a.alwaysDownload.compile()
+	if len(m.AlwaysDownload) == 0 {
+		m.AlwaysDownload = nil
 	}
+
 	m.Configurations = a.configsDef.compile()
 	if len(m.Configurations) == 0 {
 		m.Configurations = nil

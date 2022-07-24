@@ -37,7 +37,7 @@ type Mod struct {
 	Downloadables       []*Download       `json:"Downloadable" xml:"Downloadables"`
 	DonationLinks       []*DonationLink   `json:"DonationLink" xml:"DonationLinks"`
 	Games               []*Game           `json:"Games" xml:"Games"`
-	DownloadFiles       *DownloadFiles    `json:"DownloadFile,omitempty" xml:"DownloadFiles,omitempty"`
+	AlwaysDownload      []*DownloadFiles  `json:"AlwaysDownload,omitempty" xml:"AlwaysDownload,omitempty"`
 	Configurations      []*Configuration  `json:"Configuration,omitempty" xml:"Configurations,omitempty"`
 	ConfigSelectionType SelectType        `json:"ConfigSelectionType" xml:"ConfigSelectionType"`
 }
@@ -233,13 +233,13 @@ func (m Mod) Validate() string {
 		}
 	}
 
-	if (m.DownloadFiles == nil || m.DownloadFiles.IsEmpty()) && len(m.Configurations) == 0 {
+	if len(m.AlwaysDownload) == 0 && len(m.Configurations) == 0 {
 		sb.WriteString("One \"Always Download\", at least one \"Configuration\" or both are required\n")
 	}
 
-	if m.DownloadFiles != nil {
-		if m.DownloadFiles.IsEmpty() {
-			sb.WriteString(fmt.Sprintf("DownloadFiles [%s]' Must have at least one File or Dir specified\n", m.DownloadFiles.DownloadName))
+	for _, ad := range m.AlwaysDownload {
+		if ad.IsEmpty() {
+			sb.WriteString(fmt.Sprintf("AlwaysDownload [%s]' Must have at least one File or Dir specified\n", ad.DownloadName))
 		}
 	}
 

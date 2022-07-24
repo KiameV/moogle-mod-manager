@@ -5,20 +5,23 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/browser"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/mods/managed/model"
+	"github.com/kiamev/moogle-mod-manager/ui/state"
 	"io/ioutil"
 	"os"
 	"path"
+	"strings"
 )
 
 const (
-	moogleModName = "mod.moogle"
-
-	tempDir = "temp"
-
+	moogleModName  = "mod.moogle"
 	modTrackerName = "tracker.json"
 )
 
@@ -64,7 +67,7 @@ func Initialize() (err error) {
 	return nil
 }
 
-func AddModFromFile(game config.Game, file string) (err error) {
+func AddModFromFile(game config.Game, file string) (tm *model.TrackedMod, err error) {
 	var (
 		b   []byte
 		mod *mods.Mod
@@ -79,21 +82,24 @@ func AddModFromFile(game config.Game, file string) (err error) {
 	} else if ext == ".json" {
 		err = json.Unmarshal(b, &mod)
 	} else {
-		return fmt.Errorf("unknown file extension: %s", ext)
+		return nil, fmt.Errorf("unknown file extension: %s", ext)
 	}
 	if err != nil {
-		return fmt.Errorf("failed to load mod: %v", err)
+		return nil, fmt.Errorf("failed to load mod: %v", err)
 	}
 	if s := mod.Validate(); s != "" {
-		return fmt.Errorf("failed to load mod:\n%s", s)
+		return nil, fmt.Errorf("failed to load mod:\n%s", s)
 	}
-	return AddMod(game, model.NewTrackerMod(game, mod))
+
+	tm = model.NewTrackerMod(game, mod)
+	err = AddMod(game, tm)
+	return
 }
 
-func AddModFromUrl(game config.Game, url string) error {
-	b, err := browser.DownloadAsBytes(url)
-	if err != nil {
-		return err
+func AddModFromUrl(game config.Game, url string) (tm *model.TrackedMod, err error) {
+	var b []byte
+	if b, err = browser.DownloadAsBytes(url); err != nil {
+		return nil, err
 	}
 	var mod *mods.Mod
 	if b[0] == '<' {
@@ -102,9 +108,12 @@ func AddModFromUrl(game config.Game, url string) error {
 		err = json.Unmarshal(b, &mod)
 	}
 	if err != nil {
-		return fmt.Errorf("failed to load mod: %v", err)
+		return nil, fmt.Errorf("failed to load mod: %v", err)
 	}
-	return AddMod(game, model.NewTrackerMod(game, mod))
+
+	tm = model.NewTrackerMod(game, mod)
+	err = AddMod(game, tm)
+	return
 }
 
 func AddMod(game config.Game, tm *model.TrackedMod) (err error) {
@@ -148,6 +157,45 @@ func AddMod(game config.Game, tm *model.TrackedMod) (err error) {
 }
 
 func GetMods(game config.Game) []*model.TrackedMod { return lookup[game].Mods }
+
+func GetMod(game config.Game, modID string) (*model.TrackedMod, bool) {
+	if mods := GetMods(game); mods != nil {
+		for _, tm := range mods {
+			if tm.Mod.ID == modID {
+				return tm, true
+			}
+		}
+	}
+	return nil, false
+}
+
+func EnableMod(game config.Game, mod *mods.Mod, tis []*mods.ToInstall) {
+	confirmDownloads(tis, func() {
+
+	})
+}
+
+func confirmDownloads(tis []*mods.ToInstall, callback func()) {
+	sb := strings.Builder{}
+	for i, ti := range tis {
+		sb.WriteString(fmt.Sprintf("## Download %d\n\n", i+1))
+		if len(ti.Download.Sources) == 1 {
+			sb.WriteString(ti.Download.Sources[0] + "\n\n")
+		} else {
+			sb.WriteString("### Sources:\n\n")
+			for j, s := range ti.Download.Sources {
+				sb.WriteString(fmt.Sprintf(" - %d. %s\n\n", j+1, s))
+			}
+		}
+	}
+	d := dialog.NewCustomConfirm("Download Files?", "Yes", "Cancel", container.NewVScroll(widget.NewRichTextFromMarkdown(sb.String())), func(ok bool) {
+		if ok {
+			callback()
+		}
+	}, state.Window)
+	d.Resize(fyne.NewSize(500, 400))
+	d.Show()
+}
 
 func RemoveMod(game config.Game, modID string) error {
 	gm := lookup[game].Mods
