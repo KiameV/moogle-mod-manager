@@ -6,7 +6,7 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"path/filepath"
+	"path"
 	"strings"
 )
 
@@ -14,7 +14,7 @@ func Download(url, toDir string) (string, error) {
 	var (
 		buf, name, err = download(url)
 		out            *os.File
-		file           = filepath.Join(toDir, name)
+		file           = path.Join(toDir, name)
 	)
 	// Create the file
 	if out, err = os.Create(file); err != nil {

@@ -7,6 +7,7 @@ import (
 	"github.com/Xuanwo/go-locale"
 	"github.com/kiamev/moogle-mod-manager/browser"
 	"github.com/kiamev/moogle-mod-manager/mods/managed"
+	"github.com/kiamev/moogle-mod-manager/mods/managed/authored"
 	config_installer "github.com/kiamev/moogle-mod-manager/ui/config-installer"
 	"github.com/kiamev/moogle-mod-manager/ui/game-select"
 	"github.com/kiamev/moogle-mod-manager/ui/local"
@@ -20,6 +21,9 @@ func main() {
 	state.Window = state.App.NewWindow("Moogle Mod Manager " + browser.Version)
 	state.Window.Resize(fyne.NewSize(800, 850))
 	if err := managed.Initialize(); err != nil {
+		dialog.ShowError(err, state.Window)
+	}
+	if err := authored.Initialize(); err != nil {
 		dialog.ShowError(err, state.Window)
 	}
 

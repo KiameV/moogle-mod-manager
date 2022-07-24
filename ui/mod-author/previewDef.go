@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/mods"
+	"github.com/kiamev/moogle-mod-manager/ui/state"
 )
 
 type previewDef struct {
@@ -15,7 +16,7 @@ func newPreviewDef() *previewDef {
 		entryManager: newEntryManager(),
 	}
 	d.createFormItem("Preview Url", "")
-	d.createFormItem("Preview Local", "")
+	d.createFileDialog("Preview Local", "", state.GetBaseDirBinding(), false, true)
 	d.createFormItem("Size X", "")
 	d.createFormItem("Size Y", "")
 	return d
@@ -33,7 +34,7 @@ func (d *previewDef) set(p *mods.Preview) {
 		local = *p.Local
 	}
 	d.createFormItem("Preview Url", url)
-	d.createFormItem("Preview Local", local)
+	d.createFileDialog("Preview Local", local, state.GetBaseDirBinding(), false, true)
 	d.createFormItem("Size X", fmt.Sprintf("%d", p.Size.X))
 	d.createFormItem("Size Y", fmt.Sprintf("%d", p.Size.Y))
 }
@@ -68,7 +69,7 @@ func (d *previewDef) compile() *mods.Preview {
 func (d *previewDef) getFormItems() []*widget.FormItem {
 	return []*widget.FormItem{
 		d.getFormItem("Preview Url"),
-		d.getFormItem("Preview Local"),
+		d.getFileDialog("Preview Local"),
 		d.getFormItem("Size X"),
 		d.getFormItem("Size Y"),
 	}

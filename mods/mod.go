@@ -5,7 +5,9 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"github.com/kiamev/moogle-mod-manager/config"
+	"github.com/kiamev/moogle-mod-manager/ui/state"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -53,14 +55,18 @@ type Size struct {
 }
 
 func (p *Preview) Get() *canvas.Image {
+	if p == nil {
+		return nil
+	}
 	if p.img == nil {
 		var (
 			r   fyne.Resource
 			err error
 		)
 		if p.Local != nil {
-			if _, err = os.Stat(*p.Local); err == nil {
-				r, err = fyne.LoadResourceFromPath(*p.Local)
+			f := filepath.Join(state.GetBaseDir(), *p.Local)
+			if _, err = os.Stat(f); err == nil {
+				r, err = fyne.LoadResourceFromPath(f)
 			}
 		}
 		if r == nil && p.Url != nil {

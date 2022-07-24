@@ -34,11 +34,11 @@ func newChoicesDef(dlDef *downloadsDef, configDef *configurationsDef) *choicesDe
 }
 
 func (d *choicesDef) compile() []*mods.Choice {
-	downloads := make([]*mods.Choice, len(d.list.Items))
+	choices := make([]*mods.Choice, len(d.list.Items))
 	for i, item := range d.list.Items {
-		downloads[i] = item.(*mods.Choice)
+		choices[i] = item.(*mods.Choice)
 	}
-	return downloads
+	return choices
 }
 
 func (d *choicesDef) getItemKey(item interface{}) string {

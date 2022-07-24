@@ -11,7 +11,7 @@ import (
 	"github.com/kiamev/moogle-mod-manager/mods/managed/model"
 	"io/ioutil"
 	"os"
-	"path/filepath"
+	"path"
 )
 
 const (
@@ -32,7 +32,7 @@ var lookup = make([]*trackedModsForGame, 6)
 
 func Initialize() (err error) {
 	var (
-		f = filepath.Join(config.PWD, modTrackerName)
+		f = path.Join(config.PWD, modTrackerName)
 		b []byte
 	)
 	if _, err = os.Stat(f); err != nil {
@@ -51,7 +51,7 @@ func Initialize() (err error) {
 	}
 	for _, tms := range lookup {
 		for _, tm := range tms.Mods {
-			if b, err = readFile(filepath.Join(tm.Dir, moogleModName)); err != nil {
+			if b, err = readFile(path.Join(tm.Dir, moogleModName)); err != nil {
 				return
 			}
 			var mod *mods.Mod
@@ -73,7 +73,7 @@ func AddModFromFile(game config.Game, file string) (err error) {
 		return
 	}
 
-	ext := filepath.Ext(file)
+	ext := path.Ext(file)
 	if ext == ".xml" {
 		err = xml.Unmarshal(b, &mod)
 	} else if ext == ".json" {
@@ -136,7 +136,7 @@ func AddMod(game config.Game, tm *model.TrackedMod) (err error) {
 			return
 		}
 	}
-	if f, err = os.Create(filepath.Join(tm.GetDir(), moogleModName)); err != nil {
+	if f, err = os.Create(path.Join(tm.GetDir(), moogleModName)); err != nil {
 		return
 	}
 	defer func() { _ = f.Close() }()
@@ -176,7 +176,7 @@ func readModDef(dir string) (mod *mods.Mod, err error) {
 */
 func readXml(dir string, name string, to interface{}) (err error) {
 	var (
-		f = filepath.Join(dir, name)
+		f = path.Join(dir, name)
 		b []byte
 	)
 	if b, err = readFile(f); err != nil {
@@ -188,7 +188,7 @@ func readXml(dir string, name string, to interface{}) (err error) {
 
 func readJson(dir string, name string, to interface{}) (err error) {
 	var (
-		f = filepath.Join(dir, name)
+		f = path.Join(dir, name)
 		b []byte
 	)
 	if b, err = readFile(f); err != nil {
@@ -214,5 +214,5 @@ func saveToJson() error {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(filepath.Join(config.PWD, modTrackerName), b, 0755)
+	return ioutil.WriteFile(path.Join(config.PWD, modTrackerName), b, 0755)
 }

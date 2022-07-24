@@ -5,7 +5,7 @@ import (
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"io/ioutil"
 	"os"
-	"path/filepath"
+	"path"
 )
 
 func MoveFiles(files []mods.ModFile, modDir string, game config.Game) (err error) {
@@ -14,10 +14,10 @@ func MoveFiles(files []mods.ModFile, modDir string, game config.Game) (err error
 		backupDir = config.GetBackupDir(game)
 	)
 	for _, f := range files {
-		if err = os.Rename(filepath.Join(toDir, f.To), filepath.Join(backupDir, f.To)); err != nil {
+		if err = os.Rename(path.Join(toDir, f.To), path.Join(backupDir, f.To)); err != nil {
 			break
 		}
-		if err = copy(filepath.Join(modDir, f.From), filepath.Join(toDir, f.To)); err != nil {
+		if err = copy(path.Join(modDir, f.From), path.Join(toDir, f.To)); err != nil {
 			break
 		}
 	}
@@ -30,10 +30,10 @@ func RevertMoveFiles(files []string, game config.Game) (err error) {
 		backupDir = config.GetBackupDir(game)
 	)
 	for _, f := range files {
-		if err = os.Remove(filepath.Join(toDir, f)); err != nil {
+		if err = os.Remove(path.Join(toDir, f)); err != nil {
 			break
 		}
-		if err = os.Rename(filepath.Join(backupDir, f), filepath.Join(toDir, f)); err != nil {
+		if err = os.Rename(path.Join(backupDir, f), path.Join(toDir, f)); err != nil {
 			break
 		}
 	}

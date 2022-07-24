@@ -55,11 +55,11 @@ func (d *filesDef) onEditItem(item interface{}) {
 
 func (d *filesDef) createItem(item interface{}, done ...func(interface{})) {
 	f := item.(*mods.ModFile)
-	d.createFormItem("From", f.From)
+	d.createFileDialog("From", f.From, state.GetBaseDirBinding(), false, true)
 	d.createFormItem("To", f.To)
 
 	fd := dialog.NewForm("Edit File Copy", "Save", "Cancel", []*widget.FormItem{
-		d.getFormItem("From"),
+		d.getFileDialog("From"),
 		d.getFormItem("To"),
 	}, func(ok bool) {
 		if ok {
@@ -68,6 +68,7 @@ func (d *filesDef) createItem(item interface{}, done ...func(interface{})) {
 			if len(done) > 0 {
 				done[0](f)
 			}
+			d.list.Refresh()
 		}
 	}, state.Window)
 	fd.Resize(fyne.NewSize(400, 400))

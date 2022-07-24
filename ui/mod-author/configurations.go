@@ -32,11 +32,11 @@ func newConfigurationsDef(dlDef *downloadsDef) *configurationsDef {
 }
 
 func (d *configurationsDef) compile() []*mods.Configuration {
-	downloads := make([]*mods.Configuration, len(d.list.Items))
+	cfgs := make([]*mods.Configuration, len(d.list.Items))
 	for i, item := range d.list.Items {
-		downloads[i] = item.(*mods.Configuration)
+		cfgs[i] = item.(*mods.Configuration)
 	}
-	return downloads
+	return cfgs
 }
 
 func (d *configurationsDef) getItemKey(item interface{}) string {

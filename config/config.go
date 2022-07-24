@@ -3,7 +3,7 @@ package config
 import (
 	"encoding/json"
 	"os"
-	"path/filepath"
+	"path"
 )
 
 const file = "modsync.config"
@@ -44,13 +44,13 @@ func init() {
 	if PWD, err = os.Getwd(); err != nil {
 		PWD = "."
 	}
-	if b, err = os.ReadFile(filepath.Join(PWD, file)); err == nil {
+	if b, err = os.ReadFile(path.Join(PWD, file)); err == nil {
 		_ = json.Unmarshal(b, &config)
 	}
 }
 
 func Save() {
-	if f, e1 := os.Create(filepath.Join(PWD, file)); e1 == nil {
+	if f, e1 := os.Create(path.Join(PWD, file)); e1 == nil {
 		if config.WindowX == 0 {
 			config.WindowX = WindowWidth
 		}
@@ -59,7 +59,7 @@ func Save() {
 		}
 		b, err := json.Marshal(&config)
 		if err == nil {
-			os.WriteFile(filepath.Join(PWD, file), b, 644)
+			os.WriteFile(path.Join(PWD, file), b, 644)
 		}
 		_, _ = f.Write(b)
 	}
@@ -115,7 +115,7 @@ func GetModDir(game Game) (dir string) {
 			dir = "VI"
 		}
 	}
-	dir = filepath.Join(PWD, "mods", dir)
+	dir = path.Join(PWD, "mods", dir)
 	return
 }
 
@@ -134,6 +134,6 @@ func GetBackupDir(game Game) (s string) {
 	case VI:
 		s = "VI"
 	}
-	s = filepath.Join(PWD, "backup", s)
+	s = path.Join(PWD, "backup", s)
 	return
 }

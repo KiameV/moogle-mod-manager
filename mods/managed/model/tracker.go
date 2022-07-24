@@ -3,14 +3,14 @@ package model
 import (
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
-	"path/filepath"
+	"path"
 )
 
 func NewTrackerMod(game config.Game, mod *mods.Mod) *TrackedMod {
 	return &TrackedMod{
 		Enabled: false,
 		Mod:     mod,
-		Dir:     filepath.Join(config.GetModDir(game), mod.ID),
+		Dir:     path.Join(config.GetModDir(game), mod.ID),
 	}
 }
 

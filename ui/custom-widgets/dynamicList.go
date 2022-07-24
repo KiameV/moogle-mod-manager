@@ -29,11 +29,11 @@ func NewDynamicList(callbacks Callbacks) *DynamicList {
 
 func (l *DynamicList) AddItem(item interface{}) {
 	l.Items = append(l.Items, item)
-	l.createRow(item)
+	l.list.Objects = append(l.list.Objects, l.createRow(item))
 }
 
-func (l *DynamicList) createRow(item interface{}) {
-	r := container.NewHBox(
+func (l *DynamicList) createRow(item interface{}) fyne.CanvasObject {
+	return container.NewHBox(
 		widget.NewLabel(l.callbacks.GetItemKey(item)),
 		widget.NewToolbar(
 			// Edit
@@ -45,11 +45,16 @@ func (l *DynamicList) createRow(item interface{}) {
 				l.removeItem(item)
 			})),
 	)
-	l.list.Objects = append(l.list.Objects, r)
 }
 
 func (l *DynamicList) Draw() fyne.CanvasObject {
 	return l.list
+}
+
+func (l *DynamicList) Refresh() {
+	for i, item := range l.Items {
+		l.list.Objects[i] = l.createRow(item)
+	}
 }
 
 func (l *DynamicList) Reset() {

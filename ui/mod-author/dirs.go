@@ -55,12 +55,12 @@ func (d *dirsDef) onEditItem(item interface{}) {
 
 func (d *dirsDef) createItem(item interface{}, done ...func(interface{})) {
 	f := item.(*mods.ModDir)
-	d.createFormItem("From", f.From)
+	d.createFileDialog("From", f.From, state.GetBaseDirBinding(), true, true)
 	d.createFormItem("To", f.To)
 	d.createFormBool("Recursive", f.Recursive)
 
 	fd := dialog.NewForm("Edit Directory Copy", "Save", "Cancel", []*widget.FormItem{
-		d.getFormItem("From"),
+		d.getFileDialog("From"),
 		d.getFormItem("To"),
 		d.getFormItem("Recursive"),
 	}, func(ok bool) {
@@ -71,6 +71,7 @@ func (d *dirsDef) createItem(item interface{}, done ...func(interface{})) {
 			if len(done) > 0 {
 				done[0](f)
 			}
+			d.list.Refresh()
 		}
 	}, state.Window)
 	fd.Resize(fyne.NewSize(400, 400))

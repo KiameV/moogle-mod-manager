@@ -9,6 +9,7 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/mods"
+	"github.com/kiamev/moogle-mod-manager/mods/managed/authored"
 	config_installer "github.com/kiamev/moogle-mod-manager/ui/config-installer"
 	cw "github.com/kiamev/moogle-mod-manager/ui/custom-widgets"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
@@ -17,19 +18,10 @@ import (
 	"golang.design/x/clipboard"
 	"io/ioutil"
 	"os"
-	"path/filepath"
+	"path"
 	"strings"
 	"time"
 )
-
-type installType string
-
-const (
-	directInstall  installType = "Direct Install"
-	configurations installType = "Configuration"
-)
-
-var possibleInstallTypes = []string{string(directInstall), string(configurations)}
 
 func New() state.Screen {
 	dl := newDownloadsDef()
@@ -91,7 +83,7 @@ func (a *ModAuthorer) LoadModToEdit() (successfullyLoadedMod bool) {
 		dialog.ShowError(err, state.Window)
 		return false
 	}
-	if filepath.Ext(file) == ".xml" {
+	if path.Ext(file) == ".xml" {
 		err = xml.Unmarshal(b, &mod)
 	} else {
 		err = json.Unmarshal(b, &mod)
@@ -106,7 +98,11 @@ func (a *ModAuthorer) EditMod(mod *mods.Mod) {
 }
 
 func (a *ModAuthorer) Draw(w fyne.Window) {
+	if dir, found := authored.GetDir(a.getString("ID")); found {
+		state.SetBaseDir(dir)
+	}
 	items := []*widget.FormItem{
+		a.getBaseDirFormItem("Working Dir"),
 		a.getFormItem("ID"),
 		a.getFormItem("Name"),
 		a.getFormItem("Author"),
@@ -122,13 +118,13 @@ func (a *ModAuthorer) Draw(w fyne.Window) {
 	items = append(items, a.previewDef.getFormItems()...)
 
 	a.tabs = container.NewAppTabs(
-		container.NewTabItem("Mod", container.NewVBox(widget.NewForm(items...))),
-		container.NewTabItem("Compatibility", a.modCompatsDef.draw()),
-		container.NewTabItem("Downloadables", a.downloadDef.draw()),
-		container.NewTabItem("Donation Links", a.donationsDef.draw()),
-		container.NewTabItem("Games", a.gamesDef.draw()),
-		container.NewTabItem("Always Install", a.dlFilesDef.draw()),
-		container.NewTabItem("Configurations", a.configsDef.draw()))
+		container.NewTabItem("Mod", container.NewVScroll(container.NewVBox(widget.NewForm(items...)))),
+		container.NewTabItem("Compatibility", container.NewVScroll(a.modCompatsDef.draw())),
+		container.NewTabItem("Downloadables", container.NewVScroll(a.downloadDef.draw())),
+		container.NewTabItem("Donation Links", container.NewVScroll(a.donationsDef.draw())),
+		container.NewTabItem("Games", container.NewVScroll(a.gamesDef.draw())),
+		container.NewTabItem("Always Install", container.NewVScroll(a.dlFilesDef.draw())),
+		container.NewTabItem("Configurations", container.NewVScroll(a.configsDef.draw())))
 	a.tabs.OnSelected = func(tab *container.TabItem) {
 		if len(a.configsDef.list.Items) > 0 {
 			a.getFormItem("Select Type").Widget.(*widget.Select).Enable()
@@ -162,7 +158,7 @@ func (a *ModAuthorer) Draw(w fyne.Window) {
 			if len(a.configsDef.list.Items) == 0 {
 				util.DisplayDownloadsAndFiles(mod, nil)
 			}
-			if err := state.GetScreen(state.ConfigInstaller).(config_installer.ConfigInstaller).Setup(mod, true); err != nil {
+			if err := state.GetScreen(state.ConfigInstaller).(config_installer.ConfigInstaller).Setup(mod, true, state.GetBaseDir()); err != nil {
 				dialog.ShowError(err, state.Window)
 				return
 			}
@@ -176,10 +172,12 @@ func (a *ModAuthorer) Draw(w fyne.Window) {
 				a.pasteToClipboard(false)
 			})),
 		cw.NewButtonWithPopups("Save", smi...))
-	w.SetContent(container.NewVScroll(container.NewVBox(a.tabs, widget.NewSeparator(), buttons)))
+
+	w.SetContent(container.NewBorder(nil, buttons, nil, nil, a.tabs))
 }
 
 func (a *ModAuthorer) updateEntries(mod *mods.Mod) {
+	a.createBaseDir(state.GetBaseDirBinding())
 	a.createFormItem("ID", mod.ID)
 	a.createFormItem("Name", mod.Name)
 	a.createFormItem("Author", mod.Author)
@@ -191,6 +189,10 @@ func (a *ModAuthorer) updateEntries(mod *mods.Mod) {
 	a.createFormItem("Link", mod.Link)
 	a.createFormMultiLine("Mod File Links", strings.Join(mod.ModFileLinks, "\n"))
 	a.createFormSelect("Select Type", mods.SelectTypes, string(mod.ConfigSelectionType))
+
+	if dir, ok := authored.GetDir(mod.ID); ok && dir != "" {
+		a.createFormItem("Working Dir", dir)
+	}
 
 	a.previewDef.set(mod.Preview)
 	a.modCompatsDef.set(mod.ModCompatibility)
@@ -254,6 +256,7 @@ func (a *ModAuthorer) compileMod() (mod *mods.Mod) {
 	if len(m.Configurations) == 0 {
 		m.Configurations = nil
 	}
+	authored.SetDir(m.ID, state.GetBaseDir())
 	return m
 }
 

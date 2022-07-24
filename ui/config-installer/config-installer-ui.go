@@ -13,7 +13,7 @@ import (
 
 type ConfigInstaller interface {
 	state.Screen
-	Setup(mod *mods.Mod, isSandbox bool) error
+	Setup(mod *mods.Mod, isSandbox bool, baseDir string) error
 }
 
 func New() ConfigInstaller {
@@ -28,6 +28,7 @@ type configInstallerUI struct {
 	toInstall   []*mods.DownloadFiles
 	prevConfigs []*mods.Configuration
 	choiceDesc  *fyne.Container
+	baseDir     string
 
 	currentConfig *mods.Configuration
 	currentChoice *mods.Choice
@@ -37,7 +38,7 @@ func (i *configInstallerUI) OnClose() {
 
 }
 
-func (i *configInstallerUI) Setup(mod *mods.Mod, isSandbox bool) error {
+func (i *configInstallerUI) Setup(mod *mods.Mod, isSandbox bool, baseDir string) error {
 	if len(mod.Configurations) == 0 || len(mod.Configurations[0].Choices) == 0 {
 		return fmt.Errorf("no configurations for %s", mod.Name)
 	}
@@ -51,10 +52,13 @@ func (i *configInstallerUI) Setup(mod *mods.Mod, isSandbox bool) error {
 		return errors.New("could not find root configuration")
 	}
 	i.isSandbox = isSandbox
+	i.prevConfigs = make([]*mods.Configuration, 0)
+	i.baseDir = baseDir
 	return nil
 }
 
 func (i *configInstallerUI) Draw(w fyne.Window) {
+	state.SetBaseDir(i.baseDir)
 	c := container.NewVBox(
 		widget.NewLabelWithStyle(i.currentConfig.Name, fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
 		widget.NewRichTextFromMarkdown(i.currentConfig.Description),
