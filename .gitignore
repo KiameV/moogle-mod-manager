@@ -3,6 +3,7 @@ bin/*
 */obj
 *.vs
 *.json
+*.syso
 .idea
 temp
 moogle-mod-manager.exe
