@@ -36,4 +36,4 @@ As part of the installation the following files will be copied:
 
 ## Considerations
 If I decided I only wanted a single downloadable I can specify in each configuration choice to use 
-`base_mod.zip` instead. From there I'd change the file mapping to copy from a different place.
+`base mod` instead. From there I'd change the file mapping to copy from a different place.
