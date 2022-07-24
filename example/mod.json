@@ -5,7 +5,7 @@
 	"Version": "1.0.0",
 	"ReleaseDate": "Jul 23 2022",
 	"Category": "manager",
-	"Description": "Adds new moogles to manager!",
+	"Description": "Adds new moogles to manage!",
 	"ReleaseNotes": "Adds the following moogles to manager:\n- **Mog**\n- *Molulu*\n- `Mugmug`\n- Cosmog",
 	"Link": "https://github.com/KiameV/moogle-mod-manager/blob/main/example/mod/",
 	"ModFileLink": [
