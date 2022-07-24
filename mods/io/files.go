@@ -4,12 +4,10 @@ import (
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"io/ioutil"
-	"os"
-	"path"
 )
 
 func MoveFiles(files []mods.ModFile, modDir string, game config.Game) (err error) {
-	var (
+	/*var (
 		toDir     = config.GetModDir(game)
 		backupDir = config.GetBackupDir(game)
 	)
@@ -20,12 +18,12 @@ func MoveFiles(files []mods.ModFile, modDir string, game config.Game) (err error
 		if err = copy(path.Join(modDir, f.From), path.Join(toDir, f.To)); err != nil {
 			break
 		}
-	}
+	}*/
 	return
 }
 
 func RevertMoveFiles(files []string, game config.Game) (err error) {
-	var (
+	/*var (
 		toDir     = config.GetModDir(game)
 		backupDir = config.GetBackupDir(game)
 	)
@@ -36,7 +34,7 @@ func RevertMoveFiles(files []string, game config.Game) (err error) {
 		if err = os.Rename(path.Join(backupDir, f), path.Join(toDir, f)); err != nil {
 			break
 		}
-	}
+	}*/
 	return
 }
 

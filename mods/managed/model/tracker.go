@@ -10,7 +10,7 @@ func NewTrackerMod(game config.Game, mod *mods.Mod) *TrackedMod {
 	return &TrackedMod{
 		Enabled: false,
 		Mod:     mod,
-		Dir:     path.Join(config.GetModDir(game), mod.ID),
+		Dir:     path.Join(config.Get().GetModDir(game), mod.ID),
 	}
 }
 

@@ -222,8 +222,8 @@ func (ui *localUI) toggleEnabled(mod *model.TrackedMod) bool {
 
 func (ui *localUI) enableMod(tm *model.TrackedMod) bool {
 	if len(tm.Mod.Configurations) > 0 {
-		if err := state.GetScreen(state.ConfigInstaller).(ci.ConfigInstaller).Setup(tm.Mod, tm.GetDir(), func(tis []*mods.ToInstall) {
-			managed.EnableMod(*state.CurrentGame, tm.Mod, tis)
+		if err := state.GetScreen(state.ConfigInstaller).(ci.ConfigInstaller).Setup(tm.Mod, tm.GetDir(), func(tis []*mods.ToInstall) error {
+			return managed.EnableMod(*state.CurrentGame, tm, tis)
 		}); err != nil {
 			dialog.ShowError(err, state.Window)
 			return false
@@ -235,11 +235,18 @@ func (ui *localUI) enableMod(tm *model.TrackedMod) bool {
 			dialog.ShowError(err, state.Window)
 			return false
 		}
-		managed.EnableMod(*state.CurrentGame, tm.Mod, tis)
+		if err = managed.EnableMod(*state.CurrentGame, tm, tis); err != nil {
+			dialog.ShowError(err, state.Window)
+			return false
+		}
 	}
 	return true
 }
 
 func (ui *localUI) disableMod(mod *model.TrackedMod) bool {
+	if err := managed.DisableMod(*state.CurrentGame, mod); err != nil {
+		dialog.ShowError(err, state.Window)
+		return false
+	}
 	return true
 }

@@ -4,6 +4,7 @@ import (
 	"github.com/bodgit/sevenzip"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -44,7 +45,7 @@ func (d szDecompressor) extractFile(dest string, f *sevenzip.File) (err error) {
 	}
 	defer func() { _ = rc.Close() }()
 
-	path = path.Join(dest, f.Name)
+	path = filepath.Join(dest, f.Name)
 	// Check for ZipSlip (Directory traversal)
 	path = strings.ReplaceAll(path, "..", "")
 
@@ -53,7 +54,7 @@ func (d szDecompressor) extractFile(dest string, f *sevenzip.File) (err error) {
 			return
 		}
 	} else {
-		if err = os.MkdirAll(path.Dir(path), f.Mode()); err != nil {
+		if err = os.MkdirAll(filepath.Dir(path), f.Mode()); err != nil {
 			return
 		}
 		if file, err = os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode()); err != nil {

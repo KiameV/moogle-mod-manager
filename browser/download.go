@@ -16,6 +16,10 @@ func Download(url, toDir string) (string, error) {
 		out            *os.File
 		file           = path.Join(toDir, name)
 	)
+	if err != nil {
+		return "", err
+	}
+
 	// Create the file
 	if out, err = os.Create(file); err != nil {
 		return "", err
@@ -67,5 +71,8 @@ func download(url string) (buf *bytes.Buffer, name string, err error) {
 	buf = new(bytes.Buffer)
 	_, err = buf.ReadFrom(resp.Body)
 	name = sp[len(sp)-1]
+	if i := strings.Index(name, "?"); i >= 0 {
+		name = name[:i]
+	}
 	return
 }

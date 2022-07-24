@@ -27,21 +27,21 @@
 		{
 			"Name": "base",
 			"Source": [
-				"https://github.com/KiameV/moogle-mod-manager/blob/main/example/mod/base_mod.zip"
+				"https://github.com/KiameV/moogle-mod-manager/blob/main/example/mod/base_mod.zip?raw=true"
 			],
 			"InstallType": "Compressed"
 		},
 		{
 			"Name": "normal cosmog",
 			"Source": [
-				"https://github.com/KiameV/moogle-mod-manager/blob/main/example/mod/normal_cosmog.zip"
+				"https://github.com/KiameV/moogle-mod-manager/blob/main/example/mod/normal_cosmog.zip?raw=true"
 			],
 			"InstallType": "Compressed"
 		},
 		{
 			"Name": "invert cosmog",
 			"Source": [
-				"https://github.com/KiameV/moogle-mod-manager/blob/main/example/mod/invert_cosmog.zip"
+				"https://github.com/KiameV/moogle-mod-manager/blob/main/example/mod/invert_cosmog.zip?raw=true"
 			],
 			"InstallType": "Compressed"
 		}

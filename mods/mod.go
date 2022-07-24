@@ -132,9 +132,10 @@ type Game struct {
 }
 
 type Download struct {
-	Name        string      `json:"Name" xml:"Name"`
-	Sources     []string    `json:"Source" xml:"Sources"`
-	InstallType InstallType `json:"InstallType" xml:"InstallType"`
+	Name          string      `json:"Name" xml:"Name"`
+	Sources       []string    `json:"Source" xml:"Sources"`
+	InstallType   InstallType `json:"InstallType" xml:"InstallType"`
+	DownloadedLoc string      `json:"-" xml:"-"`
 }
 
 type DownloadFiles struct {

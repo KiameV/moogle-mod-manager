@@ -11,7 +11,6 @@ type GUI byte
 const (
 	None GUI = iota
 	LocalMods
-	Configure
 	ModAuthor
 	ConfigInstaller
 )

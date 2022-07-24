@@ -2,115 +2,89 @@ package config
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path"
+	"path/filepath"
 )
 
-const file = "modsync.config"
+const configsFile = "configs.json"
 
-var config ConfigData
+var configs = &Configs{}
 
 const (
-	WindowWidth  = 820
-	WindowHeight = 800
+	WindowWidth  = 1000
+	WindowHeight = 850
 )
 
 var (
 	PWD string
 )
 
-type ConfigData struct {
-	WindowX   int    `json:"width"`
-	WindowY   int    `json:"height"`
-	DirI      string `json:"dir1"`
-	DirII     string `json:"dir2"`
-	DirIII    string `json:"dir3"`
-	DirIV     string `json:"dir4"`
-	DirV      string `json:"dir5"`
-	DirVI     string `json:"dir6"`
-	ModDir    string `json:"mod-dir"`
-	BackupDir string `json:"backup-dir"`
+type Configs struct {
+	FirstTime   bool   `json:"firstTime"`
+	WindowX     int    `json:"width"`
+	WindowY     int    `json:"height"`
+	DirI        string `json:"dir1"`
+	DirII       string `json:"dir2"`
+	DirIII      string `json:"dir3"`
+	DirIV       string `json:"dir4"`
+	DirV        string `json:"dir5"`
+	DirVI       string `json:"dir6"`
+	DownloadDir string `json:"downloadDir"`
+	BackupDir   string `json:"backupDir"`
 }
 
-func Get() *ConfigData {
-	return &config
+func Get() *Configs {
+	return configs
 }
 
-func init() {
-	var (
-		b   []byte
-		err error
-	)
-	if PWD, err = os.Getwd(); err != nil {
-		PWD = "."
-	}
-	if b, err = os.ReadFile(path.Join(PWD, file)); err == nil {
-		_ = json.Unmarshal(b, &config)
-	}
-}
-
-func Save() {
-	if f, e1 := os.Create(path.Join(PWD, file)); e1 == nil {
-		if config.WindowX == 0 {
-			config.WindowX = WindowWidth
-		}
-		if config.WindowY == 0 {
-			config.WindowY = WindowHeight
-		}
-		b, err := json.Marshal(&config)
-		if err == nil {
-			os.WriteFile(path.Join(PWD, file), b, 644)
-		}
-		_, _ = f.Write(b)
-	}
-}
-
-func (c *ConfigData) SetGameDir(dir string, game Game) {
+func (c *Configs) SetGameDir(dir string, game Game) {
 	switch game {
 	case I:
-		Get().DirI = dir
+		c.DirI = dir
 	case II:
-		Get().DirII = dir
+		c.DirII = dir
 	case III:
-		Get().DirIII = dir
+		c.DirIII = dir
 	case IV:
-		Get().DirIV = dir
+		c.DirIV = dir
 	case V:
-		Get().DirV = dir
+		c.DirV = dir
 	case VI:
-		Get().DirVI = dir
+		c.DirVI = dir
 	}
 }
 
-func GetModDir(game Game) (dir string) {
+func (c *Configs) GetModDir(game Game) (dir string) {
 	switch game {
 	case I:
-		dir = Get().DirI
+		dir = c.DirI
 		if dir == "" {
 			dir = "I"
 		}
 	case II:
-		dir = Get().DirII
+		dir = c.DirII
 		if dir == "" {
 			dir = "II"
 		}
 	case III:
-		dir = Get().DirIII
+		dir = c.DirIII
 		if dir == "" {
 			dir = "III"
 		}
 	case IV:
-		dir = Get().DirIV
+		dir = c.DirIV
 		if dir == "" {
 			dir = "IV"
 		}
 	case V:
-		dir = Get().DirV
+		dir = c.DirV
 		if dir == "" {
 			dir = "V"
 		}
 	case VI:
-		dir = Get().DirVI
+		dir = c.DirVI
 		if dir == "" {
 			dir = "VI"
 		}
@@ -135,5 +109,38 @@ func GetBackupDir(game Game) (s string) {
 		s = "VI"
 	}
 	s = path.Join(PWD, "backup", s)
+	return
+}
+
+func (c *Configs) Initialize() (err error) {
+	var b []byte
+	p := filepath.Join(PWD, configsFile)
+	if _, err = os.Stat(p); err == nil {
+		if b, err = os.ReadFile(p); err != nil {
+			return fmt.Errorf("failed to read configs file: %v", err)
+		}
+		if err = json.Unmarshal(b, c); err != nil {
+			return fmt.Errorf("failed to unmarshal configs file: %v", err)
+		}
+	} else {
+		c.FirstTime = true
+	}
+	return nil
+}
+
+func (c *Configs) Save() (err error) {
+	var (
+		b []byte
+		f *os.File
+	)
+	if b, err = json.MarshalIndent(c, "", "\t"); err != nil {
+		return fmt.Errorf("failed to marshal configs: %v", err)
+	}
+	if f, err = os.Create(filepath.Join(PWD, configsFile)); err != nil {
+		return fmt.Errorf("failed to create configs file: %v", err)
+	}
+	if _, err = f.Write(b); err != nil {
+		return fmt.Errorf("failed to write configs file: %v", err)
+	}
 	return
 }

@@ -11,6 +11,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/browser"
 	"github.com/kiamev/moogle-mod-manager/config"
+	"github.com/kiamev/moogle-mod-manager/decompressor"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/mods/managed/model"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
@@ -169,10 +170,66 @@ func GetMod(game config.Game, modID string) (*model.TrackedMod, bool) {
 	return nil, false
 }
 
-func EnableMod(game config.Game, mod *mods.Mod, tis []*mods.ToInstall) {
+func EnableMod(game config.Game, tm *model.TrackedMod, tis []*mods.ToInstall) (err error) {
 	confirmDownloads(tis, func() {
+		var (
+			downloadDir string
+			f           string
+			d           decompressor.Decompressor
+		)
+		if downloadDir, err = createPath(path.Join(config.PWD, "downloads")); err != nil {
+			return
+		}
+		for _, ti := range tis {
+			if len(ti.Download.Sources) == 0 {
+				err = fmt.Errorf("%s has no download sources", ti.Download.Name)
+				return
+			}
+			for _, source := range ti.Download.Sources {
+				if f, err = browser.Download(source, downloadDir); err == nil {
+					// success
+					ti.Download.DownloadedLoc = f
+					break
+				}
+			}
+		}
 
+		for _, ti := range tis {
+			if ti.Download.DownloadedLoc == "" {
+				err = fmt.Errorf("failed to download %s", ti.Download.Sources[0])
+				return
+			}
+		}
+
+		for _, ti := range tis {
+			if d, err = decompressor.NewDecompressor(ti.Download.DownloadedLoc); err != nil {
+				return
+			}
+			if err = d.DecompressTo(tm.GetDir()); err != nil {
+				return
+			}
+		}
+
+		for _, ti := range tis {
+			if err = AddModFiles(game, tm, ti.DownloadFiles); err != nil {
+				return
+			}
+		}
 	})
+	return
+}
+
+func createPath(path string) (string, error) {
+	if err := os.MkdirAll(path, os.ModePerm); err != nil {
+		err = fmt.Errorf("failed to create mod directory: %v", err)
+		return "", err
+	}
+	return path, nil
+}
+
+func DisableMod(game config.Game, tm *model.TrackedMod) (err error) {
+	// TODO
+	return
 }
 
 func confirmDownloads(tis []*mods.ToInstall, callback func()) {

@@ -166,8 +166,9 @@ func (a *ModAuthorer) Draw(w fyne.Window) {
 				}
 				util.DisplayDownloadsAndFiles(tis)
 			}
-			if err := state.GetScreen(state.ConfigInstaller).(config_installer.ConfigInstaller).Setup(mod, state.GetBaseDir(), func(tis []*mods.ToInstall) {
+			if err := state.GetScreen(state.ConfigInstaller).(config_installer.ConfigInstaller).Setup(mod, state.GetBaseDir(), func(tis []*mods.ToInstall) error {
 				util.DisplayDownloadsAndFiles(tis)
+				return nil
 			}); err != nil {
 				dialog.ShowError(err, state.Window)
 				return

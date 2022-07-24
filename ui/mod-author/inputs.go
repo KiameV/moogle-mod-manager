@@ -7,7 +7,7 @@ import (
 	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	"github.com/ncruces/zenity"
+	cw "github.com/kiamev/moogle-mod-manager/ui/custom-widgets"
 	"strconv"
 	"strings"
 )
@@ -48,8 +48,8 @@ func (m *entryManager) getString(key string) string {
 		return t.Selected
 	case *widget.Check:
 		return fmt.Sprintf("%v", t.Checked)
-	case *ofd:
-		return t.ofh.Get()
+	case *cw.OpenFileDialogContainer:
+		return t.OpenFileDialogHandler.Get()
 	}
 	return ""
 }
@@ -83,21 +83,21 @@ func (m *entryManager) getFormItem(name string) *widget.FormItem {
 
 func (m *entryManager) getBaseDirFormItem(name string) *widget.FormItem {
 	e, _ := m.entries[baseDirKey]
-	return widget.NewFormItem(name, e.(*ofd).Container)
+	return widget.NewFormItem(name, e.(*cw.OpenFileDialogContainer).Container)
 }
 
 func (m *entryManager) getFileDialog(name string) *widget.FormItem {
 	e, _ := m.entries[name]
-	return widget.NewFormItem(name, e.(*ofd).Container)
+	return widget.NewFormItem(name, e.(*cw.OpenFileDialogContainer).Container)
 }
 
 func (m *entryManager) createBaseDir(baseDir binding.String) {
 	if _, ok := m.entries[baseDirKey]; !ok {
-		o := &openDir{BaseDir: baseDir, Value: baseDir}
+		o := &cw.OpenDirDialog{BaseDir: baseDir, Value: baseDir}
 		o.ToolbarAction = widget.NewToolbarAction(theme.FolderOpenIcon(), o.Handle)
-		m.entries[baseDirKey] = &ofd{
-			Container: container.NewBorder(nil, nil, nil, widget.NewToolbar(o), widget.NewEntryWithData(baseDir)),
-			ofh:       o,
+		m.entries[baseDirKey] = &cw.OpenFileDialogContainer{
+			Container:             container.NewBorder(nil, nil, nil, widget.NewToolbar(o), widget.NewEntryWithData(baseDir)),
+			OpenFileDialogHandler: o,
 		}
 	}
 }
@@ -106,31 +106,31 @@ func (m *entryManager) createFileDialog(key string, value string, baseDir bindin
 	e, ok := m.entries[key]
 	if !ok {
 		b := binding.NewString()
-		var o openFileHandler
+		var o cw.OpenFileDialogHandler
 		if isDir {
-			o = &openDir{
+			o = &cw.OpenDirDialog{
 				IsRelative: isRelative,
 				Value:      b,
 				BaseDir:    baseDir,
 			}
 		} else {
-			o = &openFile{
+			o = &cw.OpenFileDialog{
 				IsRelative: isRelative,
 				Value:      b,
 				BaseDir:    baseDir,
 			}
 		}
 		o.SetAction(widget.NewToolbarAction(theme.FolderOpenIcon(), o.Handle))
-		e = &ofd{
-			Container: container.NewBorder(nil, nil, nil, widget.NewToolbar(o), widget.NewEntryWithData(b)),
-			ofh:       o,
+		e = &cw.OpenFileDialogContainer{
+			Container:             container.NewBorder(nil, nil, nil, widget.NewToolbar(o), widget.NewEntryWithData(b)),
+			OpenFileDialogHandler: o,
 		}
 		m.entries[key] = e
 	}
-	switch t := e.(*ofd).ofh.(type) {
-	case *openDir:
+	switch t := e.(*cw.OpenFileDialogContainer).OpenFileDialogHandler.(type) {
+	case *cw.OpenDirDialog:
 		_ = t.Value.Set(value)
-	case *openFile:
+	case *cw.OpenFileDialog:
 		_ = t.Value.Set(value)
 	}
 }
@@ -166,85 +166,4 @@ func (m *entryManager) createFormBool(key string, value bool) {
 		m.entries[key] = e
 	}
 	e.(*widget.Check).SetChecked(value)
-}
-
-type openFileHandler interface {
-	widget.ToolbarItem
-	Handle()
-	Get() string
-	SetAction(a *widget.ToolbarAction)
-}
-
-type ofd struct {
-	*fyne.Container
-	ofh openFileHandler
-}
-
-type openDir struct {
-	*widget.ToolbarAction
-	BaseDir    binding.String
-	Value      binding.String
-	IsRelative bool
-}
-
-func (o *openDir) Get() string {
-	s, _ := o.Value.Get()
-	return s
-}
-
-func (o *openDir) SetAction(a *widget.ToolbarAction) { o.ToolbarAction = a }
-
-func (o *openDir) Handle() {
-	dir, _ := o.BaseDir.Get()
-	s, err := zenity.SelectFile(
-		zenity.Title("Select file"),
-		zenity.Filename(dir),
-		zenity.Directory())
-	if err == nil {
-		if o.IsRelative {
-			dir, _ = o.BaseDir.Get()
-			s = strings.ReplaceAll(s, dir, "")
-			s = strings.ReplaceAll(s, "\\", "/")
-			if len(s) == 0 || (len(s) > 0 && s[0] == '/') {
-				s = "." + s
-			}
-		}
-		_ = o.Value.Set(s)
-	}
-}
-
-type openFile struct {
-	*widget.ToolbarAction
-	BaseDir    binding.String
-	Value      binding.String
-	IsRelative bool
-}
-
-func (o *openFile) Get() string {
-	s, _ := o.Value.Get()
-	return s
-}
-
-func (o *openFile) SetAction(a *widget.ToolbarAction) { o.ToolbarAction = a }
-
-func (o *openFile) Handle() {
-	dir, _ := o.BaseDir.Get()
-	s, err := zenity.SelectFile(
-		zenity.Title("Select file"),
-		zenity.Filename(dir),
-		zenity.FileFilter{
-			Name:     "All files",
-			Patterns: []string{"*"},
-		})
-	if err == nil {
-		if o.IsRelative {
-			dir, _ = o.BaseDir.Get()
-			s = strings.ReplaceAll(s, dir, "")
-			s = strings.ReplaceAll(s, "\\", "/")
-			if len(s) > 0 && s[0] == '/' {
-				s = "." + s
-			}
-		}
-		_ = o.Value.Set(s)
-	}
 }

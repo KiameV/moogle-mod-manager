@@ -13,7 +13,7 @@ import (
 
 type ConfigInstaller interface {
 	state.Screen
-	Setup(mod *mods.Mod, baseDir string, callback func([]*mods.ToInstall)) error
+	Setup(mod *mods.Mod, baseDir string, callback func([]*mods.ToInstall) error) error
 }
 
 func New() ConfigInstaller {
@@ -28,7 +28,7 @@ type configInstallerUI struct {
 	prevConfigs     []*mods.Configuration
 	choiceContainer *fyne.Container
 	baseDir         string
-	callback        func([]*mods.ToInstall)
+	callback        func([]*mods.ToInstall) error
 
 	currentConfig *mods.Configuration
 	currentChoice *mods.Choice
@@ -38,7 +38,7 @@ func (i *configInstallerUI) OnClose() {
 
 }
 
-func (i *configInstallerUI) Setup(mod *mods.Mod, baseDir string, callback func([]*mods.ToInstall)) error {
+func (i *configInstallerUI) Setup(mod *mods.Mod, baseDir string, callback func([]*mods.ToInstall) error) error {
 	if len(mod.Configurations) == 0 || len(mod.Configurations[0].Choices) == 0 {
 		return fmt.Errorf("no configurations for %s", mod.Name)
 	}
@@ -90,7 +90,10 @@ func (i *configInstallerUI) Draw(w fyne.Window) {
 					state.ShowPreviousScreen()
 					return
 				}
-				i.callback(tis)
+				if err = i.callback(tis); err != nil {
+					dialog.ShowError(err, w)
+					return
+				}
 				state.ShowPreviousScreen()
 			} else {
 				for _, i.currentConfig = range i.mod.Configurations {

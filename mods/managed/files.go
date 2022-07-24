@@ -2,11 +2,10 @@ package managed
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/kiamev/moogle-mod-manager/config"
-	"github.com/kiamev/moogle-mod-manager/mods/io"
+	"github.com/kiamev/moogle-mod-manager/mods"
+	"github.com/kiamev/moogle-mod-manager/mods/managed/model"
 	"io/ioutil"
-	"strings"
 )
 
 const (
@@ -18,41 +17,43 @@ var (
 )
 
 type managedModsAndFiles struct {
-	Mods     []modFiles
-	AllFiles map[string]bool
+	Mods          map[string]modFiles
+	ReplacedFiles map[string]bool
 }
 
 type modFiles struct {
-	ModID string
-	Files []string
+	Files []mods.ModFile
 }
 
-func AddModFiles(game config.Game, modID string, files []string) error {
-	m, ok := managed[game]
+func AddModFiles(game config.Game, tm *model.TrackedMod, files []*mods.DownloadFiles) error {
+	mmf, ok := managed[game]
 	if !ok {
-		m = &managedModsAndFiles{AllFiles: make(map[string]bool)}
-		managed[game] = m
-	}
-
-	for _, mf := range m.Mods {
-		if modID == mf.ModID {
-			return fmt.Errorf("%s is already enabled", modID)
+		mmf = &managedModsAndFiles{
+			Mods:          make(map[string]modFiles),
+			ReplacedFiles: make(map[string]bool),
 		}
+		managed[game] = mmf
 	}
+	/*
+		for _, mf := range mmf.Mods {
+			if modID == mf.ModID {
+				return fmt.Errorf("%s is already enabled", modID)
+			}
+		}
 
-	if collisions := detectCollisions(m.AllFiles, files); len(collisions) > 0 {
-		return fmt.Errorf("cannot enable mod as these files would collide: %s", strings.Join(collisions, ", "))
-	}
+		if collisions := detectCollisions(m.AllFiles, files); len(collisions) > 0 {
+			return fmt.Errorf("cannot enable mod as these files would collide: %s", strings.Join(collisions, ", "))
+		}
 
-	m.Mods = append(m.Mods, modFiles{ModID: modID, Files: files})
-	for _, f := range files {
-		m.AllFiles[f] = true
-	}
+		m.Mods = append(m.Mods, modFiles{ModID: modID, Files: files})
+		for _, f := range files {
+			m.AllFiles[f] = true
+		}*/
 	return saveManagedJson()
 }
 
 func RemoveModFiles(game config.Game, modID string) error {
-	m, ok := managed[game]
+	/*m, ok := managed[game]
 	if !ok {
 		return nil
 	}
@@ -68,7 +69,7 @@ func RemoveModFiles(game config.Game, modID string) error {
 			}
 			break
 		}
-	}
+	}*/
 	return saveManagedJson()
 }
 
