@@ -1,0 +1,59 @@
+{
+	"ID": "kiamev.moogle_manager",
+	"Name": "Moogle Manager",
+	"Author": "KiameV",
+	"Version": "1.0.0",
+	"ReleaseDate": "Jul 23 2022",
+	"Category": "manager",
+	"Description": "Adds new moogles to manager!",
+	"ReleaseNotes": "Adds the following moogles to manager:\n- **Mog**\n- *Molulu*\n- `Mugmug`\n- Cosmog",
+	"Link": "https://github.com/KiameV/moogle-mod-manager/blob/main/example/",
+	"ModFileLink": [
+		"https://github.com/KiameV/moogle-mod-manager/tree/main/example/mod.json"
+	],
+	"Preview": {
+		"Url": "https://github.com/KiameV/moogle-mod-manager/blob/main/example/preview.png",
+		"Local": "./preview.png",
+		"Size": {
+			"X": 300,
+			"Y": 300
+		}
+	},
+	"Compatibility": {
+		"Require": [],
+		"Forbid": []
+	},
+	"Downloadable": [
+		{
+			"Name": "base",
+			"Source": [
+				"https://github.com/KiameV/moogle-mod-manager/blob/main/example/base_mod.zip"
+			],
+			"InstallType": "Compressed"
+		},
+		{
+			"Name": "normal cosmog",
+			"Source": [
+				"https://github.com/KiameV/moogle-mod-manager/blob/main/example/normal_cosmog.zip"
+			],
+			"InstallType": "Compressed"
+		},
+		{
+			"Name": "invert cosmog",
+			"Source": [
+				"https://github.com/KiameV/moogle-mod-manager/blob/main/example/invert_cosmog.zip"
+			],
+			"InstallType": ""
+		}
+	],
+	"DonationLink": [],
+	"Games": [
+		{
+			"Name": "FF PR VI"
+		}
+	],
+	"DownloadFile": {
+		"DownloadName": ""
+	},
+	"ConfigSelectionType": "Auto"
+}
