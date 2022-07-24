@@ -2,7 +2,7 @@
 
 ![Alt text](https://github.com/KiameV/moogle-mod-manager/blob/main/example/mod/preview.png?raw=true)
 
-This example mod demonstrates how to have multiple sources for a single mod. 
+This example mod demonstrates how to have multiple sources for a single mod. The files that make up the mod are in the `mod` directory. `mod.json` is what'll be given to the mod manager to add the mod.
 
 ## Downloadables
 Contains names and sources for 3 different sources (downloads):
