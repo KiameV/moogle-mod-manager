@@ -5,6 +5,8 @@ WIP with a task board available here: https://github.com/users/KiameV/projects/1
 
 WIP mod.xml template - https://github.com/KiameV/moogle-mod-manager/wiki/%22mod.xml%22-explained
 
+Discussions is open https://github.com/KiameV/moogle-mod-manager/discussions
+
 In association with `Moogles & Mods` discord channel - https://discord.gg/uEfSJDdQ
 
 ______________________________________________________________________________________
