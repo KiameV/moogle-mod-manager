@@ -238,7 +238,6 @@ func (ui *localUI) enableMod(game config.Game, tm *model.TrackedMod) bool {
 		if err := state.GetScreen(state.ConfigInstaller).(ci.ConfigInstaller).Setup(tm.Mod, modPath, func(tis []*mods.ToInstall) error {
 			return managed.EnableMod(*state.CurrentGame, tm, tis)
 		}); err != nil {
-			dialog.ShowError(err, state.Window)
 			return false
 		}
 		state.ShowScreen(state.ConfigInstaller)
@@ -249,7 +248,6 @@ func (ui *localUI) enableMod(game config.Game, tm *model.TrackedMod) bool {
 			return false
 		}
 		if err = managed.EnableMod(*state.CurrentGame, tm, tis); err != nil {
-			dialog.ShowError(err, state.Window)
 			return false
 		}
 	}

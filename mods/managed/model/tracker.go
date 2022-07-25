@@ -42,13 +42,9 @@ func (m *TrackedMod) GetModID() string {
 }
 
 func (m *TrackedMod) GetDirSuffix() string {
-	return util.CreateFileName(m.GetModID())
+	return filepath.Join(util.CreateFileName(m.GetModID()), util.CreateFileName(m.Mod.Version))
 }
 
 func (m *TrackedMod) GetMod() *mods.Mod {
 	return m.Mod
-}
-
-func (m *TrackedMod) GetVersion() string {
-	return util.CreateFileName(m.Mod.Version)
 }

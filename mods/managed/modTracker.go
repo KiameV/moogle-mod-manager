@@ -142,7 +142,7 @@ func AddMod(game config.Game, tm *model.TrackedMod) (err error) {
 
 	modPath := filepath.Join(config.Get().GetModsFullPath(game), tm.GetDirSuffix())
 	if _, err = os.Stat(modPath); os.IsNotExist(err) {
-		if err = os.MkdirAll(modPath, 0777); err != nil {
+		if err = os.MkdirAll(filepath.Dir(modPath), 0777); err != nil {
 			return
 		}
 	}
@@ -183,12 +183,13 @@ func EnableMod(game config.Game, tm *model.TrackedMod, tis []*mods.ToInstall) (e
 			d           decompressor.Decompressor
 			modPath     = filepath.Join(config.Get().GetModsFullPath(game), tm.GetDirSuffix())
 		)
-		if downloadDir, err = createPath(filepath.Join(config.Get().GetDownloadFullPath(game), tm.GetDirSuffix(), tm.GetVersion())); err != nil {
+		if downloadDir, err = createPath(filepath.Join(config.Get().GetDownloadFullPath(game), tm.GetDirSuffix())); err != nil {
+			dialog.ShowError(err, state.Window)
 			return
 		}
 		for _, ti := range tis {
 			if len(ti.Download.Sources) == 0 {
-				err = fmt.Errorf("%s has no download sources", ti.Download.Name)
+				dialog.ShowError(fmt.Errorf("%s has no download sources", ti.Download.Name), state.Window)
 				return
 			}
 			for _, source := range ti.Download.Sources {
@@ -202,22 +203,25 @@ func EnableMod(game config.Game, tm *model.TrackedMod, tis []*mods.ToInstall) (e
 
 		for _, ti := range tis {
 			if ti.Download.DownloadedLoc == "" {
-				err = fmt.Errorf("failed to download %s", ti.Download.Sources[0])
+				dialog.ShowError(fmt.Errorf("failed to download %s", ti.Download.Sources[0]), state.Window)
 				return
 			}
 		}
 
 		for _, ti := range tis {
 			if d, err = decompressor.NewDecompressor(ti.Download.DownloadedLoc); err != nil {
+				dialog.ShowError(err, state.Window)
 				return
 			}
 			if err = d.DecompressTo(modPath); err != nil {
+				dialog.ShowError(err, state.Window)
 				return
 			}
 		}
 
 		for _, ti := range tis {
 			if err = AddModFiles(game, tm, ti.DownloadFiles); err != nil {
+				dialog.ShowError(err, state.Window)
 				return
 			}
 		}

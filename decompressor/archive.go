@@ -22,7 +22,7 @@ func (d archiveDecompressor) DecompressTo(dest string) error {
 		return err
 	}
 	defer func() { _ = r.Close() }()
-	if err = os.MkdirAll(dest, 0777); err != nil {
+	if err = os.MkdirAll(filepath.Dir(dest), 0777); err != nil {
 		return err
 	}
 	// Closure to address file descriptors issue with all the deferred .Close() methods
@@ -50,7 +50,7 @@ func (d archiveDecompressor) extractFile(dest string, f *zip.File) (err error) {
 	path = strings.ReplaceAll(path, "..", "")
 
 	if f.FileInfo().IsDir() {
-		if err = os.MkdirAll(path, f.Mode()); err != nil {
+		if err = os.MkdirAll(filepath.Dir(path), f.Mode()); err != nil {
 			return
 		}
 	} else {

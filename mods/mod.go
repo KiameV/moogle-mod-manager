@@ -183,7 +183,7 @@ type DonationLink struct {
 	Link string `json:"Link" xml:"Link"`
 }
 
-func (m Mod) Validate() string {
+func (m *Mod) Validate() string {
 	sb := strings.Builder{}
 	if m.ID == "" {
 		sb.WriteString("ID is required\n")

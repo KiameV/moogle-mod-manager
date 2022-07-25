@@ -25,21 +25,21 @@
 	},
 	"Downloadable": [
 		{
-			"Name": "base",
+			"Name": "base_mod",
 			"Source": [
 				"https://github.com/KiameV/moogle-mod-manager/blob/main/example/mod/base_mod.zip?raw=true"
 			],
 			"InstallType": "Compressed"
 		},
 		{
-			"Name": "normal cosmog",
+			"Name": "normal_cosmog",
 			"Source": [
 				"https://github.com/KiameV/moogle-mod-manager/blob/main/example/mod/normal_cosmog.zip?raw=true"
 			],
 			"InstallType": "Compressed"
 		},
 		{
-			"Name": "invert cosmog",
+			"Name": "invert_cosmog",
 			"Source": [
 				"https://github.com/KiameV/moogle-mod-manager/blob/main/example/mod/invert_cosmog.zip?raw=true"
 			],
@@ -58,11 +58,11 @@
 		}
 	],
 	"AlwaysDownload": [{
-		"DownloadName": "base",
+		"DownloadName": "base_mod",
 		"File": [
 			{
 				"From": "./assets/file/moogles_to_manage.txt",
-				"To": "./assets"
+				"To": "./assets/moogles_to_manage.txt"
 			}
 		],
 		"Dir": [
@@ -99,11 +99,11 @@
 						}
 					},
 					"DownloadFiles": {
-						"DownloadName": "normal cosmog",
+						"DownloadName": "normal_cosmog",
 						"File": [
 							{
 								"From": "Cosmog.png",
-								"To": "./assets"
+								"To": "./assets/Cosmog.png"
 							}
 						]
 					}
@@ -120,11 +120,11 @@
 						}
 					},
 					"DownloadFiles": {
-						"DownloadName": "invert cosmog",
+						"DownloadName": "invert_cosmog",
 						"File": [
 							{
 								"From": "Cosmog.png",
-								"To": "./assets"
+								"To": "./assets/Cosmog.png"
 							}
 						]
 					}
