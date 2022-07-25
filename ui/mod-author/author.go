@@ -144,8 +144,20 @@ func (a *ModAuthorer) Draw(w fyne.Window) {
 		}))
 	if a.modBeingEdited != nil {
 		smi = append(smi, fyne.NewMenuItem("modify and back", func() {
-			*a.modBeingEdited = *a.compileMod()
-			state.ShowPreviousScreen()
+			mod := a.compileMod()
+			callback := func() {
+				*a.modBeingEdited = *a.compileMod()
+				state.ShowPreviousScreen()
+			}
+			if !a.validate(mod, false) {
+				dialog.ShowConfirm("Continue?", "The mod is not valid, continue anyway?", func(ok bool) {
+					if ok {
+						callback()
+					}
+				}, state.Window)
+			} else {
+				callback()
+			}
 		}))
 	}
 
@@ -154,7 +166,7 @@ func (a *ModAuthorer) Draw(w fyne.Window) {
 			state.ShowPreviousScreen()
 		}),
 		widget.NewButton("Validate", func() {
-			a.validate()
+			_ = a.validate(a.compileMod(), true)
 		}),
 		widget.NewButton("Test", func() {
 			mod := a.compileMod()
@@ -223,18 +235,30 @@ func (a *ModAuthorer) pasteToClipboard(asJson bool) {
 		dialog.ShowError(err, state.Window)
 		return
 	}
-	if b, err = a.Marshal(asJson); err != nil {
-		dialog.ShowError(err, state.Window)
-		return
+	mod := a.compileMod()
+	callback := func() {
+		if b, err = a.Marshal(mod, asJson); err != nil {
+			dialog.ShowError(err, state.Window)
+			return
+		}
+		clipboard.Write(clipboard.FmtText, b)
 	}
-	clipboard.Write(clipboard.FmtText, b)
+	if !a.validate(mod, false) {
+		dialog.ShowConfirm("Continue?", "The mod is not valid, continue anyway?", func(ok bool) {
+			if ok {
+				callback()
+			}
+		}, state.Window)
+	} else {
+		callback()
+	}
 }
 
-func (a *ModAuthorer) Marshal(asJson bool) (b []byte, err error) {
+func (a *ModAuthorer) Marshal(mod *mods.Mod, asJson bool) (b []byte, err error) {
 	if asJson {
-		b, err = json.MarshalIndent(a.compileMod(), "", "\t")
+		b, err = json.MarshalIndent(mod, "", "\t")
 	} else {
-		b, err = xml.MarshalIndent(a.compileMod(), "", "\t")
+		b, err = xml.MarshalIndent(mod, "", "\t")
 	}
 	return
 }
@@ -273,13 +297,27 @@ func (a *ModAuthorer) compileMod() (mod *mods.Mod) {
 }
 
 func (a *ModAuthorer) saveFile(asJson bool) {
+	mod := a.compileMod()
+	if !a.validate(mod, false) {
+		dialog.ShowConfirm("Continue?", "The mod is not valid, continue anyway?", func(ok bool) {
+			if ok {
+				a.save(mod, asJson)
+			}
+		}, state.Window)
+	} else {
+		a.save(mod, asJson)
+	}
+}
+
+func (a *ModAuthorer) save(mod *mods.Mod, asJson bool) {
 	var (
-		b, err = a.Marshal(asJson)
-		ext    string
-		file   string
-		save   = true
+		b    []byte
+		ext  string
+		file string
+		save = true
+		err  error
 	)
-	if err != nil {
+	if b, err = a.Marshal(mod, asJson); err != nil {
 		dialog.ShowError(err, state.Window)
 		return
 	}
@@ -314,11 +352,14 @@ func (a *ModAuthorer) saveFile(asJson bool) {
 	}
 }
 
-func (a *ModAuthorer) validate() {
+func (a *ModAuthorer) validate(mod *mods.Mod, showMessage bool) bool {
 	s := a.compileMod().Validate()
-	if s != "" {
-		dialog.ShowError(errors.New(s), state.Window)
-	} else {
-		dialog.ShowInformation("", "Mod is valid", state.Window)
+	if showMessage {
+		if s != "" {
+			dialog.ShowError(errors.New(s), state.Window)
+		} else {
+			dialog.ShowInformation("", "Mod is valid", state.Window)
+		}
 	}
+	return s == ""
 }

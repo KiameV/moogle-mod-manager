@@ -266,7 +266,7 @@ func (m *Mod) Validate() string {
 		if ad.IsEmpty() {
 			sb.WriteString(fmt.Sprintf("AlwaysDownload [%s]' Must have at least one File or Dir specified\n", ad.DownloadName))
 		}
-		if _, ok := dlableNames[ad.DownloadName]; ok {
+		if _, ok := dlableNames[ad.DownloadName]; !ok {
 			sb.WriteString("Always Download's downloadable doesn't exist\n")
 		}
 	}
@@ -290,7 +290,7 @@ func (m *Mod) Validate() string {
 				sb.WriteString(fmt.Sprintf("Configuration's [%s] Choice [%s]'s Next Configuration Name must not be the same as the Configuration's Name\n", c.Name, ch.Name))
 			}
 			if ch.DownloadFiles != nil && ch.DownloadFiles.DownloadName != "" {
-				if _, ok := dlableNames[ch.DownloadFiles.DownloadName]; ok {
+				if _, ok := dlableNames[ch.DownloadFiles.DownloadName]; !ok {
 					sb.WriteString(fmt.Sprintf("Configuration's [%s] Choice [%s]'s downloadable doesn't exist\n", c.Name, ch.Name))
 				}
 			}
