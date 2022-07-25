@@ -23,7 +23,7 @@ var (
 )
 
 type managedModsAndFiles struct {
-	Mods map[string]modFiles
+	Mods map[string]*modFiles
 }
 
 type modFiles struct {
@@ -39,12 +39,9 @@ func AddModFiles(game config.Game, tm *model.TrackedMod, files []*mods.DownloadF
 	)
 	if !ok {
 		mmf = &managedModsAndFiles{
-			Mods: make(map[string]modFiles),
+			Mods: make(map[string]*modFiles),
 		}
 		managed[game] = mmf
-	}
-	if _, found := mmf.Mods[tm.GetModID()]; found {
-		return fmt.Errorf("%s is already enabled", tm.Mod.Name)
 	}
 
 	if collisions := detectCollisions(nil, files); len(collisions) > 0 {
@@ -64,10 +61,15 @@ func AddModFiles(game config.Game, tm *model.TrackedMod, files []*mods.DownloadF
 		}
 	}
 
-	mf := modFiles{
-		BackedUpFiles: make(map[string]*mods.ModFile),
-		MovedFiles:    make(map[string]*mods.ModFile),
+	mf, found := mmf.Mods[tm.GetModID()]
+	if !found {
+		mf = &modFiles{
+			BackedUpFiles: make(map[string]*mods.ModFile),
+			MovedFiles:    make(map[string]*mods.ModFile),
+		}
+		mmf.Mods[tm.GetModID()] = mf
 	}
+
 	for _, f := range backedUp {
 		mf.BackedUpFiles[f.From] = f
 	}
@@ -79,25 +81,55 @@ func AddModFiles(game config.Game, tm *model.TrackedMod, files []*mods.DownloadF
 	return saveManagedJson()
 }
 
-func RemoveModFiles(game config.Game, modID string) error {
-	/*m, ok := managed[game]
+func RemoveModFiles(game config.Game, tm *model.TrackedMod) (err error) {
+	var (
+		mmf, ok = managed[game]
+		mf      *modFiles
+	)
 	if !ok {
-		return nil
+		return fmt.Errorf("%s is not enabled", tm.Mod.Name)
 	}
-	for i, mf := range m.Mods {
-		if modID == mf.ModID {
-			m.Mods[i] = m.Mods[len(m.Mods)-1]
-			m.Mods = m.Mods[:len(m.Mods)-1]
-			if err := io.RevertMoveFiles(mf.Files, game); err != nil {
-				return err
+	if mf, ok = mmf.Mods[tm.GetModID()]; !ok {
+		return fmt.Errorf("%s is not enabled", tm.Mod.Name)
+	}
+
+	handled := make([]string, 0, len(mf.MovedFiles))
+	for k, f := range mf.MovedFiles {
+		if _, err = os.Stat(f.To); err == nil {
+			if err = os.Remove(f.To); err != nil {
+				break
 			}
-			for _, f := range mf.Files {
-				delete(m.AllFiles, f)
+		}
+		handled = append(handled, k)
+	}
+	for _, h := range handled {
+		delete(mf.MovedFiles, h)
+	}
+
+	handled = make([]string, 0, len(mf.BackedUpFiles))
+	for k, f := range mf.BackedUpFiles {
+		if _, err = os.Stat(f.From); err == nil {
+			if err = os.Remove(f.From); err != nil {
+				return
 			}
+		}
+		if err = moveFile(cut, f.To, f.From, nil); err != nil {
 			break
 		}
-	}*/
-	return saveManagedJson()
+		handled = append(handled, k)
+	}
+	for _, h := range handled {
+		delete(mf.BackedUpFiles, h)
+	}
+
+	_ = saveManagedJson()
+
+	if err != nil {
+		return err
+	}
+
+	delete(mmf.Mods, tm.GetModID())
+	return
 }
 
 func detectCollisions(managedFiles map[string]bool, modFiles []*mods.DownloadFiles) (collisions []string) {

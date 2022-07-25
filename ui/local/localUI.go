@@ -68,7 +68,7 @@ func (ui *localUI) Draw(w fyne.Window) {
 			}))
 		removeButton = widget.NewButton("Remove", func() {
 			if ui.selectedMod != nil {
-				if err := managed.RemoveMod(*state.CurrentGame, ui.selectedMod.GetModID()); err != nil {
+				if err := managed.RemoveMod(*state.CurrentGame, ui.selectedMod); err != nil {
 					dialog.ShowError(err, state.Window)
 					return
 				}

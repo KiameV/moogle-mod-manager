@@ -7,6 +7,7 @@ import (
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods/managed/cache"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -222,6 +223,7 @@ func (m *Mod) Validate() string {
 		}
 	}
 
+	dlableNames := make(map[string]bool)
 	if len(m.Downloadables) == 0 {
 		sb.WriteString("Must have at least one Downloadables\n")
 	}
@@ -229,8 +231,27 @@ func (m *Mod) Validate() string {
 		if d.Name == "" {
 			sb.WriteString("Downloadables' name is required\n")
 		}
+		if strings.Index(d.Name, " ") != -1 {
+			sb.WriteString(fmt.Sprintf("Downloadables [%s]'s name cannot contain spaces\n"))
+		}
 		if len(d.Sources) == 0 {
 			sb.WriteString(fmt.Sprintf("Downloadables [%s]'s Source is required\n", d.Name))
+		}
+		for _, s := range d.Sources {
+			u, err := url.Parse(s)
+			if err != nil {
+				sb.WriteString(fmt.Sprintf("Downloadables [%s]'s Source [%s] is not a valid url: %v\n", d.Name, s, err))
+			}
+			i := strings.LastIndex(u.Path, "/")
+			j := strings.LastIndex(u.Path, ".")
+			if i == -1 || j == -1 {
+				sb.WriteString(fmt.Sprintf("Downloadables [%s]'s Source [%s] is not a valid url, maybe missing .zip/.rar/.7z\n", d.Name, s))
+			}
+			s = u.Path[i+1 : j]
+			if d.Name != s {
+				sb.WriteString(fmt.Sprintf("Downloadables [%s]'s Source [%s] must be the same as the name after the extension is removed\n", d.Name, s))
+			}
+			dlableNames[s] = true
 		}
 		if d.InstallType == "" {
 			sb.WriteString(fmt.Sprintf("Downloadables [%s]'s Install Type is required\n", d.Name))
@@ -244,6 +265,9 @@ func (m *Mod) Validate() string {
 	for _, ad := range m.AlwaysDownload {
 		if ad.IsEmpty() {
 			sb.WriteString(fmt.Sprintf("AlwaysDownload [%s]' Must have at least one File or Dir specified\n", ad.DownloadName))
+		}
+		if _, ok := dlableNames[ad.DownloadName]; ok {
+			sb.WriteString("Always Download's downloadable doesn't exist\n")
 		}
 	}
 
@@ -263,7 +287,12 @@ func (m *Mod) Validate() string {
 				sb.WriteString(fmt.Sprintf("Configuration's [%s] Choice's Name is required\n", c.Name))
 			}
 			if ch.NextConfigurationName != nil && *ch.NextConfigurationName == c.Name {
-				sb.WriteString(fmt.Sprintf("Configuration's [%s] Choice's Next Configuration Name must not be the same as the Configuration's Name\n", c.Name))
+				sb.WriteString(fmt.Sprintf("Configuration's [%s] Choice [%s]'s Next Configuration Name must not be the same as the Configuration's Name\n", c.Name, ch.Name))
+			}
+			if ch.DownloadFiles != nil && ch.DownloadFiles.DownloadName != "" {
+				if _, ok := dlableNames[ch.DownloadFiles.DownloadName]; ok {
+					sb.WriteString(fmt.Sprintf("Configuration's [%s] Choice [%s]'s downloadable doesn't exist\n", c.Name, ch.Name))
+				}
 			}
 		}
 		if c.Root {
@@ -275,6 +304,7 @@ func (m *Mod) Validate() string {
 	} else if roots > 1 {
 		sb.WriteString("Only one 'Root' Configuration is allowed\n")
 	}
+
 	return sb.String()
 }
 

@@ -239,7 +239,7 @@ func createPath(path string) (string, error) {
 
 func DisableMod(game config.Game, tm *model.TrackedMod) (err error) {
 	// TODO
-	return
+	return RemoveModFiles(game, tm)
 }
 
 func confirmDownloads(tis []*mods.ToInstall, callback func()) {
@@ -264,14 +264,14 @@ func confirmDownloads(tis []*mods.ToInstall, callback func()) {
 	d.Show()
 }
 
-func RemoveMod(game config.Game, modID string) error {
+func RemoveMod(game config.Game, tm *model.TrackedMod) error {
 	gm := lookup[game].Mods
 	for i, m := range gm {
-		if m.Mod.ID != modID {
-			return fmt.Errorf("failed to find %s", modID)
+		if m.Mod.ID != tm.GetModID() {
+			return fmt.Errorf("failed to find %s", tm.Mod.Name)
 		}
 		if m.Enabled {
-			if err := RemoveModFiles(game, modID); err != nil {
+			if err := RemoveModFiles(game, tm); err != nil {
 
 			}
 		}
