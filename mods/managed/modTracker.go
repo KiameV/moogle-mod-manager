@@ -17,12 +17,11 @@ import (
 	"github.com/kiamev/moogle-mod-manager/ui/state"
 	"io/ioutil"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
 )
 
 const (
-	moogleModName  = "mod.moogle"
 	modTrackerName = "tracker.json"
 )
 
@@ -36,7 +35,7 @@ var lookup = make([]*trackedModsForGame, 6)
 
 func Initialize() (err error) {
 	var (
-		f = path.Join(config.PWD, modTrackerName)
+		f = filepath.Join(config.PWD, modTrackerName)
 		b []byte
 	)
 	if _, err = os.Stat(f); err != nil {
@@ -55,7 +54,7 @@ func Initialize() (err error) {
 	}
 	for _, tms := range lookup {
 		for _, tm := range tms.Mods {
-			if b, err = readFile(path.Join(tm.Dir, moogleModName)); err != nil {
+			if b, err = readFile(tm.MoogleModFile); err != nil {
 				return
 			}
 			var mod *mods.Mod
@@ -77,7 +76,7 @@ func AddModFromFile(game config.Game, file string) (tm *model.TrackedMod, err er
 		return
 	}
 
-	ext := path.Ext(file)
+	ext := filepath.Ext(file)
 	if ext == ".xml" {
 		err = xml.Unmarshal(b, &mod)
 	} else if ext == ".json" {
@@ -92,7 +91,7 @@ func AddModFromFile(game config.Game, file string) (tm *model.TrackedMod, err er
 		return nil, fmt.Errorf("failed to load mod:\n%s", s)
 	}
 
-	tm = model.NewTrackerMod(game, mod)
+	tm = model.NewTrackerMod(mod, game)
 	err = AddMod(game, tm)
 	return
 }
@@ -112,7 +111,7 @@ func AddModFromUrl(game config.Game, url string) (tm *model.TrackedMod, err erro
 		return nil, fmt.Errorf("failed to load mod: %v", err)
 	}
 
-	tm = model.NewTrackerMod(game, mod)
+	tm = model.NewTrackerMod(mod, game)
 	err = AddMod(game, tm)
 	return
 }
@@ -131,7 +130,6 @@ func AddMod(game config.Game, tm *model.TrackedMod) (err error) {
 				return errors.New("mod already added")
 			}
 		}
-		m.Mods = append(m.Mods, tm)
 	}
 
 	var (
@@ -141,12 +139,14 @@ func AddMod(game config.Game, tm *model.TrackedMod) (err error) {
 	if b, err = json.MarshalIndent(tm.Mod, "", "\t"); err != nil {
 		return
 	}
-	if _, err = os.Stat(tm.GetDir()); os.IsNotExist(err) {
-		if err = os.MkdirAll(tm.GetDir(), 0755); err != nil {
+
+	modPath := filepath.Join(config.Get().GetModsFullPath(game), tm.GetDirSuffix())
+	if _, err = os.Stat(modPath); os.IsNotExist(err) {
+		if err = os.MkdirAll(modPath, 0777); err != nil {
 			return
 		}
 	}
-	if f, err = os.Create(path.Join(tm.GetDir(), moogleModName)); err != nil {
+	if f, err = os.Create(tm.MoogleModFile); err != nil {
 		return
 	}
 	defer func() { _ = f.Close() }()
@@ -154,6 +154,11 @@ func AddMod(game config.Game, tm *model.TrackedMod) (err error) {
 		return
 	}
 
+	for _, g := range tm.Mod.Games {
+		i := int(config.NameToGame(g.Name))
+		m := lookup[i]
+		m.Mods = append(m.Mods, tm)
+	}
 	return saveToJson()
 }
 
@@ -176,8 +181,9 @@ func EnableMod(game config.Game, tm *model.TrackedMod, tis []*mods.ToInstall) (e
 			downloadDir string
 			f           string
 			d           decompressor.Decompressor
+			modPath     = filepath.Join(config.Get().GetModsFullPath(game), tm.GetDirSuffix())
 		)
-		if downloadDir, err = createPath(path.Join(config.PWD, "downloads")); err != nil {
+		if downloadDir, err = createPath(filepath.Join(config.Get().GetDownloadFullPath(game), tm.GetDirSuffix(), tm.GetVersion())); err != nil {
 			return
 		}
 		for _, ti := range tis {
@@ -205,7 +211,7 @@ func EnableMod(game config.Game, tm *model.TrackedMod, tis []*mods.ToInstall) (e
 			if d, err = decompressor.NewDecompressor(ti.Download.DownloadedLoc); err != nil {
 				return
 			}
-			if err = d.DecompressTo(tm.GetDir()); err != nil {
+			if err = d.DecompressTo(modPath); err != nil {
 				return
 			}
 		}
@@ -281,7 +287,7 @@ func readModDef(dir string) (mod *mods.Mod, err error) {
 */
 func readXml(dir string, name string, to interface{}) (err error) {
 	var (
-		f = path.Join(dir, name)
+		f = filepath.Join(dir, name)
 		b []byte
 	)
 	if b, err = readFile(f); err != nil {
@@ -293,7 +299,7 @@ func readXml(dir string, name string, to interface{}) (err error) {
 
 func readJson(dir string, name string, to interface{}) (err error) {
 	var (
-		f = path.Join(dir, name)
+		f = filepath.Join(dir, name)
 		b []byte
 	)
 	if b, err = readFile(f); err != nil {
@@ -319,5 +325,5 @@ func saveToJson() error {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(path.Join(config.PWD, modTrackerName), b, 0755)
+	return ioutil.WriteFile(filepath.Join(config.PWD, modTrackerName), b, 0755)
 }

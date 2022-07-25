@@ -3,21 +3,25 @@ package model
 import (
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
-	"path"
+	"github.com/kiamev/moogle-mod-manager/util"
+	"path/filepath"
 )
 
-func NewTrackerMod(game config.Game, mod *mods.Mod) *TrackedMod {
-	return &TrackedMod{
+const moogleModName = "mod.moogle"
+
+func NewTrackerMod(mod *mods.Mod, game config.Game) *TrackedMod {
+	tm := &TrackedMod{
 		Enabled: false,
 		Mod:     mod,
-		Dir:     path.Join(config.Get().GetModDir(game), mod.ID),
 	}
+	tm.MoogleModFile = filepath.Join(config.Get().GetModsFullPath(game), tm.GetDirSuffix(), moogleModName)
+	return tm
 }
 
 type TrackedMod struct {
-	Enabled bool      `json:"Enabled"`
-	Dir     string    `json:"Dir"`
-	Mod     *mods.Mod `json:"-"`
+	Enabled       bool      `json:"Enabled"`
+	MoogleModFile string    `json:"MoogleModFile"`
+	Mod           *mods.Mod `json:"-"`
 }
 
 func (m *TrackedMod) IsEnabled() bool {
@@ -37,10 +41,14 @@ func (m *TrackedMod) GetModID() string {
 	return m.Mod.ID
 }
 
-func (m *TrackedMod) GetDir() string {
-	return m.Dir
+func (m *TrackedMod) GetDirSuffix() string {
+	return util.CreateFileName(m.GetModID())
 }
 
 func (m *TrackedMod) GetMod() *mods.Mod {
 	return m.Mod
+}
+
+func (m *TrackedMod) GetVersion() string {
+	return util.CreateFileName(m.Mod.Version)
 }

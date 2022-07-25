@@ -14,6 +14,8 @@ import (
 	cw "github.com/kiamev/moogle-mod-manager/ui/custom-widgets"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
 	"github.com/ncruces/zenity"
+	"net/url"
+	"path/filepath"
 )
 
 type LocalUI interface {
@@ -41,6 +43,7 @@ func (ui *localUI) GetSelected() *model.TrackedMod {
 func (ui *localUI) Draw(w fyne.Window) {
 	ui.data = binding.NewUntypedList()
 	var (
+		split   *container.Split
 		modList = widget.NewListWithData(
 			ui.data,
 			func() fyne.CanvasObject {
@@ -73,7 +76,6 @@ func (ui *localUI) Draw(w fyne.Window) {
 				ui.Draw(w)
 			}
 		})
-		modDetails = container.NewScroll(container.NewMax())
 	)
 
 	for _, mod := range managed.GetMods(*state.CurrentGame) {
@@ -89,23 +91,22 @@ func (ui *localUI) Draw(w fyne.Window) {
 		if i, ok := cw.GetValueFromDataItem(data); ok {
 			ui.selectedMod = i.(*model.TrackedMod)
 			removeButton.Enable()
-			modDetails.Content = container.NewCenter(widget.NewLabel("Loading..."))
-			modDetails.Refresh()
-			modDetails.Content = ui.createPreview(ui.selectedMod.Mod)
-			modDetails.Refresh()
+			split.Trailing = container.NewCenter(widget.NewLabel("Loading..."))
+			split.Refresh()
+			split.Trailing = ui.createPreview(ui.selectedMod.Mod)
+			split.Refresh()
 		}
 	}
 	modList.OnUnselected = func(id widget.ListItemID) {
 		ui.selectedMod = nil
 		removeButton.Disable()
-		modDetails.Hide()
+		split.Trailing = container.NewMax()
 	}
 
 	buttons := container.NewHBox(addButton, widget.NewSeparator(), removeButton)
-
-	split := container.NewHSplit(
+	split = container.NewHSplit(
 		modList,
-		modDetails)
+		container.NewMax())
 	split.SetOffset(0.25)
 
 	w.SetContent(container.NewBorder(
@@ -122,7 +123,7 @@ func (ui *localUI) createPreview(mod *mods.Mod) fyne.CanvasObject {
 		ui.createField("Name", mod.Name),
 		ui.createMultiLineField("Description", mod.Description),
 		ui.createField("Version", mod.Version),
-		ui.createField("Link", mod.Link),
+		ui.createLink("Link", mod.Link),
 		ui.createField("Author", mod.Author),
 		ui.createField("Category", mod.Category),
 		ui.createField("Release Date", mod.ReleaseDate),
@@ -144,6 +145,17 @@ func (ui *localUI) createField(name, value string) *fyne.Container {
 	return container.NewHBox(
 		widget.NewLabelWithStyle(name, fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
 		widget.NewLabel(value),
+	)
+}
+
+func (ui *localUI) createLink(name, value string) *fyne.Container {
+	url, err := url.ParseRequestURI(value)
+	if err != nil {
+		return ui.createField(name, value)
+	}
+	return container.NewHBox(
+		widget.NewLabelWithStyle(name, fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
+		widget.NewHyperlink(value, url),
 	)
 }
 
@@ -213,16 +225,17 @@ func (ui *localUI) addModToList(mod *model.TrackedMod) {
 	}
 }
 
-func (ui *localUI) toggleEnabled(mod *model.TrackedMod) bool {
+func (ui *localUI) toggleEnabled(game config.Game, mod *model.TrackedMod) bool {
 	if mod.Enabled {
-		return ui.enableMod(mod)
+		return ui.enableMod(game, mod)
 	}
 	return ui.disableMod(mod)
 }
 
-func (ui *localUI) enableMod(tm *model.TrackedMod) bool {
+func (ui *localUI) enableMod(game config.Game, tm *model.TrackedMod) bool {
 	if len(tm.Mod.Configurations) > 0 {
-		if err := state.GetScreen(state.ConfigInstaller).(ci.ConfigInstaller).Setup(tm.Mod, tm.GetDir(), func(tis []*mods.ToInstall) error {
+		var modPath = filepath.Join(config.Get().GetModsFullPath(game), tm.GetDirSuffix())
+		if err := state.GetScreen(state.ConfigInstaller).(ci.ConfigInstaller).Setup(tm.Mod, modPath, func(tis []*mods.ToInstall) error {
 			return managed.EnableMod(*state.CurrentGame, tm, tis)
 		}); err != nil {
 			dialog.ShowError(err, state.Window)

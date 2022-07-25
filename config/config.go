@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path"
 	"path/filepath"
 )
 
@@ -31,6 +30,8 @@ type Configs struct {
 	DirIV       string `json:"dir4"`
 	DirV        string `json:"dir5"`
 	DirVI       string `json:"dir6"`
+	ModsDir     string `json:"modDir"`
+	ImgCacheDir string `json:"imgCacheDir"`
 	DownloadDir string `json:"downloadDir"`
 	BackupDir   string `json:"backupDir"`
 }
@@ -39,61 +40,19 @@ func Get() *Configs {
 	return configs
 }
 
-func (c *Configs) SetGameDir(dir string, game Game) {
-	switch game {
-	case I:
-		c.DirI = dir
-	case II:
-		c.DirII = dir
-	case III:
-		c.DirIII = dir
-	case IV:
-		c.DirIV = dir
-	case V:
-		c.DirV = dir
-	case VI:
-		c.DirVI = dir
-	}
+func (c *Configs) GetModsFullPath(game Game) string {
+	return filepath.Join(c.ModsDir, c.GetGameDirSuffix(game))
 }
 
-func (c *Configs) GetModDir(game Game) (dir string) {
-	switch game {
-	case I:
-		dir = c.DirI
-		if dir == "" {
-			dir = "I"
-		}
-	case II:
-		dir = c.DirII
-		if dir == "" {
-			dir = "II"
-		}
-	case III:
-		dir = c.DirIII
-		if dir == "" {
-			dir = "III"
-		}
-	case IV:
-		dir = c.DirIV
-		if dir == "" {
-			dir = "IV"
-		}
-	case V:
-		dir = c.DirV
-		if dir == "" {
-			dir = "V"
-		}
-	case VI:
-		dir = c.DirVI
-		if dir == "" {
-			dir = "VI"
-		}
-	}
-	dir = path.Join(PWD, "mods", dir)
-	return
+func (c *Configs) GetDownloadFullPath(game Game) string {
+	return filepath.Join(c.DownloadDir, c.GetGameDirSuffix(game))
 }
 
-func GetBackupDir(game Game) (s string) {
+func (c *Configs) GetBackupFullPath(game Game) string {
+	return filepath.Join(c.BackupDir, c.GetGameDirSuffix(game))
+}
+
+func (c *Configs) GetGameDirSuffix(game Game) (s string) {
 	switch game {
 	case I:
 		s = "I"
@@ -108,12 +67,15 @@ func GetBackupDir(game Game) (s string) {
 	case VI:
 		s = "VI"
 	}
-	s = path.Join(PWD, "backup", s)
 	return
 }
 
 func (c *Configs) Initialize() (err error) {
 	var b []byte
+	if PWD, err = os.Getwd(); err != nil {
+		PWD = "."
+	}
+
 	p := filepath.Join(PWD, configsFile)
 	if _, err = os.Stat(p); err == nil {
 		if b, err = os.ReadFile(p); err != nil {
@@ -124,6 +86,10 @@ func (c *Configs) Initialize() (err error) {
 		}
 	} else {
 		c.FirstTime = true
+		c.ModsDir = filepath.Join(PWD, "mods")
+		c.ImgCacheDir = filepath.Join(PWD, "imgCache")
+		c.DownloadDir = filepath.Join(PWD, "downloads")
+		c.BackupDir = filepath.Join(PWD, "backups")
 	}
 	return nil
 }

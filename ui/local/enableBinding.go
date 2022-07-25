@@ -3,6 +3,7 @@ package local
 import (
 	"fyne.io/fyne/v2/data/binding"
 	"github.com/kiamev/moogle-mod-manager/mods/managed/model"
+	"github.com/kiamev/moogle-mod-manager/ui/state"
 )
 
 type enableBind struct {
@@ -26,7 +27,7 @@ func newEnableBind(localUI *localUI, mod *model.TrackedMod) *enableBind {
 
 func (b *enableBind) DataChanged() {
 	if b.orig != b.mod.Enabled {
-		if ok := b.localUI.toggleEnabled(b.mod); ok {
+		if ok := b.localUI.toggleEnabled(*state.CurrentGame, b.mod); ok {
 			b.orig = b.mod.Enabled
 		}
 	}

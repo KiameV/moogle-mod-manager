@@ -12,11 +12,21 @@ import (
 
 func Download(url, toDir string) (string, error) {
 	var (
-		buf, name, err = download(url)
-		out            *os.File
-		file           = path.Join(toDir, name)
+		name, err = getName(url)
+		buf       *bytes.Buffer
+		out       *os.File
+		file      = path.Join(toDir, name)
 	)
 	if err != nil {
+		return "", err
+	}
+
+	if _, err = os.Stat(file); err == nil {
+		// Already downloaded
+		return file, nil
+	}
+
+	if buf, err = download(url); err != nil {
 		return "", err
 	}
 
@@ -32,7 +42,7 @@ func Download(url, toDir string) (string, error) {
 }
 
 func DownloadAsString(url string) (string, error) {
-	buf, _, err := download(url)
+	buf, err := download(url)
 	if err != nil {
 		return "", err
 	}
@@ -40,36 +50,38 @@ func DownloadAsString(url string) (string, error) {
 }
 
 func DownloadAsBytes(url string) ([]byte, error) {
-	buf, _, err := download(url)
+	buf, err := download(url)
 	if err != nil {
 		return nil, err
 	}
 	return buf.Bytes(), nil
 }
 
-func download(url string) (buf *bytes.Buffer, name string, err error) {
-	var (
-		resp *http.Response
-		sp   = strings.Split(url, "/")
-	)
+func download(url string) (buf *bytes.Buffer, err error) {
+	var resp *http.Response
 	if resp, err = http.Get(url); err != nil {
 		return
 	}
 	defer func() { resp.Body.Close() }()
 
-	if len(sp) == 0 {
-		err = fmt.Errorf("invalid url: %s", url)
-		return
-	}
-
 	if resp.StatusCode != 200 {
 		err = fmt.Errorf("failed to download the mod's source at %s", url)
 		return
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	buf = new(bytes.Buffer)
 	_, err = buf.ReadFrom(resp.Body)
+
+	return
+}
+
+func getName(url string) (name string, err error) {
+	sp := strings.Split(url, "/")
+	if len(sp) == 0 {
+		err = fmt.Errorf("invalid url: %s", url)
+		return
+	}
 	name = sp[len(sp)-1]
 	if i := strings.Index(name, "?"); i >= 0 {
 		name = name[:i]

@@ -5,6 +5,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/dialog"
 	"github.com/kiamev/moogle-mod-manager/browser"
+	"github.com/kiamev/moogle-mod-manager/ui/configure"
 	"github.com/kiamev/moogle-mod-manager/ui/local"
 	a "github.com/kiamev/moogle-mod-manager/ui/mod-author"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
@@ -32,12 +33,7 @@ func (m *MainMenu) Draw(w fyne.Window) {
 	}
 	file.Items = append(file.Items,
 		fyne.NewMenuItem("Configure", func() {
-			/*widget.NewButton("Dark", func() {
-				a.Settings().SetTheme(theme.DarkTheme())
-			}),
-			widget.NewButton("Light", func() {
-				a.Settings().SetTheme(theme.LightTheme())
-			}),*/
+			configure.Show(w)
 		}),
 		fyne.NewMenuItem("Check For Updates", func() {
 			if newer, newerVersion, err := browser.CheckForUpdate(); err != nil {

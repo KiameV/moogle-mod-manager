@@ -18,31 +18,9 @@ import (
 )
 
 func main() {
-	var err error
 	state.App = app.New()
 	state.Window = state.App.NewWindow("Moogle Mod Manager " + browser.Version)
-	if err = managed.Initialize(); err != nil {
-		dialog.ShowError(err, state.Window)
-	}
-	if err = authored.Initialize(); err != nil {
-		dialog.ShowError(err, state.Window)
-	}
-	configs := config.Get()
-	if err = configs.Initialize(); err != nil {
-		dialog.ShowError(err, state.Window)
-	}
-
-	{
-		size := fyne.NewSize(config.WindowWidth, config.WindowHeight)
-		if x := configs.WindowX; x != 0 {
-			size.Width = float32(x)
-		}
-		if y := configs.WindowY; y != 0 {
-			size.Height = float32(y)
-		}
-		state.Window.Resize(size)
-	}
-
+	initialize()
 	/*
 		var tag language.Tag
 		if tag, err = locale.Detect(); err != nil {
@@ -68,4 +46,27 @@ func main() {
 	}
 
 	state.Window.ShowAndRun()
+}
+
+func initialize() {
+	var err error
+	if err = managed.Initialize(); err != nil {
+		dialog.ShowError(err, state.Window)
+	}
+	if err = authored.Initialize(); err != nil {
+		dialog.ShowError(err, state.Window)
+	}
+	configs := config.Get()
+	if err = configs.Initialize(); err != nil {
+		dialog.ShowError(err, state.Window)
+	}
+	size := fyne.NewSize(config.WindowWidth, config.WindowHeight)
+	if x := configs.WindowX; x != 0 {
+		size.Width = float32(x)
+	}
+	if y := configs.WindowY; y != 0 {
+		size.Height = float32(y)
+	}
+	state.Window.Resize(size)
+
 }
