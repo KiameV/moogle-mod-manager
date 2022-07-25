@@ -168,19 +168,40 @@ func MoveFiles(files []*mods.ModFile, modDir string, toDir string, backupDir str
 }
 
 func MoveDirs(dirs []*mods.ModDir, modDir string, toDir string, backupDir string, replacedFiles *[]*mods.ModFile, movedFiles *[]*mods.ModFile) (err error) {
-	/*var (
-		toDir     = config.GetModDir(game)
-		backupDir = config.GetBackupDir(game)
-	)
-	for _, f := range files {
-		if err = os.Rename(path.Join(toDir, f.To), path.Join(backupDir, f.To)); err != nil {
-			break
+	var mf []*mods.ModFile
+	for _, d := range dirs {
+		fromDir := strings.ReplaceAll(d.From, "\\", "/")
+		for len(fromDir) > 0 && (fromDir[0] == '.' || fromDir[0] == '/') {
+			fromDir = fromDir[1:]
 		}
-		if err = copy(path.Join(modDir, f.From), path.Join(toDir, f.To)); err != nil {
-			break
+		if err = filepath.Walk(filepath.Join(modDir, d.From),
+			func(path string, info os.FileInfo, err error) error {
+				if err != nil {
+					return err
+				}
+				if info.IsDir() {
+					return nil
+				}
+
+				f := &mods.ModFile{
+					From: strings.ReplaceAll(path, "\\", "/"),
+					To:   d.To,
+				}
+				if i := strings.Index(f.From, fromDir); i != -1 {
+					f.From = f.From[i:]
+				}
+				if i := strings.Index(f.From, fromDir); i != -1 {
+					f.To = f.From[i+len(fromDir):]
+
+				}
+				f.To = filepath.Join(d.To, f.To)
+				mf = append(mf, f)
+				return nil
+			}); err != nil {
+			return
 		}
-	}*/
-	return
+	}
+	return MoveFiles(mf, modDir, toDir, backupDir, replacedFiles, movedFiles)
 }
 
 func moveFile(action action, from, to string, backedUp *[]*mods.ModFile) (err error) {
