@@ -1,6 +1,7 @@
 package model
 
 import (
+	"fyne.io/fyne/v2/data/binding"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/util"
@@ -19,9 +20,11 @@ func NewTrackerMod(mod *mods.Mod, game config.Game) *TrackedMod {
 }
 
 type TrackedMod struct {
-	Enabled       bool      `json:"Enabled"`
-	MoogleModFile string    `json:"MoogleModFile"`
-	Mod           *mods.Mod `json:"-"`
+	Enabled       bool           `json:"Enabled"`
+	MoogleModFile string         `json:"MoogleModFile"`
+	Mod           *mods.Mod      `json:"-"`
+	NameBinding   binding.String `json:"-"`
+	UpdatedMod    *mods.Mod      `json:"-"`
 }
 
 func (m *TrackedMod) IsEnabled() bool {

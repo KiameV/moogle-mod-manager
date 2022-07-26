@@ -132,25 +132,7 @@ func AddMod(game config.Game, tm *model.TrackedMod) (err error) {
 		}
 	}
 
-	var (
-		b []byte
-		f *os.File
-	)
-	if b, err = json.MarshalIndent(tm.Mod, "", "\t"); err != nil {
-		return
-	}
-
-	modPath := filepath.Join(config.Get().GetModsFullPath(game), tm.GetDirSuffix())
-	if _, err = os.Stat(modPath); os.IsNotExist(err) {
-		if err = os.MkdirAll(filepath.Dir(modPath), 0777); err != nil {
-			return
-		}
-	}
-	if f, err = os.Create(tm.MoogleModFile); err != nil {
-		return
-	}
-	defer func() { _ = f.Close() }()
-	if _, err = f.Write(b); err != nil {
+	if err = saveMoogle(game, tm); err != nil {
 		return
 	}
 
@@ -159,6 +141,24 @@ func AddMod(game config.Game, tm *model.TrackedMod) (err error) {
 		m := lookup[i]
 		m.Mods = append(m.Mods, tm)
 	}
+	return saveToJson()
+}
+
+func UpdateMod(game config.Game, tm *model.TrackedMod) (err error) {
+	if err = tm.GetMod().Supports(game); err != nil {
+		return
+	}
+
+	if err = DisableMod(game, tm); err != nil {
+		return
+	}
+
+	tm.Mod = tm.UpdatedMod
+	if err = saveMoogle(game, tm); err != nil {
+		return
+	}
+
+	tm.UpdatedMod = nil
 	return saveToJson()
 }
 
@@ -330,4 +330,29 @@ func saveToJson() error {
 		return err
 	}
 	return ioutil.WriteFile(filepath.Join(config.PWD, modTrackerName), b, 0755)
+}
+
+func saveMoogle(game config.Game, tm *model.TrackedMod) (err error) {
+	var (
+		b []byte
+		f *os.File
+	)
+	if b, err = json.MarshalIndent(tm.Mod, "", "\t"); err != nil {
+		return
+	}
+
+	modPath := filepath.Join(config.Get().GetModsFullPath(game), tm.GetDirSuffix())
+	if _, err = os.Stat(modPath); os.IsNotExist(err) {
+		if err = os.MkdirAll(filepath.Dir(modPath), 0777); err != nil {
+			return
+		}
+	}
+	if f, err = os.Create(tm.MoogleModFile); err != nil {
+		return
+	}
+	defer func() { _ = f.Close() }()
+	if _, err = f.Write(b); err != nil {
+		return
+	}
+	return
 }

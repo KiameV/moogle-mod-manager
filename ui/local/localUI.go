@@ -1,11 +1,14 @@
 package local
 
 import (
+	"encoding/json"
+	"errors"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
+	"github.com/kiamev/moogle-mod-manager/browser"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/mods/managed"
@@ -54,7 +57,11 @@ func (ui *localUI) Draw(w fyne.Window) {
 				if i, ok := cw.GetValueFromDataItem(item); ok {
 					if tm, ok = i.(*model.TrackedMod); ok {
 						c := co.(*fyne.Container)
-						c.Objects[0].(*widget.Label).SetText(tm.Mod.Name)
+						if tm.NameBinding == nil {
+							tm.NameBinding = binding.NewString()
+							tm.NameBinding.Set(tm.Mod.Name)
+						}
+						c.Objects[0].(*widget.Label).Bind(tm.NameBinding)
 						c.Objects[1].(*widget.Check).Bind(newEnableBind(ui, tm))
 					}
 				}
@@ -76,6 +83,20 @@ func (ui *localUI) Draw(w fyne.Window) {
 				ui.Draw(w)
 			}
 		})
+		checkAll = widget.NewButton("Check All", func() {
+			for i := 0; i < ui.data.Length(); i++ {
+				if j, err := ui.data.GetItem(i); err == nil {
+					if k, ok := cw.GetValueFromDataItem(j); ok {
+						if tm, ok := k.(*model.TrackedMod); ok {
+							if ui.hasNewVersion(tm) {
+								tm.NameBinding.Set(tm.Mod.Name + " (New Version)")
+							}
+						}
+					}
+				}
+			}
+			dialog.ShowInformation("Check for updates", "Done checking for updates.", state.Window)
+		})
 	)
 
 	for _, mod := range managed.GetMods(*state.CurrentGame) {
@@ -93,7 +114,7 @@ func (ui *localUI) Draw(w fyne.Window) {
 			removeButton.Enable()
 			split.Trailing = container.NewCenter(widget.NewLabel("Loading..."))
 			split.Refresh()
-			split.Trailing = ui.createPreview(ui.selectedMod.Mod)
+			split.Trailing = ui.createPreview(ui.selectedMod)
 			split.Refresh()
 		}
 	}
@@ -103,7 +124,7 @@ func (ui *localUI) Draw(w fyne.Window) {
 		split.Trailing = container.NewMax()
 	}
 
-	buttons := container.NewHBox(addButton, widget.NewSeparator(), removeButton)
+	buttons := container.NewHBox(addButton, removeButton, checkAll)
 	split = container.NewHSplit(
 		modList,
 		container.NewMax())
@@ -118,16 +139,27 @@ func (ui *localUI) Draw(w fyne.Window) {
 		split))
 }
 
-func (ui *localUI) createPreview(mod *mods.Mod) fyne.CanvasObject {
-	c := container.NewVBox(
-		ui.createField("Name", mod.Name),
-		ui.createMultiLineField("Description", mod.Description),
-		ui.createField("Version", mod.Version),
-		ui.createLink("Link", mod.Link),
-		ui.createField("Author", mod.Author),
-		ui.createField("Category", mod.Category),
-		ui.createField("Release Date", mod.ReleaseDate),
-	)
+func (ui *localUI) createPreview(tm *model.TrackedMod) fyne.CanvasObject {
+	mod := tm.Mod
+	c := container.NewVBox()
+	if tm.UpdatedMod != nil {
+		c.Add(widget.NewButton("Update", func() {
+			if err := managed.UpdateMod(*state.CurrentGame, tm); err != nil {
+				dialog.ShowError(err, state.Window)
+				return
+			}
+			_ = tm.NameBinding.Set(tm.Mod.Name)
+			ui.enableMod(*state.CurrentGame, tm)
+		}))
+	}
+	c.Add(ui.createField("Name", mod.Name))
+	c.Add(ui.createMultiLineField("Description", mod.Description))
+	c.Add(ui.createField("Version", mod.Version))
+	c.Add(ui.createLink("Link", mod.Link))
+	c.Add(ui.createField("Author", mod.Author))
+	c.Add(ui.createField("Category", mod.Category))
+	c.Add(ui.createField("Release Date", mod.ReleaseDate))
+
 	if mod.ReleaseNotes != "" {
 		c.Add(ui.createMultiLineField("Release Notes", mod.ReleaseDate))
 	}
@@ -277,4 +309,24 @@ func (ui *localUI) disableMod(mod *model.TrackedMod) bool {
 		return false
 	}
 	return true
+}
+
+func (ui *localUI) hasNewVersion(tm *model.TrackedMod) bool {
+	var mod mods.Mod
+	for _, l := range tm.Mod.ModFileLinks {
+		if b, err := browser.DownloadAsBytes(l); err == nil {
+			if e := json.Unmarshal(b, &mod); e != nil {
+				break
+			}
+		}
+	}
+	if mod.ID == "" {
+		dialog.ShowError(errors.New("Could not download remote version for "+tm.Mod.Name), state.Window)
+		return false
+	}
+	// TODO improve!
+	if mod.Version != tm.Mod.Version {
+		tm.UpdatedMod = &mod
+	}
+	return tm.UpdatedMod != nil
 }
