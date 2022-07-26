@@ -134,6 +134,9 @@ func (ui *localUI) createPreview(mod *mods.Mod) fyne.CanvasObject {
 	if mod.ModCompatibility != nil && mod.ModCompatibility.HasItems() {
 		c.Add(ui.createCompatibility(mod.ModCompatibility))
 	}
+	if mod.DonationLinks != nil && len(mod.DonationLinks) > 0 {
+		c.Add(ui.createDonationLinks(mod.DonationLinks))
+	}
 
 	if img := mod.Preview.Get(); img != nil {
 		c = container.NewBorder(img, nil, nil, nil, c)
@@ -180,6 +183,20 @@ func (ui *localUI) createCompatibility(compatibility *mods.ModCompatibility) fyn
 		c.Add(widget.NewLabelWithStyle("  Forbids", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}))
 		for _, r := range compatibility.Requires {
 			c.Add(widget.NewLabel("  - " + r.Name + ": " + r.Source))
+		}
+	}
+	return c
+}
+
+func (ui *localUI) createDonationLinks(links []*mods.DonationLink) fyne.CanvasObject {
+	c := container.NewVBox(
+		widget.NewLabelWithStyle("Support Project", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
+	)
+	for _, r := range links {
+		if u, err := url.Parse(r.Link); err != nil {
+			c.Add(widget.NewLabel("  - " + r.Name + ": " + r.Link))
+		} else {
+			c.Add(container.NewHBox(widget.NewLabel("  - "+r.Name), widget.NewHyperlink(r.Link, u)))
 		}
 	}
 	return c

@@ -3,12 +3,15 @@ package menu
 import (
 	"fmt"
 	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/browser"
 	"github.com/kiamev/moogle-mod-manager/ui/configure"
 	"github.com/kiamev/moogle-mod-manager/ui/local"
 	a "github.com/kiamev/moogle-mod-manager/ui/mod-author"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
+	"net/url"
 )
 
 func New() state.Screen {
@@ -48,6 +51,22 @@ func (m *MainMenu) Draw(w fyne.Window) {
 			} else {
 				dialog.ShowInformation("No Updates Available", "You are running the latest version.", w)
 			}
+		}),
+		fyne.NewMenuItemSeparator(),
+		fyne.NewMenuItem("About", func() {
+			purl, _ := url.Parse("https://www.patreon.com/kiamev")
+			kurl, _ := url.Parse("https://ko-fi.com/kiamev")
+			dialog.ShowCustom("About", "ok", container.NewBorder(
+				widget.NewRichTextFromMarkdown(fmt.Sprintf(fmt.Sprintf(`
+## Moogle Mod Manager %s
+____________________________
+Written by Kiame Vivacity`,
+					browser.Version))), nil, nil, nil,
+				container.NewVBox(
+					widget.NewLabel("If you'd like to support the project:"),
+					container.NewHBox(widget.NewLabel("- Patreon"), widget.NewHyperlink("https://www.patreon.com/kiamev", purl)),
+					container.NewHBox(widget.NewLabel("- Ko-fi  "), widget.NewHyperlink("https://ko-fi.com/kiamev", kurl))),
+			), w)
 		}))
 	menus = append(menus, file)
 

@@ -48,8 +48,12 @@
 	],
 	"DonationLink": [
 		{
-			"Name": "ko-fi",
-			"Link": "https://ko-fi.com/kiamev#"
+			"Name": "Patreon",
+			"Link": "https://www.patreon.com/kiamev"
+		},
+		{
+			"Name": "Kofi",
+			"Link": "https://ko-fi.com/kiamev"
 		}
 	],
 	"Games": [
@@ -57,22 +61,24 @@
 			"Name": "FF PR VI"
 		}
 	],
-	"AlwaysDownload": [{
-		"DownloadName": "base_mod",
-		"File": [
-			{
-				"From": "./assets/file/moogles_to_manage.txt",
-				"To": "./assets/moogles_to_manage.txt"
-			}
-		],
-		"Dir": [
-			{
-				"From": "./assets/dir",
-				"To": "./assets",
-				"Recursive": false
-			}
-		]
-	}],
+	"AlwaysDownload": [
+		{
+			"DownloadName": "base_mod",
+			"File": [
+				{
+					"From": "./assets/file/moogles_to_manage.txt",
+					"To": "./assets/moogles_to_manage.txt"
+				}
+			],
+			"Dir": [
+				{
+					"From": "./assets/dir",
+					"To": "./assets",
+					"Recursive": false
+				}
+			]
+		}
+	],
 	"Configuration": [
 		{
 			"Name": "Cosmog Colors",
