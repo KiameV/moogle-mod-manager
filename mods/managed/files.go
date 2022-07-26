@@ -2,6 +2,7 @@ package managed
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
@@ -52,13 +53,31 @@ func AddModFiles(game config.Game, tm *model.TrackedMod, files []*mods.DownloadF
 	var moved []*mods.ModFile
 
 	for _, df := range files {
-		path := filepath.Join(modPath, df.DownloadName)
-		if err = MoveFiles(df.Files, path, configs.DirVI, configs.GetBackupFullPath(game), &backedUp, &moved); err != nil {
-			return err
+		modDir := filepath.Join(modPath, df.DownloadName)
+		if err = MoveFiles(df.Files, modDir, configs.DirVI, configs.GetBackupFullPath(game), &backedUp, &moved); err != nil {
+			break
 		}
-		if err = MoveDirs(df.Dirs, path, configs.DirVI, configs.GetBackupFullPath(game), &backedUp, &moved); err != nil {
-			return err
+		if err == nil {
+			if err = MoveDirs(df.Dirs, modDir, configs.DirVI, configs.GetBackupFullPath(game), &backedUp, &moved); err != nil {
+				break
+			}
 		}
+	}
+
+	if err != nil {
+		sb := strings.Builder{}
+		sb.WriteString(fmt.Sprintf("%v\n", err))
+		for _, f := range moved {
+			if e := os.Remove(f.To); e != nil {
+				sb.WriteString(fmt.Sprintf("failed to remove [%s]\n", f.To))
+			}
+		}
+		for _, f := range backedUp {
+			if e := MoveFile(cut, f.To, f.From, nil); e != nil {
+				sb.WriteString(fmt.Sprintf("failed to restore [%s] from [%s]\n", f.To, f.From))
+			}
+		}
+		return errors.New(sb.String())
 	}
 
 	mf, found := mmf.Mods[tm.GetModID()]
@@ -113,7 +132,7 @@ func RemoveModFiles(game config.Game, tm *model.TrackedMod) (err error) {
 				return
 			}
 		}
-		if err = moveFile(cut, f.To, f.From, nil); err != nil {
+		if err = MoveFile(cut, f.To, f.From, nil); err != nil {
 			break
 		}
 		handled = append(handled, k)
@@ -156,11 +175,11 @@ func MoveFiles(files []*mods.ModFile, modDir string, toDir string, backupDir str
 	for _, f := range files {
 		to := path.Join(toDir, f.To)
 		if _, err = os.Stat(to); err == nil {
-			if err = moveFile(cut, to, path.Join(backupDir, f.To), backedUp); err != nil {
+			if err = MoveFile(cut, to, path.Join(backupDir, f.To), backedUp); err != nil {
 				return
 			}
 		}
-		if err = moveFile(duplicate, path.Join(modDir, f.From), path.Join(toDir, f.To), movedFiles); err != nil {
+		if err = MoveFile(duplicate, path.Join(modDir, f.From), path.Join(toDir, f.To), movedFiles); err != nil {
 			return
 		}
 	}
@@ -204,15 +223,9 @@ func MoveDirs(dirs []*mods.ModDir, modDir string, toDir string, backupDir string
 	return MoveFiles(mf, modDir, toDir, backupDir, replacedFiles, movedFiles)
 }
 
-func moveFile(action action, from, to string, backedUp *[]*mods.ModFile) (err error) {
+func MoveFile(action action, from, to string, files *[]*mods.ModFile) (err error) {
 	if err = os.MkdirAll(filepath.Dir(to), 0777); err != nil {
 		return
-	}
-	if backedUp != nil {
-		*backedUp = append(*backedUp, &mods.ModFile{
-			From: from,
-			To:   to,
-		})
 	}
 	if action == duplicate {
 		err = copyFile(from, to)
@@ -221,6 +234,13 @@ func moveFile(action action, from, to string, backedUp *[]*mods.ModFile) (err er
 	}
 	if err != nil {
 		err = fmt.Errorf("failed to move [%s] to [%s]: %v", from, to, err)
+		return
+	}
+	if files != nil {
+		*files = append(*files, &mods.ModFile{
+			From: from,
+			To:   to,
+		})
 	}
 	return
 }
