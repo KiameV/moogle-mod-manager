@@ -119,16 +119,16 @@ var ModCompatOrders = []string{string(None), string(Before), string(After)}
 type InstallType string
 
 const (
-	Bundles  InstallType = "Bundles"
-	Memoria  InstallType = "Memoria"
-	Magicite InstallType = "Magicite"
-	BepInEx  InstallType = "BepInEx"
+	//Bundles  InstallType = "Bundles"
+	//Memoria  InstallType = "Memoria"
+	//Magicite InstallType = "Magicite"
+	//BepInEx  InstallType = "BepInEx"
 	// DLL Patcher https://discord.com/channels/371784427162042368/518331294858608650/863930606446182420
 	//DllPatch   InstallType = "DllPatch"
 	Compressed InstallType = "Compressed"
 )
 
-var InstallTypes = []string{string(Bundles), string(Memoria), string(Magicite), string(BepInEx) /*string(DllPatch),*/, string(Compressed)}
+var InstallTypes = []string{ /*string(Bundles), string(Memoria), string(Magicite), string(BepInEx), /*string(DllPatch),*/ string(Compressed)}
 
 type Game struct {
 	Name     config.GameName `json:"Name" xml:"Name"`

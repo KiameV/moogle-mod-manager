@@ -163,7 +163,11 @@ func (a *ModAuthorer) Draw(w fyne.Window) {
 
 	buttons := container.NewHBox(
 		widget.NewButton("Back", func() {
-			state.ShowPreviousScreen()
+			dialog.ShowConfirm("Go Back?", "Any unsaved data will be lost, continue?", func(ok bool) {
+				if ok {
+					state.ShowPreviousScreen()
+				}
+			}, w)
 		}),
 		widget.NewButton("Validate", func() {
 			_ = a.validate(a.compileMod(), true)
