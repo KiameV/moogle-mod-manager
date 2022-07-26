@@ -7,6 +7,7 @@ require (
 	github.com/bodgit/sevenzip v1.2.2
 	github.com/ncruces/zenity v0.8.9
 	golang.design/x/clipboard v0.6.2
+	golang.org/x/sys v0.0.0-20220627191245-f75cf1eec38b
 )
 
 require (
@@ -47,7 +48,6 @@ require (
 	golang.org/x/image v0.0.0-20220617043117-41969df76e82 // indirect
 	golang.org/x/mobile v0.0.0-20211207041440-4e6c2922fdee // indirect
 	golang.org/x/net v0.0.0-20210917221730-978cfadd31cf // indirect
-	golang.org/x/sys v0.0.0-20220627191245-f75cf1eec38b // indirect
 	golang.org/x/text v0.3.7 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	honnef.co/go/js/dom v0.0.0-20210725211120-f030747120f2 // indirect

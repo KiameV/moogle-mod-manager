@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
+
+	"golang.org/x/sys/windows/registry"
 )
 
 const configsFile = "configs.json"
@@ -78,6 +81,23 @@ func (c *Configs) GetGameDirSuffix(game Game) (s string) {
 	return
 }
 
+func TryGetGameDirFromRegistry(gameId string) string {
+	path := ""                     //initialize the path
+	if runtime.GOOS == "windows" { //only poke into registry for Windows, there's probably a similar method for Mac/Linux
+		key, err := registry.OpenKey(registry.LOCAL_MACHINE, "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Steam App "+gameId, registry.QUERY_VALUE)
+		if err != nil {
+			return path //since path is initialized to "", we just assume the user does not own this game
+		}
+		path, valtype, err := key.GetStringValue("InstallLocation")
+		if err != nil {
+			fmt.Errorf("Failed to get path for Game ID %v: ValType: %q Err: %v", gameId, valtype, err)
+		}
+		return path
+	}
+	return path
+
+}
+
 func (c *Configs) Initialize() (err error) {
 	var b []byte
 	if PWD, err = os.Getwd(); err != nil {
@@ -94,6 +114,12 @@ func (c *Configs) Initialize() (err error) {
 		}
 	} else {
 		c.FirstTime = true
+		c.DirI = TryGetGameDirFromRegistry("1173770")
+		c.DirII = TryGetGameDirFromRegistry("1173780")
+		c.DirIII = TryGetGameDirFromRegistry("1173790")
+		c.DirIV = TryGetGameDirFromRegistry("1173800")
+		c.DirV = TryGetGameDirFromRegistry("1173810")
+		c.DirVI = TryGetGameDirFromRegistry("1173820")
 		c.ModsDir = filepath.Join(PWD, "mods")
 		c.ImgCacheDir = filepath.Join(PWD, "imgCache")
 		c.DownloadDir = filepath.Join(PWD, "downloads")
