@@ -4,6 +4,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/theme"
 	"github.com/kiamev/moogle-mod-manager/browser"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods/managed"
@@ -69,4 +70,7 @@ func initialize() {
 	}
 	state.Window.Resize(size)
 
+	if configs.Theme == config.LightThemeColor {
+		fyne.CurrentApp().Settings().SetTheme(theme.LightTheme())
+	}
 }

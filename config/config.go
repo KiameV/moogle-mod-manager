@@ -20,20 +20,28 @@ var (
 	PWD string
 )
 
+type ThemeColor byte
+
+const (
+	DarkThemeColor ThemeColor = iota
+	LightThemeColor
+)
+
 type Configs struct {
-	FirstTime   bool   `json:"firstTime"`
-	WindowX     int    `json:"width"`
-	WindowY     int    `json:"height"`
-	DirI        string `json:"dir1"`
-	DirII       string `json:"dir2"`
-	DirIII      string `json:"dir3"`
-	DirIV       string `json:"dir4"`
-	DirV        string `json:"dir5"`
-	DirVI       string `json:"dir6"`
-	ModsDir     string `json:"modDir"`
-	ImgCacheDir string `json:"imgCacheDir"`
-	DownloadDir string `json:"downloadDir"`
-	BackupDir   string `json:"backupDir"`
+	FirstTime   bool       `json:"firstTime"`
+	WindowX     int        `json:"width"`
+	WindowY     int        `json:"height"`
+	DirI        string     `json:"dir1"`
+	DirII       string     `json:"dir2"`
+	DirIII      string     `json:"dir3"`
+	DirIV       string     `json:"dir4"`
+	DirV        string     `json:"dir5"`
+	DirVI       string     `json:"dir6"`
+	ModsDir     string     `json:"modDir"`
+	ImgCacheDir string     `json:"imgCacheDir"`
+	DownloadDir string     `json:"downloadDir"`
+	BackupDir   string     `json:"backupDir"`
+	Theme       ThemeColor `json:"theme"`
 }
 
 func Get() *Configs {
@@ -90,6 +98,7 @@ func (c *Configs) Initialize() (err error) {
 		c.ImgCacheDir = filepath.Join(PWD, "imgCache")
 		c.DownloadDir = filepath.Join(PWD, "downloads")
 		c.BackupDir = filepath.Join(PWD, "backups")
+		c.Theme = DarkThemeColor
 	}
 	return nil
 }

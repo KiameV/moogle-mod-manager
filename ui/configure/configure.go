@@ -25,6 +25,7 @@ func Show(w fyne.Window) {
 		createDirRow("Download Dir", &configs.DownloadDir),
 		createDirRow("Backup Dir", &configs.BackupDir),
 		createDirRow("Image Cache Dir", &configs.ImgCacheDir),
+		createThemeChoice(&configs),
 	}
 	d := dialog.NewForm("Configure", "Save", "Cancel", items, func(ok bool) {
 		if ok {
@@ -38,6 +39,14 @@ func Show(w fyne.Window) {
 			if err := c.Save(); err != nil {
 				dialog.ShowError(err, w)
 				return
+			}
+		} else {
+			if configs.Theme != config.Get().Theme {
+				t := theme.DarkTheme()
+				if config.Get().Theme == config.LightThemeColor {
+					t = theme.LightTheme()
+				}
+				fyne.CurrentApp().Settings().SetTheme(t)
 			}
 		}
 	}, w)
@@ -57,4 +66,18 @@ func createDirRow(label string, value *string) *widget.FormItem {
 		OpenFileDialogHandler: o,
 	}
 	return widget.NewFormItem(label, c.Container)
+}
+
+func createThemeChoice(configs *config.Configs) *widget.FormItem {
+	a := fyne.CurrentApp()
+	return widget.NewFormItem("Theme", container.NewGridWithColumns(2,
+		widget.NewButton("Dark", func() {
+			a.Settings().SetTheme(theme.DarkTheme())
+			configs.Theme = config.DarkThemeColor
+		}),
+		widget.NewButton("Light", func() {
+			a.Settings().SetTheme(theme.LightTheme())
+			configs.Theme = config.LightThemeColor
+		}),
+	))
 }
