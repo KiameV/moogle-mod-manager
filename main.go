@@ -58,6 +58,8 @@ func initialize() {
 	if err = authored.Initialize(); err != nil {
 		dialog.ShowError(err, state.Window)
 	}
+	config.GetSecrets().Initialize()
+
 	configs := config.Get()
 	if err = configs.Initialize(); err != nil {
 		dialog.ShowError(err, state.Window)

@@ -1,8 +1,7 @@
 package config
 
 import (
-	"encoding/json"
-	"fmt"
+	"github.com/kiamev/moogle-mod-manager/util"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -12,7 +11,10 @@ import (
 
 const configsFile = "configs.json"
 
-var configs = &Configs{}
+var (
+	PWD     string
+	configs = &Configs{}
+)
 
 const (
 	WindowWidth  = 1000
@@ -25,10 +27,6 @@ const (
 	idIV             = "1173800"
 	idV              = "1173810"
 	idVI             = "1173820"
-)
-
-var (
-	PWD string
 )
 
 type ThemeColor byte
@@ -90,20 +88,10 @@ func (c *Configs) GetGameDirSuffix(game Game) (s string) {
 }
 
 func (c *Configs) Initialize() (err error) {
-	var b []byte
 	if PWD, err = os.Getwd(); err != nil {
 		PWD = "."
 	}
-
-	p := filepath.Join(PWD, configsFile)
-	if _, err = os.Stat(p); err == nil {
-		if b, err = os.ReadFile(p); err != nil {
-			return fmt.Errorf("failed to read configs file: %v", err)
-		}
-		if err = json.Unmarshal(b, c); err != nil {
-			return fmt.Errorf("failed to unmarshal configs file: %v", err)
-		}
-	} else {
+	if err = util.LoadFromFile(filepath.Join(PWD, configsFile), c); err != nil {
 		c.FirstTime = true
 		c.DirI = c.getGameDirFromRegistry(idI)
 		c.DirII = c.getGameDirFromRegistry(idII)
@@ -114,6 +102,7 @@ func (c *Configs) Initialize() (err error) {
 		c.Theme = DarkThemeColor
 	}
 	c.setDefaults()
+
 	return nil
 }
 
@@ -133,21 +122,8 @@ func (c *Configs) getGameDirFromRegistry(gameId string) (dir string) {
 }
 
 func (c *Configs) Save() (err error) {
-	var (
-		b []byte
-		f *os.File
-	)
 	c.setDefaults()
-	if b, err = json.MarshalIndent(c, "", "\t"); err != nil {
-		return fmt.Errorf("failed to marshal configs: %v", err)
-	}
-	if f, err = os.Create(filepath.Join(PWD, configsFile)); err != nil {
-		return fmt.Errorf("failed to create configs file: %v", err)
-	}
-	if _, err = f.Write(b); err != nil {
-		return fmt.Errorf("failed to write configs file: %v", err)
-	}
-	return
+	return util.SaveToFile(filepath.Join(PWD, configsFile), c)
 }
 
 func (c *Configs) setDefaults() {

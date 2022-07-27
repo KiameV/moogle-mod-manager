@@ -10,6 +10,7 @@ import (
 	"github.com/kiamev/moogle-mod-manager/ui/configure"
 	"github.com/kiamev/moogle-mod-manager/ui/local"
 	a "github.com/kiamev/moogle-mod-manager/ui/mod-author"
+	"github.com/kiamev/moogle-mod-manager/ui/secret"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
 	"net/url"
 )
@@ -38,7 +39,11 @@ func (m *MainMenu) Draw(w fyne.Window) {
 		fyne.NewMenuItem("Configure", func() {
 			configure.Show(w)
 		}),
-		fyne.NewMenuItem("Check For Updates", func() {
+		fyne.NewMenuItem("Secrets", func() {
+			secret.Show(w)
+		}),
+		fyne.NewMenuItemSeparator(),
+		fyne.NewMenuItem("Check For App Updates", func() {
 			if newer, newerVersion, err := browser.CheckForUpdate(); err != nil {
 				dialog.ShowError(err, w)
 			} else if newer {

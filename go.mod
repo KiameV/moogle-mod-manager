@@ -5,6 +5,7 @@ go 1.17
 require (
 	fyne.io/fyne/v2 v2.2.3
 	github.com/bodgit/sevenzip v1.2.2
+	github.com/gorilla/websocket v1.5.0
 	github.com/ncruces/zenity v0.8.9
 	golang.design/x/clipboard v0.6.2
 	golang.org/x/sys v0.0.0-20220627191245-f75cf1eec38b
