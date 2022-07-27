@@ -30,7 +30,6 @@ type trackedModsForGame struct {
 	Mods []*model.TrackedMod `json:"mods"`
 }
 
-// lookup first slice is the game, second slice is the mod
 var lookup = make([]*trackedModsForGame, 6)
 
 func Initialize() (err error) {

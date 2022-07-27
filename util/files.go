@@ -27,21 +27,22 @@ func LoadFromFile(file string, i interface{}) error {
 		ext = filepath.Ext(file)
 		err error
 	)
-	if _, err = os.Stat(file); err == nil {
-		if b, err = os.ReadFile(file); err != nil {
-			return fmt.Errorf("failed to read %s: %v", file, err)
-		}
-		switch ext {
-		case ".json", ".moogle":
-			err = json.Unmarshal(b, &i)
-		case ".xml":
-			err = xml.Unmarshal(b, &i)
-		default:
-			return fmt.Errorf("unknown file extension: %s", file)
-		}
-		if err = json.Unmarshal(b, i); err != nil {
-			return fmt.Errorf("failed to unmarshal %s: %v", file, err)
-		}
+	if _, err = os.Stat(file); err != nil {
+		return err
+	}
+	if b, err = os.ReadFile(file); err != nil {
+		return fmt.Errorf("failed to read %s: %v", file, err)
+	}
+	switch ext {
+	case ".json", ".moogle":
+		err = json.Unmarshal(b, &i)
+	case ".xml":
+		err = xml.Unmarshal(b, &i)
+	default:
+		return fmt.Errorf("unknown file extension: %s", file)
+	}
+	if err = json.Unmarshal(b, i); err != nil {
+		return fmt.Errorf("failed to unmarshal %s: %v", file, err)
 	}
 	return nil
 }
