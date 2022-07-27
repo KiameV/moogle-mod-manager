@@ -28,6 +28,7 @@ func New() state.Screen {
 	return &ModAuthorer{
 		entryManager:   newEntryManager(),
 		previewDef:     newPreviewDef(),
+		modKindDef:     newModKindDef(),
 		modCompatsDef:  newModCompatibilityDef(),
 		downloadDef:    dl,
 		donationsDef:   newDonationsDef(),
@@ -42,6 +43,7 @@ type ModAuthorer struct {
 	modBeingEdited *mods.Mod
 
 	previewDef     *previewDef
+	modKindDef     *modKindDef
 	modCompatsDef  *modCompatabilityDef
 	downloadDef    *downloadsDef
 	donationsDef   *donationsDef
@@ -119,6 +121,7 @@ func (a *ModAuthorer) Draw(w fyne.Window) {
 
 	a.tabs = container.NewAppTabs(
 		container.NewTabItem("Mod", container.NewVScroll(container.NewVBox(widget.NewForm(items...)))),
+		container.NewTabItem("Kind", container.NewVScroll(a.modKindDef.draw())),
 		container.NewTabItem("Compatibility", container.NewVScroll(a.modCompatsDef.draw())),
 		container.NewTabItem("Downloadables", container.NewVScroll(a.downloadDef.draw())),
 		container.NewTabItem("Donation Links", container.NewVScroll(a.donationsDef.draw())),
@@ -208,13 +211,11 @@ func (a *ModAuthorer) updateEntries(mod *mods.Mod) {
 	a.createFormItem("ID", mod.ID)
 	a.createFormItem("Name", mod.Name)
 	a.createFormItem("Author", mod.Author)
-	a.createFormItem("Version", mod.Version)
 	a.createFormItem("Release Date", mod.ReleaseDate)
 	a.createFormItem("Category", mod.Category)
 	a.createFormItem("Description", mod.Description)
 	a.createFormMultiLine("Release Notes", mod.ReleaseNotes)
 	a.createFormItem("Link", mod.Link)
-	a.createFormMultiLine("Mod File Links", strings.Join(mod.ModFileLinks, "\n"))
 	a.createFormSelect("Select Type", mods.SelectTypes, string(mod.ConfigSelectionType))
 
 	if dir, ok := authored.GetDir(mod.ID); ok && dir != "" {
@@ -272,14 +273,13 @@ func (a *ModAuthorer) compileMod() (mod *mods.Mod) {
 		ID:                  a.getString("ID"),
 		Name:                a.getString("Name"),
 		Author:              a.getString("Author"),
-		Version:             a.getString("Version"),
 		ReleaseDate:         a.getString("Release Date"),
 		Category:            a.getString("Category"),
 		Description:         a.getString("Description"),
 		ReleaseNotes:        a.getString("Release Notes"),
 		Link:                a.getString("Link"),
-		ModFileLinks:        strings.Split(a.getString("Mod File Links"), "\n"),
 		Preview:             a.previewDef.compile(),
+		ModKind:             a.modKindDef.compile(),
 		ConfigSelectionType: mods.SelectType(a.getString("Select Type")),
 		ModCompatibility:    a.modCompatsDef.compile(),
 		Downloadables:       a.downloadDef.compile(),

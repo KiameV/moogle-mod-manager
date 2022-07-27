@@ -20,11 +20,12 @@ func NewTrackerMod(mod *mods.Mod, game config.Game) *TrackedMod {
 }
 
 type TrackedMod struct {
-	Enabled       bool           `json:"Enabled"`
-	MoogleModFile string         `json:"MoogleModFile"`
-	Mod           *mods.Mod      `json:"-"`
-	NameBinding   binding.String `json:"-"`
-	UpdatedMod    *mods.Mod      `json:"-"`
+	Enabled       bool                 `json:"Enabled"`
+	MoogleModFile string               `json:"MoogleModFile"`
+	Installed     []*InstalledDownload `json:"Installed"`
+	Mod           *mods.Mod            `json:"-"`
+	NameBinding   binding.String       `json:"-"`
+	UpdatedMod    *mods.Mod            `json:"-"`
 }
 
 func (m *TrackedMod) IsEnabled() bool {
@@ -45,9 +46,25 @@ func (m *TrackedMod) GetModID() string {
 }
 
 func (m *TrackedMod) GetDirSuffix() string {
-	return filepath.Join(util.CreateFileName(m.GetModID()), util.CreateFileName(m.Mod.Version))
+	k := m.Mod.ModKind
+	if k.Kind == mods.Hosted {
+		return filepath.Join(util.CreateFileName(m.GetModID()), util.CreateFileName(k.Hosted.Version))
+	}
+	return filepath.Join(util.CreateFileName(m.GetModID()))
 }
 
 func (m *TrackedMod) GetMod() *mods.Mod {
 	return m.Mod
+}
+
+type InstalledDownload struct {
+	Name    string `json:"Name"`
+	Version string `json:"Version"`
+}
+
+func NewInstalledDownload(name, version string) *InstalledDownload {
+	return &InstalledDownload{
+		Name:    name,
+		Version: version,
+	}
 }

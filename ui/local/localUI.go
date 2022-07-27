@@ -1,14 +1,11 @@
 package local
 
 import (
-	"encoding/json"
-	"errors"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
-	"github.com/kiamev/moogle-mod-manager/browser"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/mods/managed"
@@ -19,6 +16,7 @@ import (
 	"github.com/ncruces/zenity"
 	"net/url"
 	"path/filepath"
+	"strings"
 )
 
 type LocalUI interface {
@@ -154,10 +152,16 @@ func (ui *localUI) createPreview(tm *model.TrackedMod) fyne.CanvasObject {
 	}
 	c.Add(ui.createField("Name", mod.Name))
 	c.Add(ui.createMultiLineField("Description", mod.Description))
-	c.Add(ui.createField("Version", mod.Version))
 	c.Add(ui.createLink("Link", mod.Link))
 	c.Add(ui.createField("Author", mod.Author))
 	c.Add(ui.createField("Category", mod.Category))
+	k := mod.ModKind
+	if k.Kind == mods.Hosted {
+		c.Add(ui.createField("Version", k.Hosted.Version))
+		c.Add(ui.createField("'Mod File' Links", strings.Join(k.Hosted.ModFileLinks, ", ")))
+	} else { // nexus
+		c.Add(ui.createField("Nexus Mod ID", k.Nexus.ID))
+	}
 	c.Add(ui.createField("Release Date", mod.ReleaseDate))
 
 	if mod.ReleaseNotes != "" {
@@ -312,21 +316,27 @@ func (ui *localUI) disableMod(mod *model.TrackedMod) bool {
 }
 
 func (ui *localUI) hasNewVersion(tm *model.TrackedMod) bool {
-	var mod mods.Mod
-	for _, l := range tm.Mod.ModFileLinks {
-		if b, err := browser.DownloadAsBytes(l); err == nil {
-			if e := json.Unmarshal(b, &mod); e != nil {
-				break
+	/*
+		k := tm.Mod.ModKind
+		if k.Kind == mods.Hosted {
+		var mod mods.Mod
+		for _, l := range tm.Mod.ModFileLinks {
+			if b, err := browser.DownloadAsBytes(l); err == nil {
+				if e := json.Unmarshal(b, &mod); e != nil {
+					break
+				}
 			}
 		}
-	}
-	if mod.ID == "" {
-		dialog.ShowError(errors.New("Could not download remote version for "+tm.Mod.Name), state.Window)
-		return false
-	}
-	// TODO improve!
-	if mod.Version != tm.Mod.Version {
-		tm.UpdatedMod = &mod
-	}
-	return tm.UpdatedMod != nil
+		if mod.ID == "" {
+			dialog.ShowError(errors.New("Could not download remote version for "+tm.Mod.Name), state.Window)
+			return false
+		}
+		// TODO improve!
+		if mod.Version != tm.Mod.Version {
+			tm.UpdatedMod = &mod
+		}
+		return tm.UpdatedMod != nil
+	*/
+	// TODO
+	return false
 }

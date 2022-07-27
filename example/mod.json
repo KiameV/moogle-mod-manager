@@ -29,6 +29,7 @@
 			"Source": [
 				"https://github.com/KiameV/moogle-mod-manager/blob/main/example/mod/base_mod.zip?raw=true"
 			],
+			"Version": "1.0",
 			"InstallType": "Compressed"
 		},
 		{
@@ -36,6 +37,7 @@
 			"Source": [
 				"https://github.com/KiameV/moogle-mod-manager/blob/main/example/mod/normal_cosmog.zip?raw=true"
 			],
+			"Version": "1.0",
 			"InstallType": "Compressed"
 		},
 		{
@@ -43,6 +45,7 @@
 			"Source": [
 				"https://github.com/KiameV/moogle-mod-manager/blob/main/example/mod/invert_cosmog.zip?raw=true"
 			],
+			"Version": "1.0",
 			"InstallType": "Compressed"
 		}
 	],

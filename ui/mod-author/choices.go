@@ -108,6 +108,7 @@ func (d *choicesDef) createItem(item interface{}, done ...func(interface{})) {
 			if len(done) > 0 {
 				done[0](c)
 			}
+			d.list.Refresh()
 		}
 	}, state.Window)
 	fd.Resize(fyne.NewSize(400, 400))

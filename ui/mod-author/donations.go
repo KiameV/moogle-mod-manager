@@ -66,6 +66,7 @@ func (d *donationsDef) createItem(item interface{}, done ...func(interface{})) {
 			if len(done) > 0 {
 				done[0](m)
 			}
+			d.list.Refresh()
 		}
 	}, state.Window)
 	fd.Resize(fyne.NewSize(400, 400))

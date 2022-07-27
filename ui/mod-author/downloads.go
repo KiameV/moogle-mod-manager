@@ -1,6 +1,7 @@
 package mod_author
 
 import (
+	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
@@ -37,7 +38,11 @@ func (d *downloadsDef) compile() []*mods.Download {
 }
 
 func (d *downloadsDef) getItemKey(item interface{}) string {
-	return item.(*mods.Download).Name
+	dl := item.(*mods.Download)
+	if dl.Version == "" {
+		return dl.Name
+	}
+	return fmt.Sprintf("%s - %s", dl.Name, dl.Version)
 }
 
 func (d *downloadsDef) getItemFields(item interface{}) []string {
@@ -55,21 +60,25 @@ func (d *downloadsDef) onEditItem(item interface{}) {
 func (d *downloadsDef) createItem(item interface{}, done ...func(interface{})) {
 	m := item.(*mods.Download)
 	d.createFormItem("Name", m.Name)
+	d.createFormItem("Version", m.Version)
 	d.createFormMultiLine("Sources", strings.Join(m.Sources, "\n"))
 	d.createFormSelect("Install Type", mods.InstallTypes, string(m.InstallType))
 
 	fd := dialog.NewForm("Edit Downloadable", "Save", "Cancel", []*widget.FormItem{
 		d.getFormItem("Name"),
+		d.getFormItem("Version"),
 		d.getFormItem("Sources"),
 		d.getFormItem("Install Type"),
 	}, func(ok bool) {
 		if ok {
 			m.Name = d.getString("Name")
+			m.Version = d.getString("Version")
 			m.Sources = d.getStrings("Sources", "\n")
 			m.InstallType = mods.InstallType(d.getString("Install Type"))
 			if len(done) > 0 {
 				done[0](m)
 			}
+			d.list.Refresh()
 		}
 	}, state.Window)
 	fd.Resize(fyne.NewSize(400, 400))

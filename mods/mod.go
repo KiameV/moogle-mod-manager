@@ -27,14 +27,13 @@ type Mod struct {
 	ID                  string            `json:"ID" xml:"ID"`
 	Name                string            `json:"Name" xml:"Name"`
 	Author              string            `json:"Author" xml:"Author"`
-	Version             string            `json:"Version" xml:"Version"`
 	ReleaseDate         string            `json:"ReleaseDate" xml:"ReleaseDate"`
 	Category            string            `json:"Category" xml:"Category"`
 	Description         string            `json:"Description" xml:"Description"`
 	ReleaseNotes        string            `json:"ReleaseNotes" xml:"ReleaseNotes"`
 	Link                string            `json:"Link" xml:"Link"`
-	ModFileLinks        []string          `json:"ModFileLink" xml:"ModFileLink"`
 	Preview             *Preview          `json:"Preview,omitempty" xml:"Preview,omitempty"`
+	ModKind             ModKind           `json:"ModKind" xml:"ModKind"`
 	ModCompatibility    *ModCompatibility `json:"Compatibility,omitempty" xml:"ModCompatibility,omitempty"`
 	Downloadables       []*Download       `json:"Downloadable" xml:"Downloadables"`
 	DonationLinks       []*DonationLink   `json:"DonationLink" xml:"DonationLinks"`
@@ -42,6 +41,30 @@ type Mod struct {
 	AlwaysDownload      []*DownloadFiles  `json:"AlwaysDownload,omitempty" xml:"AlwaysDownload,omitempty"`
 	Configurations      []*Configuration  `json:"Configuration,omitempty" xml:"Configurations,omitempty"`
 	ConfigSelectionType SelectType        `json:"ConfigSelectionType" xml:"ConfigSelectionType"`
+}
+
+type Kind string
+
+const (
+	Hosted Kind = "Hosted"
+	Nexus  Kind = "Nexus"
+)
+
+var Kinds = []string{string(Hosted), string(Nexus)}
+
+type ModKind struct {
+	Kind   Kind           `json:"Kind" xml:"Kind"`
+	Hosted *HostedModKind `json:"Hosted,omitempty" xml:"Hosted,omitempty"`
+	Nexus  *NexusModKind  `json:"Nexus,omitempty" xml:"Nexus,omitempty"`
+}
+
+type HostedModKind struct {
+	Version      string   `json:"Version" xml:"Version"`
+	ModFileLinks []string `json:"ModFileLink" xml:"ModFileLink"`
+}
+
+type NexusModKind struct {
+	ID string `json:"ID" xml:"ID"`
 }
 
 type Preview struct {
@@ -138,6 +161,7 @@ type Game struct {
 type Download struct {
 	Name          string      `json:"Name" xml:"Name"`
 	Sources       []string    `json:"Source" xml:"Sources"`
+	Version       string      `json:"Version" xml:"Version"`
 	InstallType   InstallType `json:"InstallType" xml:"InstallType"`
 	DownloadedLoc string      `json:"-" xml:"-"`
 }
@@ -207,9 +231,6 @@ func (m *Mod) Validate() string {
 	if m.Link == "" {
 		sb.WriteString("Link is required\n")
 	}
-	if len(m.ModFileLinks) == 0 {
-		sb.WriteString("ModFileLinks is required\n")
-	}
 
 	if m.Preview != nil {
 		if m.Preview.Size.X <= 50 || m.Preview.Size.Y <= 50 {
@@ -217,9 +238,31 @@ func (m *Mod) Validate() string {
 		}
 	}
 
-	for _, mfl := range m.ModFileLinks {
-		if strings.HasSuffix(mfl, ".json") == false && strings.HasSuffix(mfl, ".xml") == false {
-			sb.WriteString(fmt.Sprintf("Mod File Link [%s] must be json or xml\n", mfl))
+	if m.ModKind.Kind == Hosted {
+		h := m.ModKind.Hosted
+		if h == nil {
+			sb.WriteString("Hosted is required\n")
+		} else {
+			if h.Version == "" {
+				sb.WriteString("Hosted Version is required\n")
+			}
+			if len(h.ModFileLinks) == 0 {
+				sb.WriteString("Hosted 'Mod File' Links is required\n")
+			}
+			for _, mfl := range h.ModFileLinks {
+				if strings.HasSuffix(mfl, ".json") == false && strings.HasSuffix(mfl, ".xml") == false {
+					sb.WriteString(fmt.Sprintf("Hosted 'Mod File' Link [%s] must be json or xml\n", mfl))
+				}
+			}
+		}
+	} else { // nexus
+		n := m.ModKind.Nexus
+		if n == nil {
+			sb.WriteString("Nexus is required\n")
+		} else {
+			if n.ID == "" {
+				sb.WriteString("Nexus Mod ID is required\n")
+			}
 		}
 	}
 
