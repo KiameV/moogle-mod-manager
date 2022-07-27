@@ -108,13 +108,11 @@ func (a *ModAuthorer) Draw(w fyne.Window) {
 		a.getFormItem("ID"),
 		a.getFormItem("Name"),
 		a.getFormItem("Author"),
-		a.getFormItem("Version"),
 		a.getFormItem("Release Date"),
 		a.getFormItem("Category"),
 		a.getFormItem("Description"),
 		a.getFormItem("Release Notes"),
 		a.getFormItem("Link"),
-		a.getFormItem("Mod File Links"),
 		a.getFormItem("Select Type"),
 	}
 	items = append(items, a.previewDef.getFormItems()...)

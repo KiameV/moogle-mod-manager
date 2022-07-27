@@ -2,21 +2,26 @@
 	"ID": "kiamev.moogle_manager",
 	"Name": "Moogle Manager",
 	"Author": "KiameV",
-	"Version": "1.0.0",
 	"ReleaseDate": "Jul 23 2022",
 	"Category": "manager",
 	"Description": "Adds new moogles to manage!",
 	"ReleaseNotes": "Adds the following moogles to manager:\n- **Mog**\n- *Molulu*\n- `Mugmug`\n- Cosmog",
 	"Link": "https://github.com/KiameV/moogle-mod-manager/blob/main/example/mod/",
-	"ModFileLink": [
-		"https://raw.githubusercontent.com/KiameV/moogle-mod-manager/main/example/mod.json"
-	],
 	"Preview": {
 		"Url": "https://github.com/KiameV/moogle-mod-manager/raw/main/example/mod/preview.png?raw=true",
 		"Local": "./preview.png",
 		"Size": {
 			"X": 300,
 			"Y": 300
+		}
+	},
+	"ModKind": {
+		"Kind": "Hosted",
+		"Hosted": {
+			"Version": "1.0.0",
+			"ModFileLink": [
+				"https://raw.githubusercontent.com/KiameV/moogle-mod-manager/main/example/mod.json"
+			]
 		}
 	},
 	"Compatibility": {
@@ -29,7 +34,7 @@
 			"Source": [
 				"https://github.com/KiameV/moogle-mod-manager/blob/main/example/mod/base_mod.zip?raw=true"
 			],
-			"Version": "1.0",
+			"Version": "",
 			"InstallType": "Compressed"
 		},
 		{
@@ -37,7 +42,7 @@
 			"Source": [
 				"https://github.com/KiameV/moogle-mod-manager/blob/main/example/mod/normal_cosmog.zip?raw=true"
 			],
-			"Version": "1.0",
+			"Version": "",
 			"InstallType": "Compressed"
 		},
 		{
@@ -45,7 +50,7 @@
 			"Source": [
 				"https://github.com/KiameV/moogle-mod-manager/blob/main/example/mod/invert_cosmog.zip?raw=true"
 			],
-			"Version": "1.0",
+			"Version": "",
 			"InstallType": "Compressed"
 		}
 	],

@@ -16,7 +16,6 @@ import (
 	"github.com/ncruces/zenity"
 	"net/url"
 	"path/filepath"
-	"strings"
 )
 
 type LocalUI interface {
@@ -156,10 +155,9 @@ func (ui *localUI) createPreview(tm *model.TrackedMod) fyne.CanvasObject {
 	c.Add(ui.createField("Author", mod.Author))
 	c.Add(ui.createField("Category", mod.Category))
 	k := mod.ModKind
-	if k.Kind == mods.Hosted {
+	if k.Kind == mods.Hosted && k.Hosted != nil {
 		c.Add(ui.createField("Version", k.Hosted.Version))
-		c.Add(ui.createField("'Mod File' Links", strings.Join(k.Hosted.ModFileLinks, ", ")))
-	} else { // nexus
+	} else if k.Nexus != nil {
 		c.Add(ui.createField("Nexus Mod ID", k.Nexus.ID))
 	}
 	c.Add(ui.createField("Release Date", mod.ReleaseDate))
