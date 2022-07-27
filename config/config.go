@@ -17,6 +17,14 @@ var configs = &Configs{}
 const (
 	WindowWidth  = 1000
 	WindowHeight = 850
+
+	windowsRegLookup = "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Steam App "
+	idI              = "1173770"
+	idII             = "1173780"
+	idIII            = "1173790"
+	idIV             = "1173800"
+	idV              = "1173810"
+	idVI             = "1173820"
 )
 
 var (
@@ -81,23 +89,6 @@ func (c *Configs) GetGameDirSuffix(game Game) (s string) {
 	return
 }
 
-func TryGetGameDirFromRegistry(gameId string) string {
-	path := ""                     //initialize the path
-	if runtime.GOOS == "windows" { //only poke into registry for Windows, there's probably a similar method for Mac/Linux
-		key, err := registry.OpenKey(registry.LOCAL_MACHINE, "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Steam App "+gameId, registry.QUERY_VALUE)
-		if err != nil {
-			return path //since path is initialized to "", we just assume the user does not own this game
-		}
-		path, valtype, err := key.GetStringValue("InstallLocation")
-		if err != nil {
-			fmt.Errorf("Failed to get path for Game ID %v: ValType: %q Err: %v", gameId, valtype, err)
-		}
-		return path
-	}
-	return path
-
-}
-
 func (c *Configs) Initialize() (err error) {
 	var b []byte
 	if PWD, err = os.Getwd(); err != nil {
@@ -114,19 +105,31 @@ func (c *Configs) Initialize() (err error) {
 		}
 	} else {
 		c.FirstTime = true
-		c.DirI = TryGetGameDirFromRegistry("1173770")
-		c.DirII = TryGetGameDirFromRegistry("1173780")
-		c.DirIII = TryGetGameDirFromRegistry("1173790")
-		c.DirIV = TryGetGameDirFromRegistry("1173800")
-		c.DirV = TryGetGameDirFromRegistry("1173810")
-		c.DirVI = TryGetGameDirFromRegistry("1173820")
-		c.ModsDir = filepath.Join(PWD, "mods")
-		c.ImgCacheDir = filepath.Join(PWD, "imgCache")
-		c.DownloadDir = filepath.Join(PWD, "downloads")
-		c.BackupDir = filepath.Join(PWD, "backups")
+		c.DirI = c.getGameDirFromRegistry(idI)
+		c.DirII = c.getGameDirFromRegistry(idII)
+		c.DirIII = c.getGameDirFromRegistry(idIII)
+		c.DirIV = c.getGameDirFromRegistry(idIV)
+		c.DirV = c.getGameDirFromRegistry(idV)
+		c.DirVI = c.getGameDirFromRegistry(idVI)
 		c.Theme = DarkThemeColor
 	}
+	c.setDefaults()
 	return nil
+}
+
+func (c *Configs) getGameDirFromRegistry(gameId string) (dir string) {
+	//only poke into registry for Windows, there's probably a similar method for Mac/Linux
+	if runtime.GOOS == "windows" {
+		key, err := registry.OpenKey(registry.LOCAL_MACHINE, windowsRegLookup+gameId, registry.QUERY_VALUE)
+		if err != nil {
+			return
+		}
+		if dir, _, err = key.GetStringValue("InstallLocation"); err != nil {
+			dir = ""
+		}
+	}
+	return
+
 }
 
 func (c *Configs) Save() (err error) {
@@ -134,6 +137,7 @@ func (c *Configs) Save() (err error) {
 		b []byte
 		f *os.File
 	)
+	c.setDefaults()
 	if b, err = json.MarshalIndent(c, "", "\t"); err != nil {
 		return fmt.Errorf("failed to marshal configs: %v", err)
 	}
@@ -144,4 +148,19 @@ func (c *Configs) Save() (err error) {
 		return fmt.Errorf("failed to write configs file: %v", err)
 	}
 	return
+}
+
+func (c *Configs) setDefaults() {
+	if c.ModsDir == "" {
+		c.ModsDir = filepath.Join(PWD, "mods")
+	}
+	if c.ImgCacheDir == "" {
+		c.ImgCacheDir = filepath.Join(PWD, "imgCache")
+	}
+	if c.DownloadDir == "" {
+		c.DownloadDir = filepath.Join(PWD, "downloads")
+	}
+	if c.BackupDir == "" {
+		c.BackupDir = filepath.Join(PWD, "backups")
+	}
 }

@@ -6,6 +6,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
+	"github.com/kiamev/moogle-mod-manager/ui/util/resources"
 )
 
 func New() state.Screen {
@@ -15,38 +16,41 @@ func New() state.Screen {
 type GameSelect struct{}
 
 func (s *GameSelect) OnClose() {
-	
+
 }
 
 func (s *GameSelect) Draw(w fyne.Window) {
-	w.SetContent(container.NewGridWithColumns(2,
+	w.SetContent(container.NewCenter(
 		container.NewVBox(
-			widget.NewLabelWithStyle("Select Games", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
-			widget.NewButton("Final Fantasy I", func() {
+			container.NewMax(resources.LogoI, widget.NewButton("", func() {
 				state.CurrentGame = toGamePtr(config.I)
 				state.ShowScreen(state.LocalMods)
-			}),
-			widget.NewButton("Final Fantasy II", func() {
+			})),
+			widget.NewSeparator(),
+			container.NewMax(resources.LogoII, widget.NewButton("", func() {
 				state.CurrentGame = toGamePtr(config.II)
 				state.ShowScreen(state.LocalMods)
-			}),
-			widget.NewButton("Final Fantasy III", func() {
+			})),
+			widget.NewSeparator(),
+			container.NewMax(resources.LogoIII, widget.NewButton("", func() {
 				state.CurrentGame = toGamePtr(config.III)
 				state.ShowScreen(state.LocalMods)
-			}),
-			widget.NewButton("Final Fantasy IV", func() {
+			})),
+			widget.NewSeparator(),
+			container.NewMax(resources.LogoIV, widget.NewButton("", func() {
 				state.CurrentGame = toGamePtr(config.IV)
 				state.ShowScreen(state.LocalMods)
-			}),
-			widget.NewButton("Final Fantasy V", func() {
+			})),
+			widget.NewSeparator(),
+			container.NewMax(resources.LogoV, widget.NewButton("", func() {
 				state.CurrentGame = toGamePtr(config.V)
 				state.ShowScreen(state.LocalMods)
-			}),
-			widget.NewButton("Final Fantasy VI", func() {
+			})),
+			widget.NewSeparator(),
+			container.NewMax(resources.LogoVI, widget.NewButton("", func() {
 				state.CurrentGame = toGamePtr(config.VI)
 				state.ShowScreen(state.LocalMods)
-			})),
-		container.NewVBox(),
+			}))),
 	))
 }
 

@@ -16,6 +16,7 @@ import (
 	"github.com/kiamev/moogle-mod-manager/ui/menu"
 	mod_author "github.com/kiamev/moogle-mod-manager/ui/mod-author"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
+	"github.com/kiamev/moogle-mod-manager/ui/util/resources"
 )
 
 func main() {
@@ -73,4 +74,6 @@ func initialize() {
 	if configs.Theme == config.LightThemeColor {
 		fyne.CurrentApp().Settings().SetTheme(theme.LightTheme())
 	}
+
+	resources.Initialize()
 }
