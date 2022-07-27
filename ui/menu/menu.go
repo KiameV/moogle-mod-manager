@@ -65,7 +65,11 @@ func (m *MainMenu) Draw(w fyne.Window) {
 				widget.NewRichTextFromMarkdown(fmt.Sprintf(fmt.Sprintf(`
 ## Moogle Mod Manager %s
 ____________________________
-Written by Kiame Vivacity`,
+Written by Kiame Vivacity
+
+Contributors:
+
+- Silvris`,
 					browser.Version))), nil, nil, nil,
 				container.NewVBox(
 					widget.NewLabel("If you'd like to support the project:"),
