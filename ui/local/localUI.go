@@ -197,9 +197,12 @@ func (ui *localUI) createLink(name, value string) *fyne.Container {
 }
 
 func (ui *localUI) createMultiLineField(name, value string) *fyne.Container {
+	rt := widget.NewRichTextFromMarkdown(value)
+	s := container.NewScroll(rt)
+	s.SetMinSize(fyne.NewSize(600, 300))
 	return container.NewHBox(
 		widget.NewLabelWithStyle(name, fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
-		widget.NewRichTextFromMarkdown(value),
+		s,
 	)
 }
 
@@ -293,7 +296,7 @@ func (ui *localUI) enableMod(game config.Game, tm *model.TrackedMod) bool {
 		}
 		state.ShowScreen(state.ConfigInstaller)
 	} else {
-		tis, err := mods.NewToInstallForMod(ui.selectedMod.Mod, ui.selectedMod.Mod.AlwaysDownload)
+		tis, err := mods.NewToInstallForMod(tm.Mod, tm.Mod.AlwaysDownload)
 		if err != nil {
 			dialog.ShowError(err, state.Window)
 			return false

@@ -48,8 +48,8 @@ func (d *downloadsDef) getItemKey(item interface{}) string {
 func (d *downloadsDef) getItemFields(item interface{}) []string {
 	return []string{
 		item.(*mods.Download).Name,
-		strings.Join(item.(*mods.Download).Sources, ", "),
-		string(item.(*mods.Download).InstallType),
+		//strings.Join(item.(*mods.Download).Sources, ", "),
+		//string(item.(*mods.Download).InstallType),
 	}
 }
 
@@ -61,20 +61,39 @@ func (d *downloadsDef) createItem(item interface{}, done ...func(interface{})) {
 	m := item.(*mods.Download)
 	d.createFormItem("Name", m.Name)
 	d.createFormItem("Version", m.Version)
-	d.createFormMultiLine("Sources", strings.Join(m.Sources, "\n"))
-	d.createFormSelect("Install Type", mods.InstallTypes, string(m.InstallType))
+	//d.createFormSelect("Install Type", mods.InstallTypes, string(m.InstallType))
+	if m.Nexus != nil {
+		d.createFormItem("File Name", m.Nexus.FileName)
+		d.createFormItem("File ID", fmt.Sprintf("%d", m.Nexus.FileID))
+	}
+	if m.Hosted != nil {
+		d.createFormMultiLine("Sources", strings.Join(m.Hosted.Sources, "\n"))
+	}
 
-	fd := dialog.NewForm("Edit Downloadable", "Save", "Cancel", []*widget.FormItem{
+	items := []*widget.FormItem{
 		d.getFormItem("Name"),
 		d.getFormItem("Version"),
-		d.getFormItem("Sources"),
-		d.getFormItem("Install Type"),
-	}, func(ok bool) {
+	}
+	if m.Hosted != nil {
+		items = append(items, d.getFormItem("Sources"))
+	}
+	if m.Nexus != nil {
+		items = append(items, d.getFormItem("File Name"))
+		items = append(items, d.getFormItem("File ID"))
+	}
+
+	fd := dialog.NewForm("Edit Downloadable", "Save", "Cancel", items, func(ok bool) {
 		if ok {
 			m.Name = d.getString("Name")
 			m.Version = d.getString("Version")
-			m.Sources = d.getStrings("Sources", "\n")
-			m.InstallType = mods.InstallType(d.getString("Install Type"))
+			if m.Nexus != nil {
+				m.Nexus.FileName = d.getString("File Name")
+				m.Nexus.FileID = d.getInt("File ID")
+			}
+			if m.Hosted != nil {
+				m.Hosted.Sources = d.getStrings("Sources", "\n")
+			}
+			//m.InstallType = mods.InstallType(d.getString("Install Type"))
 			if len(done) > 0 {
 				done[0](m)
 			}

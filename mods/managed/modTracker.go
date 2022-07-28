@@ -16,6 +16,8 @@ import (
 	"github.com/kiamev/moogle-mod-manager/mods/managed/model"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
 	"github.com/kiamev/moogle-mod-manager/util"
+	"io"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -146,7 +148,7 @@ func UpdateMod(game config.Game, tm *model.TrackedMod) (err error) {
 func GetMods(game config.Game) []*model.TrackedMod { return lookup[game].Mods }
 
 func EnableMod(game config.Game, tm *model.TrackedMod, tis []*mods.ToInstall) (err error) {
-	confirmDownloads(tis, func() {
+	confirmDownloads(tm, tis, func() {
 		var (
 			downloadDir string
 			f           string
@@ -158,25 +160,35 @@ func EnableMod(game config.Game, tm *model.TrackedMod, tis []*mods.ToInstall) (e
 			dialog.ShowError(err, state.Window)
 			return
 		}
-		for _, ti := range tis {
-			if len(ti.Download.Sources) == 0 {
-				dialog.ShowError(fmt.Errorf("%s has no download sources", ti.Download.Name), state.Window)
-				return
-			}
-			for _, source := range ti.Download.Sources {
-				if f, err = browser.Download(source, filepath.Join(downloadDir, util.CreateFileName(ti.Download.Version))); err == nil {
-					// success
-					installed = append(installed, model.NewInstalledDownload(ti.Download.Name, ti.Download.Version))
-					ti.Download.DownloadedLoc = f
-					break
+
+		if tm.Mod.ModKind.Kind == mods.Hosted {
+			for _, ti := range tis {
+				if len(ti.Download.Hosted.Sources) == 0 {
+					dialog.ShowError(fmt.Errorf("%s has no download sources", ti.Download.Name), state.Window)
+					return
+				}
+				for _, source := range ti.Download.Hosted.Sources {
+					if f, err = browser.Download(source, filepath.Join(downloadDir, util.CreateFileName(ti.Download.Version))); err == nil {
+						// success
+						installed = append(installed, model.NewInstalledDownload(ti.Download.Name, ti.Download.Version))
+						ti.Download.DownloadedLoc = f
+						break
+					}
 				}
 			}
-		}
 
-		for _, ti := range tis {
-			if ti.Download.DownloadedLoc == "" {
-				dialog.ShowError(fmt.Errorf("failed to download %s", ti.Download.Sources[0]), state.Window)
-				return
+			for _, ti := range tis {
+				if ti.Download.DownloadedLoc == "" {
+					dialog.ShowError(fmt.Errorf("failed to download %s", ti.Download.Hosted.Sources[0]), state.Window)
+					return
+				}
+			}
+		} else {
+			for _, ti := range tis {
+				if ti.Download.DownloadedLoc == "" {
+					dialog.ShowError(fmt.Errorf("failed to download %s", ti.Download.Nexus.FileName), state.Window)
+					return
+				}
 			}
 		}
 
@@ -199,7 +211,7 @@ func EnableMod(game config.Game, tm *model.TrackedMod, tis []*mods.ToInstall) (e
 		}
 
 		tm.Installed = installed
-		saveToJson()
+		_ = saveToJson()
 	})
 	// Don't save here, save in the callback
 	return
@@ -220,15 +232,30 @@ func DisableMod(game config.Game, tm *model.TrackedMod) (err error) {
 	return saveToJson()
 }
 
-func confirmDownloads(tis []*mods.ToInstall, callback func()) {
+func confirmDownloads(tm *model.TrackedMod, tis []*mods.ToInstall, callback func()) {
+	if tm.Mod.ModKind.Kind == mods.Nexus {
+		for _, ti := range tis {
+			resp, err := http.Get(ti.Download.DownloadedLoc)
+			if err != nil {
+				return
+			}
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return
+			}
+			b = b
+		}
+		callback()
+		return
+	}
 	sb := strings.Builder{}
 	for i, ti := range tis {
 		sb.WriteString(fmt.Sprintf("## Download %d\n\n", i+1))
-		if len(ti.Download.Sources) == 1 {
-			sb.WriteString(ti.Download.Sources[0] + "\n\n")
+		if len(ti.Download.Hosted.Sources) == 1 {
+			sb.WriteString(ti.Download.Hosted.Sources[0] + "\n\n")
 		} else {
 			sb.WriteString("### Sources:\n\n")
-			for j, s := range ti.Download.Sources {
+			for j, s := range ti.Download.Hosted.Sources {
 				sb.WriteString(fmt.Sprintf(" - %d. %s\n\n", j+1, s))
 			}
 		}

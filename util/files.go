@@ -52,6 +52,9 @@ func SaveToFile(file string, i interface{}) (err error) {
 		b []byte
 		f *os.File
 	)
+	if err = os.MkdirAll(filepath.Dir(file), 0777); err != nil {
+		return fmt.Errorf("failed to create directory %s: %v", filepath.Dir(file), err)
+	}
 	if b, err = json.MarshalIndent(i, "", "\t"); err != nil {
 		return fmt.Errorf("failed to marshal %s: %v", file, err)
 	}

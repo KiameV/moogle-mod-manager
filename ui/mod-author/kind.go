@@ -17,16 +17,17 @@ type modKindDef struct {
 }
 
 func newModKindDef() *modKindDef {
-	return &modKindDef{
+	d := &modKindDef{
 		entryManager: newEntryManager(),
 		main:         container.NewMax(),
 		hosted:       widget.NewForm(),
 		nexus:        widget.NewForm(),
 	}
+	d.kindSelect = widget.NewRadioGroup(mods.Kinds, d.onSelectChange)
+	return d
 }
 
 func (d *modKindDef) draw() fyne.CanvasObject {
-	d.Clear()
 	if len(d.hosted.Items) == 0 {
 		d.hosted.AppendItem(d.getFormItem("Version"))
 		d.hosted.AppendItem(d.getFormItem("'Mod File' Links"))
@@ -34,21 +35,22 @@ func (d *modKindDef) draw() fyne.CanvasObject {
 	if len(d.nexus.Items) == 0 {
 		d.nexus.AppendItem(d.getFormItem("Mod ID"))
 	}
-	d.kindSelect = widget.NewRadioGroup(mods.Kinds, func(kind string) {
-		if kind == string(mods.Hosted) {
-			d.main.RemoveAll()
-			d.main.Add(d.hosted)
-		} else {
-			d.main.RemoveAll()
-			d.main.Add(d.nexus)
-		}
-	})
 	d.kindSelect.SetSelected(string(mods.Hosted))
 
 	return container.NewBorder(d.kindSelect, nil, nil, nil, d.main)
 }
 
-func (d *modKindDef) compile() mods.ModKind {
+func (d *modKindDef) onSelectChange(kind string) {
+	if kind == string(mods.Hosted) {
+		d.main.RemoveAll()
+		d.main.Add(d.hosted)
+	} else {
+		d.main.RemoveAll()
+		d.main.Add(d.nexus)
+	}
+}
+
+func (d *modKindDef) compile() *mods.ModKind {
 	k := mods.ModKind{}
 	switch d.kindSelect.Selected {
 	case string(mods.Hosted):
@@ -63,18 +65,21 @@ func (d *modKindDef) compile() mods.ModKind {
 			ID: d.getString("Mod ID"),
 		}
 	}
-	return k
+	return &k
 }
 
 func (d *modKindDef) set(k *mods.ModKind) {
 	d.Clear()
+	if k == nil {
+		return
+	}
 	if k.Kind == mods.Hosted {
+		d.kindSelect.SetSelected(string(mods.Hosted))
 		d.createFormItem("Version", k.Hosted.Version)
 		d.createFormItem("'Mod File' Links", strings.Join(k.Hosted.ModFileLinks, ", "))
-		d.kindSelect.SetSelected(string(mods.Hosted))
 	} else {
-		d.createFormItem("Mod ID", k.Nexus.ID)
 		d.kindSelect.SetSelected(string(mods.Nexus))
+		d.createFormItem("Mod ID", k.Nexus.ID)
 	}
 }
 

@@ -27,13 +27,14 @@ type Mod struct {
 	ID                  string            `json:"ID" xml:"ID"`
 	Name                string            `json:"Name" xml:"Name"`
 	Author              string            `json:"Author" xml:"Author"`
+	AuthorLink          string            `json:"AuthorLink" xml:"AuthorLink"`
 	ReleaseDate         string            `json:"ReleaseDate" xml:"ReleaseDate"`
 	Category            string            `json:"Category" xml:"Category"`
 	Description         string            `json:"Description" xml:"Description"`
 	ReleaseNotes        string            `json:"ReleaseNotes" xml:"ReleaseNotes"`
 	Link                string            `json:"Link" xml:"Link"`
 	Preview             *Preview          `json:"Preview,omitempty" xml:"Preview,omitempty"`
-	ModKind             ModKind           `json:"ModKind" xml:"ModKind"`
+	ModKind             *ModKind          `json:"ModKind" xml:"ModKind"`
 	ModCompatibility    *ModCompatibility `json:"Compatibility,omitempty" xml:"ModCompatibility,omitempty"`
 	Downloadables       []*Download       `json:"Downloadable" xml:"Downloadables"`
 	DonationLinks       []*DonationLink   `json:"DonationLink" xml:"DonationLinks"`
@@ -41,30 +42,6 @@ type Mod struct {
 	AlwaysDownload      []*DownloadFiles  `json:"AlwaysDownload,omitempty" xml:"AlwaysDownload,omitempty"`
 	Configurations      []*Configuration  `json:"Configuration,omitempty" xml:"Configurations,omitempty"`
 	ConfigSelectionType SelectType        `json:"ConfigSelectionType" xml:"ConfigSelectionType"`
-}
-
-type Kind string
-
-const (
-	Hosted Kind = "Hosted"
-	Nexus  Kind = "Nexus"
-)
-
-var Kinds = []string{string(Hosted), string(Nexus)}
-
-type ModKind struct {
-	Kind   Kind           `json:"Kind" xml:"Kind"`
-	Hosted *HostedModKind `json:"Hosted,omitempty" xml:"Hosted,omitempty"`
-	Nexus  *NexusModKind  `json:"Nexus,omitempty" xml:"Nexus,omitempty"`
-}
-
-type HostedModKind struct {
-	Version      string   `json:"Version" xml:"Version"`
-	ModFileLinks []string `json:"ModFileLink" xml:"ModFileLink"`
-}
-
-type NexusModKind struct {
-	ID string `json:"ID" xml:"ID"`
 }
 
 type Preview struct {
@@ -158,14 +135,6 @@ type Game struct {
 	Versions []string        `json:"Version,omitempty" xml:"GameVersions,omitempty"`
 }
 
-type Download struct {
-	Name          string      `json:"Name" xml:"Name"`
-	Sources       []string    `json:"Source" xml:"Sources"`
-	Version       string      `json:"Version" xml:"Version"`
-	InstallType   InstallType `json:"InstallType" xml:"InstallType"`
-	DownloadedLoc string      `json:"-" xml:"-"`
-}
-
 type DownloadFiles struct {
 	DownloadName string     `json:"DownloadName" xml:"DownloadName"`
 	Files        []*ModFile `json:"File,omitempty" xml:"Files,omitempty"`
@@ -238,7 +207,8 @@ func (m *Mod) Validate() string {
 		}
 	}
 
-	if m.ModKind.Kind == Hosted {
+	kind := m.ModKind.Kind
+	if kind == Hosted {
 		h := m.ModKind.Hosted
 		if h == nil {
 			sb.WriteString("Hosted is required\n")
@@ -277,28 +247,45 @@ func (m *Mod) Validate() string {
 		if strings.Index(d.Name, " ") != -1 {
 			sb.WriteString(fmt.Sprintf("Downloadables [%s]'s name cannot contain spaces\n"))
 		}
-		if len(d.Sources) == 0 {
-			sb.WriteString(fmt.Sprintf("Downloadables [%s]'s Source is required\n", d.Name))
-		}
-		for _, s := range d.Sources {
-			u, err := url.Parse(s)
-			if err != nil {
-				sb.WriteString(fmt.Sprintf("Downloadables [%s]'s Source [%s] is not a valid url: %v\n", d.Name, s, err))
+		if kind == Hosted {
+			if d.Hosted == nil {
+				sb.WriteString(fmt.Sprintf("Downloadables [%s]'s Hosted is required\n", d.Name))
+			} else {
+				if len(d.Hosted.Sources) == 0 {
+					sb.WriteString(fmt.Sprintf("Downloadables [%s]'s Source is required\n", d.Name))
+				}
+				for _, s := range d.Hosted.Sources {
+					u, err := url.Parse(s)
+					if err != nil {
+						sb.WriteString(fmt.Sprintf("Downloadables [%s]'s Source [%s] is not a valid url: %v\n", d.Name, s, err))
+					}
+					i := strings.LastIndex(u.Path, "/")
+					j := strings.LastIndex(u.Path, ".")
+					if i == -1 || j == -1 {
+						sb.WriteString(fmt.Sprintf("Downloadables [%s]'s Source [%s] is not a valid url, maybe missing .zip/.rar/.7z\n", d.Name, s))
+					}
+					s = u.Path[i+1 : j]
+					if d.Name != s {
+						sb.WriteString(fmt.Sprintf("Downloadables [%s]'s Source [%s] must be the same as the name after the extension is removed\n", d.Name, s))
+					}
+					dlableNames[s] = true
+				}
 			}
-			i := strings.LastIndex(u.Path, "/")
-			j := strings.LastIndex(u.Path, ".")
-			if i == -1 || j == -1 {
-				sb.WriteString(fmt.Sprintf("Downloadables [%s]'s Source [%s] is not a valid url, maybe missing .zip/.rar/.7z\n", d.Name, s))
+		} else {
+			if d.Nexus == nil {
+				sb.WriteString(fmt.Sprintf("Downloadables [%s]'s Nexus is required\n", d.Name))
 			}
-			s = u.Path[i+1 : j]
-			if d.Name != s {
-				sb.WriteString(fmt.Sprintf("Downloadables [%s]'s Source [%s] must be the same as the name after the extension is removed\n", d.Name, s))
+			if d.Nexus.FileID <= 0 {
+				sb.WriteString(fmt.Sprintf("Downloadables [%s]'s Nexus FileID must be greater than 0\n", d.Name))
 			}
-			dlableNames[s] = true
+			if d.Nexus.FileName == "" {
+				sb.WriteString(fmt.Sprintf("Downloadables [%s]'s Nexus FileName is required\n", d.Name))
+			}
+			dlableNames[d.Name] = true
 		}
-		if d.InstallType == "" {
-			sb.WriteString(fmt.Sprintf("Downloadables [%s]'s Install Type is required\n", d.Name))
-		}
+		//if d.InstallType == "" {
+		//	sb.WriteString(fmt.Sprintf("Downloadables [%s]'s Install Type is required\n", d.Name))
+		//}
 	}
 
 	if len(m.AlwaysDownload) == 0 && len(m.Configurations) == 0 {

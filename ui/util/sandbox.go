@@ -16,8 +16,12 @@ func DisplayDownloadsAndFiles(toInstall []*mods.ToInstall) {
 	for _, ti := range toInstall {
 		sb.WriteString(fmt.Sprintf("## %s\n\n", ti.Download.Name))
 		sb.WriteString("### Sources:\n\n")
-		for _, s := range ti.Download.Sources {
-			sb.WriteString(fmt.Sprintf("  - %s\n\n", s))
+		if ti.Download.Hosted != nil {
+			for _, s := range ti.Download.Hosted.Sources {
+				sb.WriteString(fmt.Sprintf("  - %s\n\n", s))
+			}
+		} else if ti.Download.Nexus != nil {
+			sb.WriteString(fmt.Sprintf("  - %s\n\n", ti.Download.Nexus.FileName))
 		}
 		sb.WriteString("### Files:\n\n")
 		for _, dl := range ti.DownloadFiles {

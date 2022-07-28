@@ -30,6 +30,10 @@ func Download(url, toDir string) (string, error) {
 		return "", err
 	}
 
+	if err = os.MkdirAll(toDir, 0777); err != nil {
+		return "", err
+	}
+
 	// Create the file
 	if out, err = os.Create(file); err != nil {
 		return "", err

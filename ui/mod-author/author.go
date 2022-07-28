@@ -10,6 +10,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/mods/managed/authored"
+	"github.com/kiamev/moogle-mod-manager/nexus"
 	config_installer "github.com/kiamev/moogle-mod-manager/ui/config-installer"
 	cw "github.com/kiamev/moogle-mod-manager/ui/custom-widgets"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
@@ -65,6 +66,24 @@ func (a *ModAuthorer) NewMod() {
 		ReleaseDate:         time.Now().Format("Jan 02 2006"),
 		ConfigSelectionType: mods.Auto,
 	})
+}
+
+func (a *ModAuthorer) NewFromNexus() {
+	a.NewMod()
+	e := widget.NewEntry()
+	dialog.ShowForm("", "Ok", "Cancel", []*widget.FormItem{widget.NewFormItem("Link", e)},
+		func(ok bool) {
+			if !ok {
+				state.ShowPreviousScreen()
+				return
+			}
+			m, err := nexus.GetModFromNexus(e.Text)
+			if err != nil {
+				dialog.ShowError(err, state.Window)
+				return
+			}
+			a.updateEntries(m)
+		}, state.Window)
 }
 
 func (a *ModAuthorer) LoadModToEdit() (successfullyLoadedMod bool) {
@@ -211,7 +230,7 @@ func (a *ModAuthorer) updateEntries(mod *mods.Mod) {
 	a.createFormItem("Author", mod.Author)
 	a.createFormItem("Release Date", mod.ReleaseDate)
 	a.createFormItem("Category", mod.Category)
-	a.createFormItem("Description", mod.Description)
+	a.createFormMultiLine("Description", mod.Description)
 	a.createFormMultiLine("Release Notes", mod.ReleaseNotes)
 	a.createFormItem("Link", mod.Link)
 	a.createFormSelect("Select Type", mods.SelectTypes, string(mod.ConfigSelectionType))
@@ -222,6 +241,7 @@ func (a *ModAuthorer) updateEntries(mod *mods.Mod) {
 
 	a.previewDef.set(mod.Preview)
 	a.modCompatsDef.set(mod.ModCompatibility)
+	a.modKindDef.set(mod.ModKind)
 	a.downloadDef.set(mod.Downloadables)
 	a.donationsDef.set(mod.DonationLinks)
 	a.gamesDef.set(mod.Games)

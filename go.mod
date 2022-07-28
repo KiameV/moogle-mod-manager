@@ -4,8 +4,9 @@ go 1.17
 
 require (
 	fyne.io/fyne/v2 v2.2.3
+	github.com/JohannesKaufmann/html-to-markdown v1.3.5
 	github.com/bodgit/sevenzip v1.2.2
-	github.com/gorilla/websocket v1.5.0
+	github.com/frustra/bbcode v0.0.0-20201127003707-6ef347fbe1c8
 	github.com/ncruces/zenity v0.8.9
 	golang.design/x/clipboard v0.6.2
 	golang.org/x/sys v0.0.0-20220627191245-f75cf1eec38b
@@ -13,8 +14,10 @@ require (
 
 require (
 	fyne.io/systray v1.10.1-0.20220621085403-9a2652634e93 // indirect
+	github.com/PuerkitoBio/goquery v1.5.1 // indirect
 	github.com/akavel/rsrc v0.10.2 // indirect
 	github.com/andybalholm/brotli v1.0.4 // indirect
+	github.com/andybalholm/cascadia v1.1.0 // indirect
 	github.com/bodgit/plumbing v1.2.0 // indirect
 	github.com/bodgit/windows v1.0.0 // indirect
 	github.com/connesc/cipherio v0.2.1 // indirect

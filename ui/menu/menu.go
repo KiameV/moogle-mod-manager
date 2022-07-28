@@ -86,6 +86,10 @@ Contributors:
 				state.GetScreen(state.ModAuthor).(*a.ModAuthorer).NewMod()
 				state.ShowScreen(state.ModAuthor)
 			}),
+			fyne.NewMenuItem("New From Nexus", func() {
+				state.GetScreen(state.ModAuthor).(*a.ModAuthorer).NewFromNexus()
+				state.ShowScreen(state.ModAuthor)
+			}),
 			fyne.NewMenuItem("Edit Mod", func() {
 				if state.GetScreen(state.ModAuthor).(*a.ModAuthorer).LoadModToEdit() {
 					state.ShowScreen(state.ModAuthor)

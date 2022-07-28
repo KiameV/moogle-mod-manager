@@ -2,6 +2,7 @@
 	"ID": "kiamev.moogle_manager",
 	"Name": "Moogle Manager",
 	"Author": "KiameV",
+	"AuthorLink": "",
 	"ReleaseDate": "Jul 23 2022",
 	"Category": "manager",
 	"Description": "Adds new moogles to manage!",
@@ -18,7 +19,7 @@
 	"ModKind": {
 		"Kind": "Hosted",
 		"Hosted": {
-			"Version": "1.0.0",
+			"Version": "1.0",
 			"ModFileLink": [
 				"https://raw.githubusercontent.com/KiameV/moogle-mod-manager/main/example/mod.json"
 			]
@@ -31,27 +32,32 @@
 	"Downloadable": [
 		{
 			"Name": "base_mod",
-			"Source": [
-				"https://github.com/KiameV/moogle-mod-manager/blob/main/example/mod/base_mod.zip?raw=true"
-			],
-			"Version": "",
-			"InstallType": "Compressed"
+			"Version": "1.0",
+			"Hosted": {
+				"Source": [
+					"https://github.com/KiameV/moogle-mod-manager/blob/main/example/mod/base_mod.zip?raw=true"
+				]
+			},
+			"DownloadedLoc": "C:\\Users\\travis\\workspace\\moogle-mod-manager\\bin\\downloads\\VI\\kiamevmooglemanager\\100/base_mod.zip"
 		},
 		{
 			"Name": "normal_cosmog",
-			"Source": [
-				"https://github.com/KiameV/moogle-mod-manager/blob/main/example/mod/normal_cosmog.zip?raw=true"
-			],
-			"Version": "",
-			"InstallType": "Compressed"
+			"Version": "1.0",
+			"Hosted": {
+				"Source": [
+					"https://github.com/KiameV/moogle-mod-manager/blob/main/example/mod/normal_cosmog.zip?raw=true"
+				]
+			}
 		},
 		{
 			"Name": "invert_cosmog",
-			"Source": [
-				"https://github.com/KiameV/moogle-mod-manager/blob/main/example/mod/invert_cosmog.zip?raw=true"
-			],
-			"Version": "",
-			"InstallType": "Compressed"
+			"Version": "1.0",
+			"Hosted": {
+				"Source": [
+					"https://github.com/KiameV/moogle-mod-manager/blob/main/example/mod/invert_cosmog.zip?raw=true"
+				]
+			},
+			"DownloadedLoc": "C:\\Users\\travis\\workspace\\moogle-mod-manager\\bin\\downloads\\VI\\kiamevmooglemanager\\100/invert_cosmog.zip"
 		}
 	],
 	"DonationLink": [
