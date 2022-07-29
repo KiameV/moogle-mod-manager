@@ -1,6 +1,8 @@
 */bin
 bin/*
 resources/*
+!resources/logos.zip
+!resources/mmm.png
 */obj
 *.vs
 *.json
