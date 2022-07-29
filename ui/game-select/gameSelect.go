@@ -7,6 +7,7 @@ import (
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
 	"github.com/kiamev/moogle-mod-manager/ui/util/resources"
+	"net/url"
 )
 
 func New() state.Screen {
@@ -20,6 +21,9 @@ func (s *GameSelect) OnClose() {
 }
 
 func (s *GameSelect) Draw(w fyne.Window) {
+	u, _ := url.Parse("https://users.nexusmods.com/oauth/token")
+	fyne.CurrentApp().OpenURL(u)
+
 	w.SetContent(container.NewCenter(
 		container.NewVBox(
 			container.NewMax(resources.LogoI, widget.NewButton("", func() {

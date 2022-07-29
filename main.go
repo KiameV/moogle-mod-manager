@@ -24,16 +24,47 @@ func main() {
 	state.Window = state.App.NewWindow("Moogle Mod Manager " + browser.Version)
 	initialize()
 	/*
-		var tag language.Tag
-		if tag, err = locale.Detect(); err != nil {
-			dialog.ShowError(err, state.Window)
-		} else {
-			// TODO
-			println(tag.String())
-			//https://github.com/nicksnyder/go-i18n/
-			//https://en.wikipedia.org/wiki/IETF_language_tag
-			//en-US
-		}
+			var tag language.Tag
+			if tag, err = locale.Detect(); err != nil {
+				dialog.ShowError(err, state.Window)
+			} else {
+				// TODO
+				println(tag.String())
+				//https://github.com/nicksnyder/go-i18n/
+				//https://en.wikipedia.org/wiki/IETF_language_tag
+				//en-US
+			}
+
+
+
+		  setup: async (discovery, context) => {
+		    await checkForRequiredToolStat({
+		      context,
+		      discovery,
+		      name: 'Memoria FF6',
+		      url: 'https://github.com/Albeoris/Memoria.FFPR',
+		      paths: [path.join('BepInEx', 'plugins', 'Memoria.FF6.dll')],
+		    })
+
+		    await checkForRequiredToolStat({
+		      context,
+		      discovery,
+		      name: 'BepInEx',
+		      url: 'https://github.com/Albeoris/Memoria.FFPR',
+		      paths: [path.join('BepInEx', 'core', 'BepInEx.Core.dll')],
+		    })
+
+		    await checkForRequiredToolSha256({
+		      context,
+		      discovery,
+		      name: 'UnityPlayer.dll',
+		      path: 'UnityPlayer.dll',
+		      url: 'https://www.dropbox.com/s/pyqpoxpl7i4i67a/UnityPlayer.7z',
+		      hashes: [
+		        'F1B5D1110914CEBEF9D31A935239262342DEBDE78115D90F48C640CD39673CBE',
+		      ],
+		    })
+		  },
 	*/
 
 	state.RegisterMainMenu(menu.New())

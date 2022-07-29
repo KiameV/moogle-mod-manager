@@ -36,6 +36,8 @@ const (
 	nexusApiModDlUrlSuffix = "?category=main%2Cupdate%2Coptional%2Cmiscellaneous"
 	nexusUrl               = "https://www.nexusmods.com/%s/mods/%d"
 
+	nexusUsersApiUrl = "https://users.nexusmods.com/oauth/token"
+
 	// file_id, NexusGameID
 	nexusFileDownload = "https://www.nexusmods.com/Core/Libs/Common/Widgets/DownloadPopUp?id=%d&game_id=%v"
 )

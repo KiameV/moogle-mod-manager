@@ -7,6 +7,8 @@ require (
 	github.com/JohannesKaufmann/html-to-markdown v1.3.5
 	github.com/bodgit/sevenzip v1.2.2
 	github.com/frustra/bbcode v0.0.0-20201127003707-6ef347fbe1c8
+	github.com/google/uuid v1.1.2
+	github.com/gorilla/websocket v1.5.0
 	github.com/ncruces/zenity v0.8.9
 	golang.design/x/clipboard v0.6.2
 	golang.org/x/sys v0.0.0-20220627191245-f75cf1eec38b
