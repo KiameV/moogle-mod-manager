@@ -10,7 +10,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/mods/managed/authored"
-	"github.com/kiamev/moogle-mod-manager/nexus"
+	"github.com/kiamev/moogle-mod-manager/mods/nexus"
 	config_installer "github.com/kiamev/moogle-mod-manager/ui/config-installer"
 	cw "github.com/kiamev/moogle-mod-manager/ui/custom-widgets"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
@@ -79,7 +79,7 @@ func (a *ModAuthorer) NewFromNexus() {
 			}
 			m, err := nexus.GetModFromNexus(e.Text)
 			if err != nil {
-				dialog.ShowError(err, state.Window)
+				util.ShowErrorLong(err)
 				return
 			}
 			a.updateEntries(m)
@@ -101,7 +101,7 @@ func (a *ModAuthorer) LoadModToEdit() (successfullyLoadedMod bool) {
 		return false
 	}
 	if b, err = ioutil.ReadFile(file); err != nil {
-		dialog.ShowError(err, state.Window)
+		util.ShowErrorLong(err)
 		return false
 	}
 	if path.Ext(file) == ".xml" {
@@ -197,7 +197,7 @@ func (a *ModAuthorer) Draw(w fyne.Window) {
 			if len(a.configsDef.list.Items) == 0 {
 				tis, err := mods.NewToInstallForMod(mod, mod.AlwaysDownload)
 				if err != nil {
-					dialog.ShowError(err, state.Window)
+					util.ShowErrorLong(err)
 					return
 				}
 				util.DisplayDownloadsAndFiles(tis)
@@ -206,7 +206,7 @@ func (a *ModAuthorer) Draw(w fyne.Window) {
 				util.DisplayDownloadsAndFiles(tis)
 				return nil
 			}); err != nil {
-				dialog.ShowError(err, state.Window)
+				util.ShowErrorLong(err)
 				return
 			}
 			state.ShowScreen(state.ConfigInstaller)
@@ -255,13 +255,13 @@ func (a *ModAuthorer) pasteToClipboard(asJson bool) {
 		err error
 	)
 	if err = clipboard.Init(); err != nil {
-		dialog.ShowError(err, state.Window)
+		util.ShowErrorLong(err)
 		return
 	}
 	mod := a.compileMod()
 	callback := func() {
 		if b, err = a.Marshal(mod, asJson); err != nil {
-			dialog.ShowError(err, state.Window)
+			util.ShowErrorLong(err)
 			return
 		}
 		clipboard.Write(clipboard.FmtText, b)
@@ -340,7 +340,7 @@ func (a *ModAuthorer) save(mod *mods.Mod, asJson bool) {
 		err  error
 	)
 	if b, err = a.Marshal(mod, asJson); err != nil {
-		dialog.ShowError(err, state.Window)
+		util.ShowErrorLong(err)
 		return
 	}
 
@@ -369,7 +369,7 @@ func (a *ModAuthorer) save(mod *mods.Mod, asJson bool) {
 	}
 	if save {
 		if err = ioutil.WriteFile(file, b, 0755); err != nil {
-			dialog.ShowError(err, state.Window)
+			util.ShowErrorLong(err)
 		}
 	}
 }

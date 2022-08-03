@@ -13,6 +13,7 @@ import (
 	ci "github.com/kiamev/moogle-mod-manager/ui/config-installer"
 	cw "github.com/kiamev/moogle-mod-manager/ui/custom-widgets"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
+	"github.com/kiamev/moogle-mod-manager/ui/util"
 	"github.com/ncruces/zenity"
 	"net/url"
 	"path/filepath"
@@ -73,7 +74,7 @@ func (ui *localUI) Draw(w fyne.Window) {
 		removeButton = widget.NewButton("Remove", func() {
 			if ui.selectedMod != nil {
 				if err := managed.RemoveMod(*state.CurrentGame, ui.selectedMod); err != nil {
-					dialog.ShowError(err, state.Window)
+					util.ShowErrorLong(err)
 					return
 				}
 				ui.selectedMod = nil
@@ -142,7 +143,7 @@ func (ui *localUI) createPreview(tm *model.TrackedMod) fyne.CanvasObject {
 	if tm.UpdatedMod != nil {
 		c.Add(widget.NewButton("Update", func() {
 			if err := managed.UpdateMod(*state.CurrentGame, tm); err != nil {
-				dialog.ShowError(err, state.Window)
+				util.ShowErrorLong(err)
 				return
 			}
 			_ = tm.NameBinding.Set(tm.Mod.Name)
@@ -248,7 +249,7 @@ func (ui *localUI) addFromFile() {
 			Patterns: []string{"*.xml", "*.json"},
 		}); err == nil {
 		if tm, err = managed.AddModFromFile(*state.CurrentGame, file); err != nil {
-			dialog.ShowError(err, state.Window)
+			util.ShowErrorLong(err)
 			return
 		} else {
 			ui.addModToList(tm)
@@ -263,7 +264,7 @@ func (ui *localUI) addFromUrl() {
 		func(ok bool) {
 			if ok && e.Text != "" {
 				if tm, err := managed.AddModFromUrl(*state.CurrentGame, e.Text); err != nil {
-					dialog.ShowError(err, state.Window)
+					util.ShowErrorLong(err)
 					return
 				} else {
 					ui.addModToList(tm)
@@ -298,7 +299,7 @@ func (ui *localUI) enableMod(game config.Game, tm *model.TrackedMod) bool {
 	} else {
 		tis, err := mods.NewToInstallForMod(tm.Mod, tm.Mod.AlwaysDownload)
 		if err != nil {
-			dialog.ShowError(err, state.Window)
+			util.ShowErrorLong(err)
 			return false
 		}
 		if err = managed.EnableMod(*state.CurrentGame, tm, tis); err != nil {
@@ -310,7 +311,7 @@ func (ui *localUI) enableMod(game config.Game, tm *model.TrackedMod) bool {
 
 func (ui *localUI) disableMod(mod *model.TrackedMod) bool {
 	if err := managed.DisableMod(*state.CurrentGame, mod); err != nil {
-		dialog.ShowError(err, state.Window)
+		util.ShowErrorLong(err)
 		return false
 	}
 	return true

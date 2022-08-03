@@ -3,7 +3,6 @@ package main
 import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
-	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/theme"
 	"github.com/kiamev/moogle-mod-manager/browser"
 	"github.com/kiamev/moogle-mod-manager/config"
@@ -16,6 +15,7 @@ import (
 	"github.com/kiamev/moogle-mod-manager/ui/menu"
 	mod_author "github.com/kiamev/moogle-mod-manager/ui/mod-author"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
+	"github.com/kiamev/moogle-mod-manager/ui/util"
 	"github.com/kiamev/moogle-mod-manager/ui/util/resources"
 )
 
@@ -23,10 +23,19 @@ func main() {
 	state.App = app.New()
 	state.Window = state.App.NewWindow("Moogle Mod Manager " + browser.Version)
 	initialize()
+
+	// Mod versions
+	// \Steam\steamapps\appmanifest_1173820.acf
+	// FF1:1173770
+	// FF2:1173780
+	// FF3:1173790
+	// FF4:1173800
+	// FF5:1173810
+	// FF6:1173820
 	/*
 			var tag language.Tag
 			if tag, err = locale.Detect(); err != nil {
-				dialog.ShowError(err, state.Window)
+				util.ShowErrorLong(err)
 			} else {
 				// TODO
 				println(tag.String())
@@ -84,16 +93,16 @@ func main() {
 func initialize() {
 	var err error
 	if err = managed.Initialize(); err != nil {
-		dialog.ShowError(err, state.Window)
+		util.ShowErrorLong(err)
 	}
 	if err = authored.Initialize(); err != nil {
-		dialog.ShowError(err, state.Window)
+		util.ShowErrorLong(err)
 	}
 	config.GetSecrets().Initialize()
 
 	configs := config.Get()
 	if err = configs.Initialize(); err != nil {
-		dialog.ShowError(err, state.Window)
+		util.ShowErrorLong(err)
 	}
 	size := fyne.NewSize(config.WindowWidth, config.WindowHeight)
 	if x := configs.WindowX; x != 0 {

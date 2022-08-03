@@ -4,9 +4,9 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/widget"
+	"github.com/gen2brain/go-unarr"
 	"github.com/kiamev/moogle-mod-manager/browser"
 	"github.com/kiamev/moogle-mod-manager/config"
-	"github.com/kiamev/moogle-mod-manager/decompressor"
 	"os"
 	"path/filepath"
 )
@@ -24,7 +24,7 @@ var (
 
 func Initialize() {
 	resources := filepath.Join(config.PWD, resourcesDir)
-	downloadResources(resources)
+	_ = downloadResources(resources)
 	LogoI = loadLogo(config.I, filepath.Join(resources, "1.png"))
 	LogoII = loadLogo(config.II, filepath.Join(resources, "2.png"))
 	LogoIII = loadLogo(config.III, filepath.Join(resources, "3.png"))
@@ -33,12 +33,8 @@ func Initialize() {
 	LogoVI = loadLogo(config.VI, filepath.Join(resources, "6.png"))
 }
 
-func downloadResources(resources string) {
-	var (
-		f   string
-		d   decompressor.Decompressor
-		err error
-	)
+func downloadResources(resources string) (err error) {
+	var f string
 	if _, err = os.Stat(resources); err != nil {
 		if err = os.Mkdir(resources, 0777); err != nil {
 			return
@@ -51,13 +47,9 @@ func downloadResources(resources string) {
 		defer func() {
 			_ = os.Remove(f)
 		}()
-		if d, err = decompressor.NewDecompressor(f); err != nil {
-			return
-		}
-		if err = d.DecompressTo(resources); err != nil {
-			return
-		}
+		return decompress(f, resources)
 	}
+	return nil
 }
 
 func loadLogo(game config.Game, f string) fyne.CanvasObject {
@@ -82,4 +74,19 @@ func loadLogo(game config.Game, f string) fyne.CanvasObject {
 
 func createTextLogo(game config.Game) fyne.CanvasObject {
 	return widget.NewLabel(config.GameNameString(game))
+}
+
+func decompress(from string, to string) error {
+	a, err := unarr.NewArchive(from)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = a.Close() }()
+
+	if err = os.MkdirAll(to, 0777); err != nil {
+		return err
+	}
+
+	_, err = a.Extract(to)
+	return err
 }

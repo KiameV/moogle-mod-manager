@@ -38,12 +38,46 @@ const (
 
 	nexusUsersApiUrl = "https://users.nexusmods.com/oauth/token"
 
-	// file_id, NexusGameID
-	nexusFileDownload = "https://www.nexusmods.com/Core/Libs/Common/Widgets/DownloadPopUp?id=%d&game_id=%v"
+	// NexusFileDownload file_id, NexusGameID
+	NexusFileDownload = "https://www.nexusmods.com/Core/Libs/Common/Widgets/DownloadPopUp?id=%d&game_id=%v"
 )
 
 func IsNexus(url string) bool {
 	return strings.Index(url, "nexusmods.com") >= 0
+}
+
+func NexusGameFromGame(game config.Game) NexusGame {
+	switch game {
+	case config.I:
+		return FFI
+	case config.II:
+		return FFII
+	case config.III:
+		return FFIII
+	case config.IV:
+		return FFIV
+	case config.V:
+		return FFV
+	default:
+		return FFVI
+	}
+}
+
+func IdFromGame(game config.Game) NexusGameID {
+	switch game {
+	case config.I:
+		return IdFFI
+	case config.II:
+		return IdFFII
+	case config.III:
+		return IdFFIII
+	case config.IV:
+		return IdFFIV
+	case config.V:
+		return IdFFV
+	default:
+		return IdFFVI
+	}
 }
 
 func GetModFromNexus(url string) (mod *mods.Mod, err error) {
@@ -121,7 +155,6 @@ func sendRequest(url string) (response []byte, err error) {
 
 func toMod(n nexusMod, dls []NexusFile) (mod *mods.Mod, err error) {
 	modID := fmt.Sprintf("%d", n.ModID)
-	var nexusGameID NexusGameID
 	mod = &mods.Mod{
 		ID:           modID,
 		Name:         n.Name,
@@ -154,25 +187,20 @@ func toMod(n nexusMod, dls []NexusFile) (mod *mods.Mod, err error) {
 		mod.Description = n.Description
 		err = nil
 	}
+
 	switch n.Game {
 	case FFI:
 		mod.Games[0].Name = config.FfPrI
-		nexusGameID = IdFFI
 	case FFII:
 		mod.Games[0].Name = config.FfPrII
-		nexusGameID = IdFFII
 	case FFIII:
 		mod.Games[0].Name = config.FfPrIII
-		nexusGameID = IdFFIII
 	case FFIV:
 		mod.Games[0].Name = config.FfPrIV
-		nexusGameID = IdFFIV
 	case FFV:
 		mod.Games[0].Name = config.FfPrV
-		nexusGameID = IdFFV
 	case FFVI:
 		mod.Games[0].Name = config.FfPrVI
-		nexusGameID = IdFFVI
 	default:
 		err = fmt.Errorf("unsupported game %s", n.Game)
 		return
@@ -186,7 +214,6 @@ func toMod(n nexusMod, dls []NexusFile) (mod *mods.Mod, err error) {
 				FileID:   d.FileID,
 				FileName: d.FileName,
 			},
-			DownloadedLoc: fmt.Sprintf(nexusFileDownload, d.FileID, nexusGameID),
 		}
 	}
 	return

@@ -5,10 +5,9 @@ go 1.17
 require (
 	fyne.io/fyne/v2 v2.2.3
 	github.com/JohannesKaufmann/html-to-markdown v1.3.5
-	github.com/bodgit/sevenzip v1.2.2
 	github.com/frustra/bbcode v0.0.0-20201127003707-6ef347fbe1c8
-	github.com/google/uuid v1.1.2
-	github.com/gorilla/websocket v1.5.0
+	github.com/gen2brain/go-unarr v0.1.4
+	github.com/mholt/archiver/v4 v4.0.0-alpha.7
 	github.com/ncruces/zenity v0.8.9
 	golang.design/x/clipboard v0.6.2
 	golang.org/x/sys v0.0.0-20220627191245-f75cf1eec38b
@@ -20,11 +19,9 @@ require (
 	github.com/akavel/rsrc v0.10.2 // indirect
 	github.com/andybalholm/brotli v1.0.4 // indirect
 	github.com/andybalholm/cascadia v1.1.0 // indirect
-	github.com/bodgit/plumbing v1.2.0 // indirect
-	github.com/bodgit/windows v1.0.0 // indirect
-	github.com/connesc/cipherio v0.2.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dchest/jsmin v0.0.0-20220218165748-59f39799265f // indirect
+	github.com/dsnet/compress v0.0.1 // indirect
 	github.com/fredbi/uri v0.0.0-20181227131451-3dcfdacbaaf3 // indirect
 	github.com/fsnotify/fsnotify v1.5.4 // indirect
 	github.com/fyne-io/gl-js v0.0.0-20220119005834-d2da28d9ccfe // indirect
@@ -34,12 +31,13 @@ require (
 	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20211213063430-748e38ca8aec // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
 	github.com/goki/freetype v0.0.0-20181231101311-fa8a33aabaff // indirect
+	github.com/golang/snappy v0.0.4 // indirect
 	github.com/gopherjs/gopherjs v1.17.2 // indirect
-	github.com/hashicorp/errwrap v1.0.0 // indirect
-	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/josephspurrier/goversioninfo v1.4.0 // indirect
 	github.com/jsummers/gobmp v0.0.0-20151104160322-e2ba15ffa76e // indirect
-	github.com/klauspost/compress v1.15.4 // indirect
+	github.com/klauspost/compress v1.15.5 // indirect
+	github.com/klauspost/pgzip v1.2.5 // indirect
+	github.com/nwaples/rardecode/v2 v2.0.0-beta.2 // indirect
 	github.com/pierrec/lz4/v4 v4.1.14 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/randall77/makefat v0.0.0-20210315173500-7ddd0e42c844 // indirect
@@ -47,9 +45,9 @@ require (
 	github.com/srwiley/rasterx v0.0.0-20200120212402-85cb7272f5e9 // indirect
 	github.com/stretchr/testify v1.7.2 // indirect
 	github.com/tevino/abool v1.2.0 // indirect
+	github.com/therootcompany/xz v1.0.1 // indirect
 	github.com/ulikunitz/xz v0.5.10 // indirect
 	github.com/yuin/goldmark v1.4.0 // indirect
-	go4.org v0.0.0-20200411211856-f5505b9728dd // indirect
 	golang.org/x/exp v0.0.0-20200224162631-6cc2880d07d6 // indirect
 	golang.org/x/image v0.0.0-20220617043117-41969df76e82 // indirect
 	golang.org/x/mobile v0.0.0-20211207041440-4e6c2922fdee // indirect

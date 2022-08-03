@@ -1,23 +1,21 @@
 package managed
 
 import (
+	"context"
 	"encoding/json"
 	"encoding/xml"
 	"errors"
 	"fmt"
-	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/dialog"
-	"fyne.io/fyne/v2/widget"
+	unarr "github.com/gen2brain/go-unarr"
 	"github.com/kiamev/moogle-mod-manager/browser"
 	"github.com/kiamev/moogle-mod-manager/config"
-	"github.com/kiamev/moogle-mod-manager/decompressor"
+	"github.com/kiamev/moogle-mod-manager/downloads"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/mods/managed/model"
-	"github.com/kiamev/moogle-mod-manager/ui/state"
+	wu "github.com/kiamev/moogle-mod-manager/ui/util"
 	"github.com/kiamev/moogle-mod-manager/util"
+	archiver "github.com/mholt/archiver/v4"
 	"io"
-	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -148,81 +146,91 @@ func UpdateMod(game config.Game, tm *model.TrackedMod) (err error) {
 func GetMods(game config.Game) []*model.TrackedMod { return lookup[game].Mods }
 
 func EnableMod(game config.Game, tm *model.TrackedMod, tis []*mods.ToInstall) (err error) {
-	confirmDownloads(tm, tis, func() {
-		var (
-			downloadDir string
-			f           string
-			d           decompressor.Decompressor
-			modPath     = filepath.Join(config.Get().GetModsFullPath(game), tm.GetDirSuffix())
-			installed   []*model.InstalledDownload
-		)
-		if downloadDir, err = createPath(filepath.Join(config.Get().GetDownloadFullPath(game), tm.GetDirSuffix())); err != nil {
-			dialog.ShowError(err, state.Window)
-			return
-		}
-
-		if tm.Mod.ModKind.Kind == mods.Hosted {
-			for _, ti := range tis {
-				if len(ti.Download.Hosted.Sources) == 0 {
-					dialog.ShowError(fmt.Errorf("%s has no download sources", ti.Download.Name), state.Window)
-					return
-				}
-				for _, source := range ti.Download.Hosted.Sources {
-					if f, err = browser.Download(source, filepath.Join(downloadDir, util.CreateFileName(ti.Download.Version))); err == nil {
-						// success
-						installed = append(installed, model.NewInstalledDownload(ti.Download.Name, ti.Download.Version))
-						ti.Download.DownloadedLoc = f
-						break
-					}
-				}
-			}
-
-			for _, ti := range tis {
-				if ti.Download.DownloadedLoc == "" {
-					dialog.ShowError(fmt.Errorf("failed to download %s", ti.Download.Hosted.Sources[0]), state.Window)
-					return
-				}
-			}
-		} else {
-			for _, ti := range tis {
-				if ti.Download.DownloadedLoc == "" {
-					dialog.ShowError(fmt.Errorf("failed to download %s", ti.Download.Nexus.FileName), state.Window)
-					return
-				}
-			}
-		}
-
-		for _, ti := range tis {
-			if d, err = decompressor.NewDecompressor(ti.Download.DownloadedLoc); err != nil {
-				dialog.ShowError(err, state.Window)
-				return
-			}
-			if err = d.DecompressTo(modPath); err != nil {
-				dialog.ShowError(err, state.Window)
-				return
-			}
-		}
-
-		for _, ti := range tis {
-			if err = AddModFiles(game, tm, ti.DownloadFiles); err != nil {
-				dialog.ShowError(err, state.Window)
-				return
-			}
-		}
-
-		tm.Installed = installed
-		_ = saveToJson()
-	})
-	// Don't save here, save in the callback
+	if err = downloads.Download(game, tm, tis, enableMod); err != nil {
+		wu.ShowErrorLong(err)
+	}
 	return
 }
 
-func createPath(path string) (string, error) {
-	if err := os.MkdirAll(path, os.ModePerm); err != nil {
-		err = fmt.Errorf("failed to create mod directory: %v", err)
-		return "", err
+func enableMod(game config.Game, tm *model.TrackedMod, tis []*mods.ToInstall, err error) {
+	var (
+		modPath   = filepath.Join(config.Get().GetModsFullPath(game), tm.GetDirSuffix())
+		installed []*model.InstalledDownload
+	)
+
+	if err != nil {
+		wu.ShowErrorLong(err)
+		tm.Enabled = false
+		return
 	}
-	return path, nil
+
+	for _, ti := range tis {
+		if err = decompress(ti.Download.DownloadedLoc, modPath); err != nil {
+			wu.ShowErrorLong(err)
+			tm.Enabled = false
+			return
+		}
+	}
+
+	for _, ti := range tis {
+		if err = AddModFiles(game, tm, ti.DownloadFiles); err != nil {
+			wu.ShowErrorLong(err)
+			tm.Enabled = false
+			return
+		}
+	}
+
+	tm.Installed = installed
+	_ = saveToJson()
+	return
+}
+
+func decompress(from string, to string) error {
+	if filepath.Ext(from) == ".rar" {
+		handler := func(ctx context.Context, f archiver.File) (err error) {
+			if !f.IsDir() {
+				var r io.ReadCloser
+				if r, err = f.Open(); err != nil {
+					return
+				}
+				defer func() { _ = r.Close() }()
+
+				fp := filepath.Join(to, f.Name())
+				if err = os.MkdirAll(filepath.Dir(fp), 0755); err != nil {
+					return
+				}
+				buf := new(strings.Builder)
+				if _, err = io.Copy(buf, r); err != nil {
+					return
+				}
+				var file *os.File
+				if file, err = os.Create(fp); err != nil {
+					return
+				}
+				defer func() { _ = file.Close() }()
+
+				_, err = file.WriteString(buf.String())
+			}
+			return
+		}
+		f, err := os.Open(from)
+		if err != nil {
+			return err
+		}
+		return archiver.Rar{}.Extract(context.Background(), f, nil, handler)
+	}
+	a, err := unarr.NewArchive(from)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = a.Close() }()
+
+	if err = os.MkdirAll(to, 0777); err != nil {
+		return err
+	}
+
+	_, err = a.Extract(to)
+	return err
 }
 
 func DisableMod(game config.Game, tm *model.TrackedMod) (err error) {
@@ -230,43 +238,6 @@ func DisableMod(game config.Game, tm *model.TrackedMod) (err error) {
 		return
 	}
 	return saveToJson()
-}
-
-func confirmDownloads(tm *model.TrackedMod, tis []*mods.ToInstall, callback func()) {
-	if tm.Mod.ModKind.Kind == mods.Nexus {
-		for _, ti := range tis {
-			resp, err := http.Get(ti.Download.DownloadedLoc)
-			if err != nil {
-				return
-			}
-			b, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return
-			}
-			b = b
-		}
-		callback()
-		return
-	}
-	sb := strings.Builder{}
-	for i, ti := range tis {
-		sb.WriteString(fmt.Sprintf("## Download %d\n\n", i+1))
-		if len(ti.Download.Hosted.Sources) == 1 {
-			sb.WriteString(ti.Download.Hosted.Sources[0] + "\n\n")
-		} else {
-			sb.WriteString("### Sources:\n\n")
-			for j, s := range ti.Download.Hosted.Sources {
-				sb.WriteString(fmt.Sprintf(" - %d. %s\n\n", j+1, s))
-			}
-		}
-	}
-	d := dialog.NewCustomConfirm("Download Files?", "Yes", "Cancel", container.NewVScroll(widget.NewRichTextFromMarkdown(sb.String())), func(ok bool) {
-		if ok {
-			callback()
-		}
-	}, state.Window)
-	d.Resize(fyne.NewSize(500, 400))
-	d.Show()
 }
 
 func RemoveMod(game config.Game, tm *model.TrackedMod) error {
