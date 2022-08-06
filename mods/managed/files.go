@@ -45,8 +45,8 @@ func AddModFiles(game config.Game, tm *model.TrackedMod, files []*mods.DownloadF
 		managed[game] = mmf
 	}
 
-	if collisions := detectCollisions(nil, files); len(collisions) > 0 {
-		return fmt.Errorf("cannot enable mod as these files would collide: %s", strings.Join(collisions, ", "))
+	if err = detectCollisions(mmf.Mods, files); err != nil {
+		return
 	}
 
 	var backedUp []*mods.ModFile
@@ -54,11 +54,11 @@ func AddModFiles(game config.Game, tm *model.TrackedMod, files []*mods.DownloadF
 
 	for _, df := range files {
 		modDir := filepath.Join(modPath, df.DownloadName)
-		if err = MoveFiles(df.Files, modDir, configs.DirVI, configs.GetBackupFullPath(game), &backedUp, &moved); err != nil {
+		if err = MoveFiles(df.Files, modDir, configs.DirVI, configs.GetBackupFullPath(game), &backedUp, &moved, false); err != nil {
 			break
 		}
 		if err == nil {
-			if err = MoveDirs(df.Dirs, modDir, configs.DirVI, configs.GetBackupFullPath(game), &backedUp, &moved); err != nil {
+			if err = MoveDirs(df.Dirs, modDir, configs.DirVI, configs.GetBackupFullPath(game), &backedUp, &moved, false); err != nil {
 				break
 			}
 		}
@@ -104,6 +104,7 @@ func RemoveModFiles(game config.Game, tm *model.TrackedMod) (err error) {
 	var (
 		mmf, ok = managed[game]
 		mf      *modFiles
+		sb      = strings.Builder{}
 	)
 	if !ok {
 		return fmt.Errorf("%s is not enabled", tm.Mod.Name)
@@ -116,7 +117,8 @@ func RemoveModFiles(game config.Game, tm *model.TrackedMod) (err error) {
 	for k, f := range mf.MovedFiles {
 		if _, err = os.Stat(f.To); err == nil {
 			if err = os.Remove(f.To); err != nil {
-				break
+				sb.WriteString(fmt.Sprintf("failed to remove [%s]: %v\n", f.To, err))
+				err = nil
 			}
 		}
 		handled = append(handled, k)
@@ -129,11 +131,13 @@ func RemoveModFiles(game config.Game, tm *model.TrackedMod) (err error) {
 	for k, f := range mf.BackedUpFiles {
 		if _, err = os.Stat(f.From); err == nil {
 			if err = os.Remove(f.From); err != nil {
-				return
+				sb.WriteString(fmt.Sprintf("failed to remove [%s]: %v\n", f.To, err))
+				err = nil
 			}
 		}
 		if err = MoveFile(cut, f.To, f.From, nil); err != nil {
-			break
+			sb.WriteString(fmt.Sprintf("failed to move [%s] to [%s]: %v\n", f.To, f.From, err))
+			err = nil
 		}
 		handled = append(handled, k)
 	}
@@ -151,9 +155,49 @@ func RemoveModFiles(game config.Game, tm *model.TrackedMod) (err error) {
 	return
 }
 
-func detectCollisions(managedFiles map[string]bool, modFiles []*mods.DownloadFiles) (collisions []string) {
-	// TODO
+func detectCollisions(managedFiles map[string]*modFiles, modFiles []*mods.DownloadFiles) error {
+	/*fileToMod := make(map[string]string)
+	for modID, mf := range managedFiles {
+		for _, f := range mf.MovedFiles {
+			fileToMod[f.To] = modID
+		}
+	}
+	collisions := detectCollisionsFromMap(fileToMod, modFiles)
+	if len(collisions) > 0 {
+		sb := strings.Builder{}
+		for modID, fs := range collisions {
+			sb.WriteString(modID)
+			sb.WriteByte('\n')
+			for _, f := range fs {
+				sb.WriteString(f)
+				sb.WriteByte('\n')
+			}
+		}
+		return fmt.Errorf("cannot enable mod as these files would collide:\n%s", sb.String())
+	}*/
+	return nil
+}
+
+func detectCollisionsFromMap(rootDir string, fileToMod map[string]string, modFiles []*mods.DownloadFiles) (collisions map[string][]string) {
+	/*for _, mf := range modFiles {
+		for _, f := range mf.Files {
+			if modID, found := fileToMod[f.To]; found {
+				collisions[modID] = append(collisions[modID], f.To)
+			}
+		}
+		for _, d := range mf.Dirs {
+			_ = filepath.WalkDir(rootDir)
+		}
+	}*/
 	return
+}
+
+func initializeFiles() error {
+	b, err := ioutil.ReadFile(filepath.Join(config.PWD, managedXmlName))
+	if err != nil {
+		return nil
+	}
+	return json.Unmarshal(b, &managed)
 }
 
 func saveManagedJson() error {
@@ -161,7 +205,7 @@ func saveManagedJson() error {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(managedXmlName, b, 0777)
+	return ioutil.WriteFile(filepath.Join(config.PWD, managedXmlName), b, 0777)
 }
 
 type action bool
@@ -171,22 +215,26 @@ const (
 	cut       action = true
 )
 
-func MoveFiles(files []*mods.ModFile, modDir string, toDir string, backupDir string, backedUp *[]*mods.ModFile, movedFiles *[]*mods.ModFile) (err error) {
+func MoveFiles(files []*mods.ModFile, modDir string, toDir string, backupDir string, backedUp *[]*mods.ModFile, movedFiles *[]*mods.ModFile, returnOnFail bool) (err error) {
 	for _, f := range files {
 		to := path.Join(toDir, f.To)
 		if _, err = os.Stat(to); err == nil {
 			if err = MoveFile(cut, to, path.Join(backupDir, f.To), backedUp); err != nil {
-				return
+				if returnOnFail {
+					return
+				}
 			}
 		}
 		if err = MoveFile(duplicate, path.Join(modDir, f.From), path.Join(toDir, f.To), movedFiles); err != nil {
-			return
+			if returnOnFail {
+				return
+			}
 		}
 	}
 	return
 }
 
-func MoveDirs(dirs []*mods.ModDir, modDir string, toDir string, backupDir string, replacedFiles *[]*mods.ModFile, movedFiles *[]*mods.ModFile) (err error) {
+func MoveDirs(dirs []*mods.ModDir, modDir string, toDir string, backupDir string, replacedFiles *[]*mods.ModFile, movedFiles *[]*mods.ModFile, returnOnFail bool) (err error) {
 	var mf []*mods.ModFile
 	for _, d := range dirs {
 		fromDir := strings.ReplaceAll(d.From, "\\", "/")
@@ -195,6 +243,9 @@ func MoveDirs(dirs []*mods.ModDir, modDir string, toDir string, backupDir string
 		}
 		if err = filepath.Walk(filepath.Join(modDir, d.From),
 			func(path string, info os.FileInfo, err error) error {
+				if returnOnFail {
+					err = nil
+				}
 				if err != nil {
 					return err
 				}
@@ -220,7 +271,7 @@ func MoveDirs(dirs []*mods.ModDir, modDir string, toDir string, backupDir string
 			return
 		}
 	}
-	return MoveFiles(mf, modDir, toDir, backupDir, replacedFiles, movedFiles)
+	return MoveFiles(mf, modDir, toDir, backupDir, replacedFiles, movedFiles, returnOnFail)
 }
 
 func MoveFile(action action, from, to string, files *[]*mods.ModFile) (err error) {

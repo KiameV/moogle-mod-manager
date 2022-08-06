@@ -50,7 +50,7 @@ func Initialize() (err error) {
 			tm.Mod = mod
 		}
 	}
-	return
+	return initializeFiles()
 }
 
 func AddModFromFile(game config.Game, file string) (tm *model.TrackedMod, err error) {
@@ -202,7 +202,7 @@ func decompress(from string, to string) error {
 				}
 				defer func() { _ = r.Close() }()
 
-				fp := filepath.Join(to, f.Name())
+				fp := filepath.Join(to, f.NameInArchive)
 				if err = os.MkdirAll(filepath.Dir(fp), 0755); err != nil {
 					return
 				}

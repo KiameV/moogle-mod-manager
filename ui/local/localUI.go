@@ -83,10 +83,11 @@ func (ui *localUI) Draw(w fyne.Window) {
 			}
 		})
 		checkAll = widget.NewButton("Check All", func() {
+			var tm *model.TrackedMod
 			for i := 0; i < ui.data.Length(); i++ {
 				if j, err := ui.data.GetItem(i); err == nil {
 					if k, ok := cw.GetValueFromDataItem(j); ok {
-						if tm, ok := k.(*model.TrackedMod); ok {
+						if tm, ok = k.(*model.TrackedMod); ok {
 							if ui.hasNewVersion(tm) {
 								tm.NameBinding.Set(tm.Mod.Name + " (New Version)")
 							}
@@ -315,20 +316,26 @@ func (ui *localUI) toggleEnabled(game config.Game, mod *model.TrackedMod) bool {
 
 func (ui *localUI) enableMod(game config.Game, tm *model.TrackedMod) bool {
 	if len(tm.Mod.Configurations) > 0 {
+		ui.showInputs(false)
 		var modPath = filepath.Join(config.Get().GetModsFullPath(game), tm.GetDirSuffix())
 		if err := state.GetScreen(state.ConfigInstaller).(ci.ConfigInstaller).Setup(tm.Mod, modPath, func(tis []*model.ToInstall) error {
-			return managed.EnableMod(*state.CurrentGame, tm, tis)
+			result := managed.EnableMod(*state.CurrentGame, tm, tis)
+			ui.showInputs(true)
+			return result
 		}); err != nil {
+			ui.showInputs(true)
 			return false
 		}
 		state.ShowScreen(state.ConfigInstaller)
 	} else {
 		tis, err := model.NewToInstallForMod(tm.Mod.ModKind.Kind, tm.Mod, tm.Mod.AlwaysDownload)
 		if err != nil {
+			ui.showInputs(true)
 			util.ShowErrorLong(err)
 			return false
 		}
 		if err = managed.EnableMod(*state.CurrentGame, tm, tis); err != nil {
+			ui.showInputs(true)
 			return false
 		}
 	}
@@ -341,6 +348,15 @@ func (ui *localUI) disableMod(mod *model.TrackedMod) bool {
 		return false
 	}
 	return true
+}
+
+func (ui *localUI) showInputs(yes bool) {
+	if yes {
+		ui.split.Leading.Show()
+	} else {
+		ui.split.Leading.Hide()
+	}
+	ui.split.Refresh()
 }
 
 func (ui *localUI) hasNewVersion(tm *model.TrackedMod) bool {
