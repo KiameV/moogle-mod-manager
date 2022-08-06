@@ -136,9 +136,10 @@ type Game struct {
 }
 
 type DownloadFiles struct {
-	DownloadName string     `json:"DownloadName" xml:"DownloadName"`
-	Files        []*ModFile `json:"File,omitempty" xml:"Files,omitempty"`
-	Dirs         []*ModDir  `json:"Dir,omitempty" xml:"Dirs,omitempty"`
+	DownloadName string `json:"DownloadName" xml:"DownloadName"`
+	// IsInstallAll is used by nexus mods when a mod.xml is not used
+	Files []*ModFile `json:"File,omitempty" xml:"Files,omitempty"`
+	Dirs  []*ModDir  `json:"Dir,omitempty" xml:"Dirs,omitempty"`
 }
 
 func (f *DownloadFiles) IsEmpty() bool {

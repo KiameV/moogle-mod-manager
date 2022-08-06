@@ -12,6 +12,7 @@ import (
 	"github.com/kiamev/moogle-mod-manager/downloads"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/mods/managed/model"
+	"github.com/kiamev/moogle-mod-manager/mods/nexus"
 	wu "github.com/kiamev/moogle-mod-manager/ui/util"
 	"github.com/kiamev/moogle-mod-manager/util"
 	archiver "github.com/mholt/archiver/v4"
@@ -69,18 +70,29 @@ func AddModFromFile(game config.Game, file string) (tm *model.TrackedMod, err er
 }
 
 func AddModFromUrl(game config.Game, url string) (tm *model.TrackedMod, err error) {
-	var b []byte
-	if b, err = browser.DownloadAsBytes(url); err != nil {
-		return nil, err
+	var (
+		mod *mods.Mod
+		b   []byte
+	)
+	if i := strings.Index(url, "?"); i != -1 {
+		url = url[:i]
 	}
-	var mod *mods.Mod
-	if b[0] == '<' {
-		err = xml.Unmarshal(b, &mod)
+	if nexus.IsNexus(url) {
+		if mod, err = nexus.GetModFromNexus(game, url); err != nil {
+			return
+		}
 	} else {
-		err = json.Unmarshal(b, &mod)
-	}
-	if err != nil {
-		return nil, fmt.Errorf("failed to load mod: %v", err)
+		if b, err = browser.DownloadAsBytes(url); err != nil {
+			return nil, err
+		}
+		if b[0] == '<' {
+			err = xml.Unmarshal(b, &mod)
+		} else {
+			err = json.Unmarshal(b, &mod)
+		}
+		if err != nil {
+			return nil, fmt.Errorf("failed to load mod: %v", err)
+		}
 	}
 
 	tm = model.NewTrackerMod(mod, game)
@@ -145,19 +157,15 @@ func UpdateMod(game config.Game, tm *model.TrackedMod) (err error) {
 
 func GetMods(game config.Game) []*model.TrackedMod { return lookup[game].Mods }
 
-func EnableMod(game config.Game, tm *model.TrackedMod, tis []*mods.ToInstall) (err error) {
+func EnableMod(game config.Game, tm *model.TrackedMod, tis []*model.ToInstall) (err error) {
 	if err = downloads.Download(game, tm, tis, enableMod); err != nil {
 		wu.ShowErrorLong(err)
 	}
 	return
 }
 
-func enableMod(game config.Game, tm *model.TrackedMod, tis []*mods.ToInstall, err error) {
-	var (
-		modPath   = filepath.Join(config.Get().GetModsFullPath(game), tm.GetDirSuffix())
-		installed []*model.InstalledDownload
-	)
-
+func enableMod(game config.Game, tm *model.TrackedMod, tis []*model.ToInstall, err error) {
+	modPath := filepath.Join(config.Get().GetModsFullPath(game), tm.GetDirSuffix())
 	if err != nil {
 		wu.ShowErrorLong(err)
 		tm.Enabled = false
@@ -165,7 +173,7 @@ func enableMod(game config.Game, tm *model.TrackedMod, tis []*mods.ToInstall, er
 	}
 
 	for _, ti := range tis {
-		if err = decompress(ti.Download.DownloadedLoc, modPath); err != nil {
+		if err = decompress(ti.Download.DownloadedArchiveLocation, modPath); err != nil {
 			wu.ShowErrorLong(err)
 			tm.Enabled = false
 			return
@@ -180,7 +188,6 @@ func enableMod(game config.Game, tm *model.TrackedMod, tis []*mods.ToInstall, er
 		}
 	}
 
-	tm.Installed = installed
 	_ = saveToJson()
 	return
 }
@@ -243,18 +250,17 @@ func DisableMod(game config.Game, tm *model.TrackedMod) (err error) {
 func RemoveMod(game config.Game, tm *model.TrackedMod) error {
 	gm := lookup[game].Mods
 	for i, m := range gm {
-		if m.Mod.ID != tm.GetModID() {
-			return fmt.Errorf("failed to find %s", tm.Mod.Name)
-		}
-		if m.Enabled {
-			if err := RemoveModFiles(game, tm); err != nil {
-
+		if m.Mod.ID == tm.GetModID() {
+			if m.Enabled {
+				if err := RemoveModFiles(game, tm); err != nil {
+					return errors.New("failed to disable mod")
+				}
 			}
+			lookup[game].Mods = append(gm[:i], gm[i+1:]...)
+			return saveToJson()
 		}
-		lookup[game].Mods = append(gm[:i], gm[i+1:]...)
-		break
 	}
-	return saveToJson()
+	return fmt.Errorf("failed to find %s", tm.Mod.Name)
 }
 
 func saveToJson() error {

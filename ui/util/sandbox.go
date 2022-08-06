@@ -6,12 +6,12 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
-	"github.com/kiamev/moogle-mod-manager/mods"
+	"github.com/kiamev/moogle-mod-manager/mods/managed/model"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
 	"strings"
 )
 
-func DisplayDownloadsAndFiles(toInstall []*mods.ToInstall) {
+func DisplayDownloadsAndFiles(toInstall []*model.ToInstall) {
 	sb := strings.Builder{}
 	for _, ti := range toInstall {
 		sb.WriteString(fmt.Sprintf("## %s\n\n", ti.Download.Name))

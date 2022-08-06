@@ -20,12 +20,12 @@ func NewTrackerMod(mod *mods.Mod, game config.Game) *TrackedMod {
 }
 
 type TrackedMod struct {
-	Enabled       bool                 `json:"Enabled"`
-	MoogleModFile string               `json:"MoogleModFile"`
-	Installed     []*InstalledDownload `json:"Installed"`
-	Mod           *mods.Mod            `json:"-"`
-	NameBinding   binding.String       `json:"-"`
-	UpdatedMod    *mods.Mod            `json:"-"`
+	Enabled       bool   `json:"Enabled"`
+	MoogleModFile string `json:"MoogleModFile"`
+	//Installed     []*InstalledDownload `json:"Installed"`
+	Mod         *mods.Mod      `json:"-"`
+	NameBinding binding.String `json:"-"`
+	UpdatedMod  *mods.Mod      `json:"-"`
 }
 
 func (m *TrackedMod) IsEnabled() bool {

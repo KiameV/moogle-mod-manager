@@ -31,6 +31,7 @@ func New() LocalUI {
 type localUI struct {
 	selectedMod *model.TrackedMod
 	data        binding.UntypedList
+	split       *container.Split
 }
 
 func (ui *localUI) OnClose() {
@@ -44,7 +45,6 @@ func (ui *localUI) GetSelected() *model.TrackedMod {
 func (ui *localUI) Draw(w fyne.Window) {
 	ui.data = binding.NewUntypedList()
 	var (
-		split   *container.Split
 		modList = widget.NewListWithData(
 			ui.data,
 			func() fyne.CanvasObject {
@@ -77,8 +77,9 @@ func (ui *localUI) Draw(w fyne.Window) {
 					util.ShowErrorLong(err)
 					return
 				}
+				ui.removeModFromList(ui.selectedMod)
 				ui.selectedMod = nil
-				ui.Draw(w)
+				ui.split.Trailing = container.NewMax()
 			}
 		})
 		checkAll = widget.NewButton("Check All", func() {
@@ -110,23 +111,23 @@ func (ui *localUI) Draw(w fyne.Window) {
 		if i, ok := cw.GetValueFromDataItem(data); ok {
 			ui.selectedMod = i.(*model.TrackedMod)
 			removeButton.Enable()
-			split.Trailing = container.NewCenter(widget.NewLabel("Loading..."))
-			split.Refresh()
-			split.Trailing = ui.createPreview(ui.selectedMod)
-			split.Refresh()
+			ui.split.Trailing = container.NewCenter(widget.NewLabel("Loading..."))
+			ui.split.Refresh()
+			ui.split.Trailing = ui.createPreview(ui.selectedMod)
+			ui.split.Refresh()
 		}
 	}
 	modList.OnUnselected = func(id widget.ListItemID) {
 		ui.selectedMod = nil
 		removeButton.Disable()
-		split.Trailing = container.NewMax()
+		ui.split.Trailing = container.NewMax()
 	}
 
 	buttons := container.NewHBox(addButton, removeButton, checkAll)
-	split = container.NewHSplit(
+	ui.split = container.NewHSplit(
 		modList,
 		container.NewMax())
-	split.SetOffset(0.25)
+	ui.split.SetOffset(0.25)
 
 	w.SetContent(container.NewBorder(
 		container.NewVBox(
@@ -134,7 +135,7 @@ func (ui *localUI) Draw(w fyne.Window) {
 			widget.NewSeparator(),
 			buttons,
 		), nil, nil, nil,
-		split))
+		ui.split))
 }
 
 func (ui *localUI) createPreview(tm *model.TrackedMod) fyne.CanvasObject {
@@ -176,7 +177,7 @@ func (ui *localUI) createPreview(tm *model.TrackedMod) fyne.CanvasObject {
 	if img := mod.Preview.Get(); img != nil {
 		c = container.NewBorder(img, nil, nil, nil, c)
 	}
-	return c
+	return container.NewScroll(c)
 }
 
 func (ui *localUI) createField(name, value string) *fyne.Container {
@@ -280,6 +281,31 @@ func (ui *localUI) addModToList(mod *model.TrackedMod) {
 	}
 }
 
+func (ui *localUI) removeModFromList(mod *model.TrackedMod) {
+	var item binding.DataItem
+	sl, err := ui.data.Get()
+	if err != nil {
+		// TODO message
+		return
+	}
+	for i := 0; i < len(sl); i++ {
+		if item, err = ui.data.GetItem(i); err != nil {
+			// TODO message
+			return
+		}
+		if j, ok := cw.GetValueFromDataItem(item); ok {
+			if j == mod {
+				sl = append(sl[:i], sl[i+1:]...)
+				if err = ui.data.Set(sl); err != nil {
+					// TODO message
+				}
+				return
+			}
+		}
+	}
+	return
+}
+
 func (ui *localUI) toggleEnabled(game config.Game, mod *model.TrackedMod) bool {
 	if mod.Enabled {
 		return ui.enableMod(game, mod)
@@ -290,14 +316,14 @@ func (ui *localUI) toggleEnabled(game config.Game, mod *model.TrackedMod) bool {
 func (ui *localUI) enableMod(game config.Game, tm *model.TrackedMod) bool {
 	if len(tm.Mod.Configurations) > 0 {
 		var modPath = filepath.Join(config.Get().GetModsFullPath(game), tm.GetDirSuffix())
-		if err := state.GetScreen(state.ConfigInstaller).(ci.ConfigInstaller).Setup(tm.Mod, modPath, func(tis []*mods.ToInstall) error {
+		if err := state.GetScreen(state.ConfigInstaller).(ci.ConfigInstaller).Setup(tm.Mod, modPath, func(tis []*model.ToInstall) error {
 			return managed.EnableMod(*state.CurrentGame, tm, tis)
 		}); err != nil {
 			return false
 		}
 		state.ShowScreen(state.ConfigInstaller)
 	} else {
-		tis, err := mods.NewToInstallForMod(tm.Mod, tm.Mod.AlwaysDownload)
+		tis, err := model.NewToInstallForMod(tm.Mod.ModKind.Kind, tm.Mod, tm.Mod.AlwaysDownload)
 		if err != nil {
 			util.ShowErrorLong(err)
 			return false

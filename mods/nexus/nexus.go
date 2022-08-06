@@ -15,6 +15,7 @@ import (
 
 type NexusGame string
 type NexusGameID int
+type InstallBaseDir string
 
 const (
 	FFI   NexusGame = "finalfantasypixelremaster"
@@ -23,6 +24,13 @@ const (
 	FFIV  NexusGame = "finalfantasy4pixelremaster"
 	FFV   NexusGame = "finalfantasy5pixelremaster"
 	FFVI  NexusGame = "finalfantasy6pixelremaster"
+
+	InstallDir_I   InstallBaseDir = "FINAL FANTASY_Data"
+	InstallDir_II  InstallBaseDir = "FINAL FANTASY II_Data"
+	InstallDir_III InstallBaseDir = "FINAL FANTASY III_Data"
+	InstallDir_IV  InstallBaseDir = "FINAL FANTASY IV_Data"
+	InstallDir_V   InstallBaseDir = "FINAL FANTASY V_Data"
+	InstallDir_VI  InstallBaseDir = "FINAL FANTASY VI_Data"
 
 	IdFFI   NexusGameID = 3934
 	IdFFII  NexusGameID = 3958
@@ -46,7 +54,7 @@ func IsNexus(url string) bool {
 	return strings.Index(url, "nexusmods.com") >= 0
 }
 
-func NexusGameFromGame(game config.Game) NexusGame {
+func GameToNexusGame(game config.Game) NexusGame {
 	switch game {
 	case config.I:
 		return FFI
@@ -63,7 +71,7 @@ func NexusGameFromGame(game config.Game) NexusGame {
 	}
 }
 
-func IdFromGame(game config.Game) NexusGameID {
+func GameToID(game config.Game) NexusGameID {
 	switch game {
 	case config.I:
 		return IdFFI
@@ -80,7 +88,24 @@ func IdFromGame(game config.Game) NexusGameID {
 	}
 }
 
-func GetModFromNexus(url string) (mod *mods.Mod, err error) {
+func GameToInstallBaseDir(game config.Game) InstallBaseDir {
+	switch game {
+	case config.I:
+		return InstallDir_I
+	case config.II:
+		return InstallDir_II
+	case config.III:
+		return InstallDir_III
+	case config.IV:
+		return InstallDir_IV
+	case config.V:
+		return InstallDir_V
+	default:
+		return InstallDir_VI
+	}
+}
+
+func GetModFromNexus(game config.Game, url string) (mod *mods.Mod, err error) {
 	var (
 		sp      = strings.Split(url, "/")
 		nexusID string
@@ -115,7 +140,7 @@ func GetModFromNexus(url string) (mod *mods.Mod, err error) {
 	if err = json.Unmarshal(b, &nDls); err != nil {
 		return
 	}
-	return toMod(nMod, nDls.Files)
+	return toMod(game, nMod, nDls.Files)
 }
 
 func sendRequest(url string) (response []byte, err error) {
@@ -153,7 +178,7 @@ func sendRequest(url string) (response []byte, err error) {
 	return
 }
 
-func toMod(n nexusMod, dls []NexusFile) (mod *mods.Mod, err error) {
+func toMod(game config.Game, n nexusMod, dls []NexusFile) (mod *mods.Mod, err error) {
 	modID := fmt.Sprintf("%d", n.ModID)
 	mod = &mods.Mod{
 		ID:           modID,
@@ -175,7 +200,10 @@ func toMod(n nexusMod, dls []NexusFile) (mod *mods.Mod, err error) {
 				ID: modID,
 			},
 		},
-		Games:          []*mods.Game{&mods.Game{}},
+		Games: []*mods.Game{{
+			Name:     config.GameToName(game),
+			Versions: nil,
+		}},
 		Downloadables:  make([]*mods.Download, len(dls)),
 		DonationLinks:  nil,
 		AlwaysDownload: nil,
@@ -206,6 +234,7 @@ func toMod(n nexusMod, dls []NexusFile) (mod *mods.Mod, err error) {
 		return
 	}
 
+	var choices []*mods.Choice
 	for i, d := range dls {
 		mod.Downloadables[i] = &mods.Download{
 			Name:    d.Name,
@@ -213,6 +242,39 @@ func toMod(n nexusMod, dls []NexusFile) (mod *mods.Mod, err error) {
 			Nexus: &mods.NexusDownloadable{
 				FileID:   d.FileID,
 				FileName: d.FileName,
+			},
+		}
+		dlf := &mods.DownloadFiles{
+			DownloadName: d.Name,
+			Dirs: []*mods.ModDir{
+				{
+					From:      string(GameToInstallBaseDir(game)),
+					To:        ".",
+					Recursive: true,
+				},
+			},
+		}
+		if d.IsPrimary {
+			mod.AlwaysDownload = append(mod.AlwaysDownload, dlf)
+		}
+		if !d.IsPrimary {
+			choices = append(choices, &mods.Choice{
+				Name:                  d.Name,
+				Description:           d.Description,
+				Preview:               nil,
+				DownloadFiles:         dlf,
+				NextConfigurationName: nil,
+			})
+		}
+	}
+	if len(choices) > 0 {
+		mod.Configurations = []*mods.Configuration{
+			{
+				Name:        "Choose preference",
+				Description: "",
+				Preview:     nil,
+				Root:        true,
+				Choices:     choices,
 			},
 		}
 	}

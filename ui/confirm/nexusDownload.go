@@ -7,35 +7,42 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/config"
-	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/mods/managed/model"
 	"github.com/kiamev/moogle-mod-manager/mods/nexus"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
 	"net/url"
 )
 
-func Nexus(game config.Game, downloadDir string, tm *model.TrackedMod, tis []*mods.ToInstall, done DownloadCompleteCallback, callback downloadCallback) error {
-	c := container.NewVBox(widget.NewLabelWithStyle("Please download the following files from Nexus", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}))
+func Nexus(game config.Game, tm *model.TrackedMod, tis []*model.ToInstall, done DownloadCompleteCallback, callback downloadCallback) (err error) {
+	var (
+		uri string
+		u   *url.URL
+		c   = container.NewVBox(widget.NewLabelWithStyle("Download the following file from Nexus", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}))
+		dll string
+	)
 	for _, ti := range tis {
-		uri := fmt.Sprintf(nexus.NexusFileDownload, ti.Download.Nexus.FileID, nexus.IdFromGame(game))
-		u, err := url.Parse(uri)
-		if err != nil {
-			return err
+		uri = fmt.Sprintf(nexus.NexusFileDownload, ti.Download.Nexus.FileID, nexus.GameToID(game))
+		if u, err = url.Parse(uri); err != nil {
+			return
 		}
 		c.Add(widget.NewHyperlink(uri, u))
+
+		c.Add(widget.NewLabelWithStyle("Place download in:", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}))
+
+		if dll, err = ti.GetDownloadLocation(game, tm); err != nil {
+			return
+		}
+		if u, err = url.Parse(dll); err != nil {
+			return
+		}
+		c.Add(widget.NewHyperlink(dll, u))
 	}
-	c.Add(widget.NewLabel("Please place all downloads in"))
-	u, err := url.Parse(downloadDir)
-	if err != nil {
-		return err
-	}
-	c.Add(widget.NewHyperlink(downloadDir, u))
 	d := dialog.NewCustomConfirm("Download Files", "Done", "Cancel", container.NewVScroll(c), func(ok bool) {
 		if ok {
-			done(game, tm, tis, callback(game, downloadDir, tm, tis))
+			done(game, tm, tis, callback(game, tm, tis))
 		}
 	}, state.Window)
 	d.Resize(fyne.NewSize(500, 400))
 	d.Show()
-	return nil
+	return
 }

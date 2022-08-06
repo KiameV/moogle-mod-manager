@@ -8,12 +8,13 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/mods"
+	"github.com/kiamev/moogle-mod-manager/mods/managed/model"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
 )
 
 type ConfigInstaller interface {
 	state.Screen
-	Setup(mod *mods.Mod, baseDir string, callback func([]*mods.ToInstall) error) error
+	Setup(mod *mods.Mod, baseDir string, callback func([]*model.ToInstall) error) error
 }
 
 func New() ConfigInstaller {
@@ -28,7 +29,7 @@ type configInstallerUI struct {
 	prevConfigs     []*mods.Configuration
 	choiceContainer *fyne.Container
 	baseDir         string
-	callback        func([]*mods.ToInstall) error
+	callback        func([]*model.ToInstall) error
 
 	currentConfig *mods.Configuration
 	currentChoice *mods.Choice
@@ -38,7 +39,7 @@ func (i *configInstallerUI) OnClose() {
 
 }
 
-func (i *configInstallerUI) Setup(mod *mods.Mod, baseDir string, callback func([]*mods.ToInstall) error) error {
+func (i *configInstallerUI) Setup(mod *mods.Mod, baseDir string, callback func([]*model.ToInstall) error) error {
 	if len(mod.Configurations) == 0 || len(mod.Configurations[0].Choices) == 0 {
 		return fmt.Errorf("no configurations for %s", mod.Name)
 	}
@@ -84,7 +85,7 @@ func (i *configInstallerUI) Draw(w fyne.Window) {
 			i.prevConfigs = append(i.prevConfigs, i.currentConfig)
 			i.toInstall = append(i.toInstall, i.currentChoice.DownloadFiles)
 			if i.currentChoice.NextConfigurationName == nil {
-				tis, err := mods.NewToInstallForMod(i.mod, i.toInstall)
+				tis, err := model.NewToInstallForMod(i.mod.ModKind.Kind, i.mod, i.toInstall)
 				if err != nil {
 					dialog.ShowError(err, w)
 					state.ShowPreviousScreen()

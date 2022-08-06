@@ -77,7 +77,7 @@ func AddModFiles(game config.Game, tm *model.TrackedMod, files []*mods.DownloadF
 				sb.WriteString(fmt.Sprintf("failed to restore [%s] from [%s]\n", f.To, f.From))
 			}
 		}
-		return errors.New(sb.String())
+		return errors.New(fmt.Sprintf("%s: %v", sb.String(), err))
 	}
 
 	mf, found := mmf.Mods[tm.GetModID()]
