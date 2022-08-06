@@ -173,7 +173,7 @@ func enableMod(game config.Game, tm *model.TrackedMod, tis []*model.ToInstall, e
 	}
 
 	for _, ti := range tis {
-		if err = decompress(ti.Download.DownloadedArchiveLocation, modPath); err != nil {
+		if err = decompress(ti.Download.DownloadedArchiveLocation, filepath.Join(modPath, ti.Download.Name)); err != nil {
 			wu.ShowErrorLong(err)
 			tm.Enabled = false
 			return
