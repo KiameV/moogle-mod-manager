@@ -173,10 +173,20 @@ func enableMod(game config.Game, tm *model.TrackedMod, tis []*model.ToInstall, e
 	}
 
 	for _, ti := range tis {
-		if err = decompress(ti.Download.DownloadedArchiveLocation, filepath.Join(modPath, ti.Download.Name)); err != nil {
+		to := filepath.Join(modPath, ti.Download.Name)
+		if err = decompress(ti.Download.DownloadedArchiveLocation, to); err != nil {
 			wu.ShowErrorLong(err)
 			tm.Enabled = false
 			return
+		}
+		if tm.Mod.ModKind.Kind == mods.Nexus {
+			var fi os.FileInfo
+			sa := filepath.Join(to, "StreamingAssets")
+			if fi, err = os.Stat(sa); err == nil && fi.IsDir() {
+				newTo := filepath.Join(to, string(nexus.GameToInstallBaseDir(game)))
+				_ = os.MkdirAll(newTo, 0777)
+				_ = os.Rename(sa, filepath.Join(newTo, "StreamingAssets"))
+			}
 		}
 	}
 

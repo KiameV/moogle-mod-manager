@@ -32,6 +32,8 @@ const (
 	InstallDir_V   InstallBaseDir = "FINAL FANTASY V_Data"
 	InstallDir_VI  InstallBaseDir = "FINAL FANTASY VI_Data"
 
+	StreamingAssetsDir = "StreamingAssets"
+
 	IdFFI   NexusGameID = 3934
 	IdFFII  NexusGameID = 3958
 	IdFFIII NexusGameID = 3942
