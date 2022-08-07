@@ -109,7 +109,6 @@ func (c *nexusUpdateChecker) getError() error {
 }
 
 func isVersionNewer(new string, old string) bool {
-	print(fmt.Sprintf("Testing %s > %s", new, old))
 	if new == old {
 		return false
 	}
