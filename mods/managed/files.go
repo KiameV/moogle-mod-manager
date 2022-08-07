@@ -261,8 +261,7 @@ func MoveDirs(dirs []*mods.ModDir, modDir string, toDir string, backupDir string
 					f.From = f.From[i:]
 				}
 				if i := strings.Index(f.From, fromDir); i != -1 {
-					f.To = f.From[i+len(fromDir):]
-
+					f.To = f.From[i:]
 				}
 				f.To = filepath.Join(d.To, f.To)
 				mf = append(mf, f)
