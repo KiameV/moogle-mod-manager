@@ -32,6 +32,7 @@ type localUI struct {
 	selectedMod *model.TrackedMod
 	data        binding.UntypedList
 	split       *container.Split
+	checkAll    *widget.Button
 }
 
 func (ui *localUI) OnClose() {
@@ -81,16 +82,21 @@ func (ui *localUI) Draw(w fyne.Window) {
 				ui.split.Trailing = container.NewMax()
 			}
 		})
-		checkAll = widget.NewButton("Check All", func() {
-			managed.CheckForUpdates(*state.CurrentGame, func(err error) {
-				if err != nil {
-					util.ShowErrorLong(err)
-				} else {
-					dialog.ShowInformation("Check for updates", "Done checking for updates.", state.Window)
-				}
-			})
-		})
 	)
+	ui.checkAll = widget.NewButton("Check All", func() {
+		ui.checkAll.Disable()
+		defer func() {
+			ui.split.Refresh()
+			ui.checkAll.Enable()
+		}()
+		managed.CheckForUpdates(*state.CurrentGame, func(err error) {
+			if err != nil {
+				util.ShowErrorLong(err)
+			} else {
+				dialog.ShowInformation("Check for updates", "Done checking for updates.", state.Window)
+			}
+		})
+	})
 
 	for _, mod := range managed.GetMods(*state.CurrentGame) {
 		ui.addModToList(mod)
@@ -117,7 +123,7 @@ func (ui *localUI) Draw(w fyne.Window) {
 		ui.split.Trailing = container.NewMax()
 	}
 
-	buttons := container.NewHBox(addButton, removeButton, checkAll)
+	buttons := container.NewHBox(addButton, removeButton, ui.checkAll)
 	ui.split = container.NewHSplit(
 		modList,
 		container.NewMax())
@@ -142,6 +148,7 @@ func (ui *localUI) createPreview(tm *model.TrackedMod) fyne.CanvasObject {
 				return
 			}
 			ui.enableMod(*state.CurrentGame, tm)
+			tm.DisplayName = tm.Mod.Name
 		}))
 	}
 	c.Add(ui.createField("Name", mod.Name))
