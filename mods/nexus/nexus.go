@@ -10,6 +10,7 @@ import (
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -106,6 +107,21 @@ func GameToInstallBaseDir(game config.Game) InstallBaseDir {
 		return InstallDir_VI
 	}
 }
+func GetModFromNexusForMod(in *mods.Mod) (mod *mods.Mod, err error) {
+	if len(in.Games) == 0 || in.Games[0] == nil {
+		err = errors.New("no games found for mod " + in.Name)
+		return
+	}
+	var (
+		id   uint64
+		game = config.NameToGame(in.Games[0].Name)
+	)
+	if id, err = strconv.ParseUint(in.ModKind.Nexus.ID, 0, 64); err != nil {
+		err = fmt.Errorf("could not parse mod id %s for %s", in.ModKind.Nexus.ID, in.Name)
+		return
+	}
+	return GetModFromNexus(game, fmt.Sprintf(nexusUrl, GameToNexusGame(game), id))
+}
 
 func GetModFromNexus(game config.Game, url string) (mod *mods.Mod, err error) {
 	var (
@@ -199,7 +215,8 @@ func toMod(game config.Game, n nexusMod, dls []NexusFile) (mod *mods.Mod, err er
 		ModKind: &mods.ModKind{
 			Kind: mods.Nexus,
 			Nexus: &mods.NexusModKind{
-				ID: modID,
+				ID:      modID,
+				Version: n.Version,
 			},
 		},
 		Games: []*mods.Game{{

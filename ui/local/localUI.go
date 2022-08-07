@@ -54,12 +54,11 @@ func (ui *localUI) Draw(w fyne.Window) {
 				var tm *model.TrackedMod
 				if i, ok := cw.GetValueFromDataItem(item); ok {
 					if tm, ok = i.(*model.TrackedMod); ok {
-						c := co.(*fyne.Container)
-						if tm.NameBinding == nil {
-							tm.NameBinding = binding.NewString()
-							tm.NameBinding.Set(tm.Mod.Name)
+						if tm.DisplayName == "" {
+							tm.DisplayName = tm.Mod.Name
 						}
-						c.Objects[0].(*widget.Label).Bind(tm.NameBinding)
+						c := co.(*fyne.Container)
+						c.Objects[0].(*widget.Label).Bind(binding.BindString(&tm.DisplayName))
 						c.Objects[1].(*widget.Check).Bind(newEnableBind(ui, tm))
 					}
 				}
@@ -83,19 +82,13 @@ func (ui *localUI) Draw(w fyne.Window) {
 			}
 		})
 		checkAll = widget.NewButton("Check All", func() {
-			var tm *model.TrackedMod
-			for i := 0; i < ui.data.Length(); i++ {
-				if j, err := ui.data.GetItem(i); err == nil {
-					if k, ok := cw.GetValueFromDataItem(j); ok {
-						if tm, ok = k.(*model.TrackedMod); ok {
-							if ui.hasNewVersion(tm) {
-								tm.NameBinding.Set(tm.Mod.Name + " (New Version)")
-							}
-						}
-					}
+			managed.CheckForUpdates(*state.CurrentGame, func(err error) {
+				if err != nil {
+					util.ShowErrorLong(err)
+				} else {
+					dialog.ShowInformation("Check for updates", "Done checking for updates.", state.Window)
 				}
-			}
-			dialog.ShowInformation("Check for updates", "Done checking for updates.", state.Window)
+			})
 		})
 	)
 
@@ -148,7 +141,6 @@ func (ui *localUI) createPreview(tm *model.TrackedMod) fyne.CanvasObject {
 				util.ShowErrorLong(err)
 				return
 			}
-			_ = tm.NameBinding.Set(tm.Mod.Name)
 			ui.enableMod(*state.CurrentGame, tm)
 		}))
 	}
@@ -357,30 +349,4 @@ func (ui *localUI) showInputs(yes bool) {
 		ui.split.Leading.Hide()
 	}
 	ui.split.Refresh()
-}
-
-func (ui *localUI) hasNewVersion(tm *model.TrackedMod) bool {
-	/*
-		k := tm.Mod.ModKind
-		if k.Kind == mods.Hosted {
-		var mod mods.Mod
-		for _, l := range tm.Mod.ModFileLinks {
-			if b, err := browser.DownloadAsBytes(l); err == nil {
-				if e := json.Unmarshal(b, &mod); e != nil {
-					break
-				}
-			}
-		}
-		if mod.ID == "" {
-			dialog.ShowError(errors.New("Could not download remote version for "+tm.Mod.Name), state.Window)
-			return false
-		}
-		// TODO improve!
-		if mod.Version != tm.Mod.Version {
-			tm.UpdatedMod = &mod
-		}
-		return tm.UpdatedMod != nil
-	*/
-	// TODO
-	return false
 }

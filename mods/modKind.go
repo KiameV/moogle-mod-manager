@@ -21,5 +21,6 @@ type HostedModKind struct {
 }
 
 type NexusModKind struct {
-	ID string `json:"ID" xml:"ID"`
+	ID      string `json:"ID" xml:"ID"`
+	Version string `json:"Version" xml:"Version"`
 }

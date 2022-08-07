@@ -34,6 +34,7 @@ func (d *modKindDef) draw() fyne.CanvasObject {
 	}
 	if len(d.nexus.Items) == 0 {
 		d.nexus.AppendItem(d.getFormItem("Mod ID"))
+		d.nexus.AppendItem(d.getFormItem("Version"))
 	}
 	d.kindSelect.SetSelected(string(mods.Hosted))
 
@@ -62,7 +63,8 @@ func (d *modKindDef) compile() *mods.ModKind {
 	default: // string(mods.Nexus):
 		k.Kind = mods.Nexus
 		k.Nexus = &mods.NexusModKind{
-			ID: d.getString("Mod ID"),
+			ID:      d.getString("Mod ID"),
+			Version: d.getString("Version"),
 		}
 	}
 	return &k
@@ -80,6 +82,7 @@ func (d *modKindDef) set(k *mods.ModKind) {
 	} else {
 		d.kindSelect.SetSelected(string(mods.Nexus))
 		d.createFormItem("Mod ID", k.Nexus.ID)
+		d.createFormItem("Version", k.Nexus.ID)
 	}
 }
 
