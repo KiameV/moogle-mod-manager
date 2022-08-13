@@ -17,7 +17,7 @@ var (
 )
 
 const (
-	WindowWidth  = 1000
+	WindowWidth  = 1200
 	WindowHeight = 850
 
 	windowsRegLookup = "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Steam App "

@@ -37,6 +37,8 @@ func New() state.Screen {
 		gamesDef:       newGamesDef(),
 		alwaysDownload: newAlwaysDownloadDef(dl),
 		configsDef:     newConfigurationsDef(dl),
+		description:    newRichTextEditor(),
+		releaseNotes:   newRichTextEditor(),
 	}
 }
 
@@ -52,6 +54,9 @@ type ModAuthorer struct {
 	gamesDef       *gamesDef
 	alwaysDownload *alwaysDownloadDef
 	configsDef     *configurationsDef
+
+	description  *richTextEditor
+	releaseNotes *richTextEditor
 
 	tabs *container.AppTabs
 }
@@ -128,19 +133,19 @@ func (a *ModAuthorer) Draw(w fyne.Window) {
 		a.getFormItem("ID"),
 		a.getFormItem("Name"),
 		a.getFormItem("Author"),
-		a.getFormItem("Release Date"),
 		a.getFormItem("Category"),
-		a.getFormItem("Description"),
-		a.getFormItem("Release Notes"),
+		a.getFormItem("Release Date"),
 		a.getFormItem("Link"),
 		a.getFormItem("Select Type"),
 	}
 	items = append(items, a.previewDef.getFormItems()...)
 
 	a.tabs = container.NewAppTabs(
-		container.NewTabItem("Mod", container.NewVScroll(container.NewVBox(widget.NewForm(items...)))),
+		container.NewTabItem("Mod", container.NewVScroll(widget.NewForm(items...))),
+		container.NewTabItem("Description", a.description.Draw()),
 		container.NewTabItem("Kind", container.NewVScroll(a.modKindDef.draw())),
 		container.NewTabItem("Compatibility", container.NewVScroll(a.modCompatsDef.draw())),
+		container.NewTabItem("Release Notes", a.releaseNotes.Draw()),
 		container.NewTabItem("Downloadables", container.NewVScroll(a.downloadDef.draw())),
 		container.NewTabItem("Donation Links", container.NewVScroll(a.donationsDef.draw())),
 		container.NewTabItem("Games", container.NewVScroll(a.gamesDef.draw())),
@@ -231,8 +236,8 @@ func (a *ModAuthorer) updateEntries(mod *mods.Mod) {
 	a.createFormItem("Author", mod.Author)
 	a.createFormItem("Release Date", mod.ReleaseDate)
 	a.createFormItem("Category", mod.Category)
-	a.createFormMultiLine("Description", mod.Description)
-	a.createFormMultiLine("Release Notes", mod.ReleaseNotes)
+	a.description.SetText(mod.Description)
+	a.releaseNotes.SetText(mod.ReleaseNotes)
 	a.createFormItem("Link", mod.Link)
 	a.createFormSelect("Select Type", mods.SelectTypes, string(mod.ConfigSelectionType))
 
@@ -294,8 +299,8 @@ func (a *ModAuthorer) compileMod() (mod *mods.Mod) {
 		Author:              a.getString("Author"),
 		ReleaseDate:         a.getString("Release Date"),
 		Category:            a.getString("Category"),
-		Description:         a.getString("Description"),
-		ReleaseNotes:        a.getString("Release Notes"),
+		Description:         a.description.String(),
+		ReleaseNotes:        a.releaseNotes.String(),
 		Link:                a.getString("Link"),
 		Preview:             a.previewDef.compile(),
 		ModKind:             a.modKindDef.compile(),
