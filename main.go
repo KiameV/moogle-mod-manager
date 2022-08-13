@@ -87,6 +87,10 @@ func main() {
 		configure.Show(state.Window)
 	}
 
+	if state.SetCurrentGameFromString(config.Get().DefaultGame) {
+		state.ShowScreen(state.LocalMods)
+	}
+
 	state.Window.ShowAndRun()
 }
 

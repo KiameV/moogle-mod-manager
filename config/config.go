@@ -51,6 +51,7 @@ type Configs struct {
 	DownloadDir string     `json:"downloadDir"`
 	BackupDir   string     `json:"backupDir"`
 	Theme       ThemeColor `json:"theme"`
+	DefaultGame string     `json:"openTo"`
 }
 
 func Get() *Configs {

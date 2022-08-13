@@ -230,10 +230,15 @@ func toMod(game config.Game, n nexusMod, dls []NexusFile) (mod *mods.Mod, err er
 	}
 	compiler := bbcode.NewCompiler(true, true)
 	c := converter.NewConverter("", true, nil)
-	if mod.Description, err = c.ConvertString(compiler.Compile(n.Description)); err != nil {
+	cd := compiler.Compile(n.Description)
+	cd = removeFont(cd)
+	if mod.Description, err = c.ConvertString(cd); err != nil {
 		mod.Description = n.Description
 		err = nil
 	}
+	mod.Description = strings.ReplaceAll(mod.Description, "<br />", "\n")
+	mod.Description = strings.ReplaceAll(mod.Description, "\\\\_", "_")
+	mod.Description = strings.ReplaceAll(mod.Description, "\\_", "_")
 
 	switch n.Game {
 	case FFI:
@@ -298,6 +303,19 @@ func toMod(game config.Game, n nexusMod, dls []NexusFile) (mod *mods.Mod, err er
 		}
 	}
 	return
+}
+
+func removeFont(s string) string {
+	var i, j int
+	for i = 0; i < len(s)-10; i++ {
+		if s[i] == '[' && s[i+1] == 'f' && s[i+2] == 'o' && s[i+3] == 'n' && s[i+4] == 't' && s[i+5] == '=' {
+			for j = i; j < len(s) && s[j] != ']'; j++ {
+			}
+			s = s[:i] + s[j+1:]
+		}
+	}
+	s = strings.ReplaceAll(s, "[/font]", "")
+	return s
 }
 
 /*

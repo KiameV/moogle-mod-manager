@@ -15,6 +15,7 @@ import (
 func Show(w fyne.Window) {
 	configs := *config.Get()
 	items := []*widget.FormItem{
+		createSelectRow("Default Game", &configs.DefaultGame, "None", "I", "II", "III", "IV", "V", "VI"),
 		createDirRow("FF I Dir", &configs.DirI),
 		createDirRow("FF II Dir", &configs.DirII),
 		createDirRow("FF III Dir", &configs.DirIII),
@@ -52,6 +53,17 @@ func Show(w fyne.Window) {
 	}, w)
 	d.Resize(fyne.NewSize(800, 400))
 	d.Show()
+}
+
+func createSelectRow(label string, value *string, options ...string) *widget.FormItem {
+	if *value == "" {
+		*value = options[0]
+	}
+	sel := widget.NewSelect(options, func(s string) {
+		*value = s
+	})
+	sel.SetSelected(*value)
+	return widget.NewFormItem(label, sel)
 }
 
 func createDirRow(label string, value *string) *widget.FormItem {

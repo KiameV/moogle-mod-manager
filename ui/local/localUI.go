@@ -152,28 +152,32 @@ func (ui *localUI) createPreview(tm *model.TrackedMod) fyne.CanvasObject {
 		}))
 	}
 	c.Add(ui.createField("Name", mod.Name))
-	c.Add(ui.createMultiLineField("Description", mod.Description))
 	c.Add(ui.createLink("Link", mod.Link))
 	c.Add(ui.createField("Author", mod.Author))
-	c.Add(ui.createField("Category", mod.Category))
+	//c.Add(ui.createField("Category", mod.Category))
 	k := mod.ModKind
 	if k.Kind == mods.Hosted && k.Hosted != nil {
 		c.Add(ui.createField("Version", k.Hosted.Version))
 	} else if k.Nexus != nil {
-		c.Add(ui.createField("Nexus Mod ID", k.Nexus.ID))
+		//	c.Add(ui.createField("Nexus Mod ID", k.Nexus.ID))
+		c.Add(ui.createField("Version", k.Nexus.Version))
 	}
 	c.Add(ui.createField("Release Date", mod.ReleaseDate))
 
+	tabs := container.NewAppTabs(
+		container.NewTabItem("Description", widget.NewRichTextFromMarkdown(mod.Description)),
+	)
 	if mod.ReleaseNotes != "" {
-		c.Add(ui.createMultiLineField("Release Notes", mod.ReleaseDate))
+		container.NewTabItem("Release Notes", widget.NewRichTextFromMarkdown(mod.ReleaseNotes))
 	}
 	if mod.ModCompatibility != nil && mod.ModCompatibility.HasItems() {
-		c.Add(ui.createCompatibility(mod.ModCompatibility))
+		tabs.Append(container.NewTabItem("Compatibility", ui.createCompatibility(mod.ModCompatibility)))
 	}
 	if mod.DonationLinks != nil && len(mod.DonationLinks) > 0 {
-		c.Add(ui.createDonationLinks(mod.DonationLinks))
+		tabs.Append(container.NewTabItem("Donations", ui.createDonationLinks(mod.DonationLinks)))
 	}
 
+	c = container.NewBorder(c, nil, nil, nil, tabs)
 	if img := mod.Preview.Get(); img != nil {
 		c = container.NewBorder(img, nil, nil, nil, c)
 	}
@@ -195,16 +199,6 @@ func (ui *localUI) createLink(name, value string) *fyne.Container {
 	return container.NewHBox(
 		widget.NewLabelWithStyle(name, fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
 		widget.NewHyperlink(value, url),
-	)
-}
-
-func (ui *localUI) createMultiLineField(name, value string) *fyne.Container {
-	rt := widget.NewRichTextFromMarkdown(value)
-	s := container.NewScroll(rt)
-	s.SetMinSize(fyne.NewSize(600, 300))
-	return container.NewHBox(
-		widget.NewLabelWithStyle(name, fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
-		s,
 	)
 }
 
