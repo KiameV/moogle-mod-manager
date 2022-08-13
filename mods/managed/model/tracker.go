@@ -1,6 +1,7 @@
 package model
 
 import (
+	"fmt"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/util"
@@ -47,13 +48,17 @@ func (m *TrackedMod) GetModID() string {
 func (m *TrackedMod) GetDirSuffix() string {
 	k := m.Mod.ModKind
 	if k.Kind == mods.Hosted {
-		return filepath.Join(util.CreateFileName(m.GetModID()), util.CreateFileName(k.Hosted.Version))
+		return filepath.Join(util.CreateFileName(m.GetModID()), util.CreateFileName(m.Mod.Version))
 	}
 	return filepath.Join(util.CreateFileName(m.GetModID()))
 }
 
 func (m *TrackedMod) GetMod() *mods.Mod {
 	return m.Mod
+}
+
+func (m *TrackedMod) GetBranchName() string {
+	return fmt.Sprintf("%s_%s", m.Mod.ID, m.Mod.Version)
 }
 
 type InstalledDownload struct {

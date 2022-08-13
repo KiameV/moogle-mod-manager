@@ -201,6 +201,7 @@ func toMod(game config.Game, n nexusMod, dls []NexusFile) (mod *mods.Mod, err er
 	mod = &mods.Mod{
 		ID:           modID,
 		Name:         n.Name,
+		Version:      n.Version,
 		Author:       n.Author,
 		AuthorLink:   n.AuthorLink,
 		Category:     fmt.Sprintf("%d", n.CategoryID),
@@ -215,8 +216,7 @@ func toMod(game config.Game, n nexusMod, dls []NexusFile) (mod *mods.Mod, err er
 		ModKind: &mods.ModKind{
 			Kind: mods.Nexus,
 			Nexus: &mods.NexusModKind{
-				ID:      modID,
-				Version: n.Version,
+				ID: modID,
 			},
 		},
 		Games: []*mods.Game{{

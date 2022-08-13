@@ -33,6 +33,7 @@ type Mod struct {
 	Description         string            `json:"Description" xml:"Description"`
 	ReleaseNotes        string            `json:"ReleaseNotes" xml:"ReleaseNotes"`
 	Link                string            `json:"Link" xml:"Link"`
+	Version             string            `json:"Version"`
 	Preview             *Preview          `json:"Preview,omitempty" xml:"Preview,omitempty"`
 	ModKind             *ModKind          `json:"ModKind" xml:"ModKind"`
 	ModCompatibility    *ModCompatibility `json:"Compatibility,omitempty" xml:"ModCompatibility,omitempty"`
@@ -186,6 +187,9 @@ func (m *Mod) Validate() string {
 	if m.Name == "" {
 		sb.WriteString("Name is required\n")
 	}
+	if m.Version == "" {
+		sb.WriteString("Version is required\n")
+	}
 	if m.Author == "" {
 		sb.WriteString("Author is required\n")
 	}
@@ -214,9 +218,6 @@ func (m *Mod) Validate() string {
 		if h == nil {
 			sb.WriteString("Hosted is required\n")
 		} else {
-			if h.Version == "" {
-				sb.WriteString("Hosted Version is required\n")
-			}
 			if len(h.ModFileLinks) == 0 {
 				sb.WriteString("Hosted 'Mod File' Links is required\n")
 			}

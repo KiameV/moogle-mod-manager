@@ -72,7 +72,7 @@ func (c *hostedUpdateChecker) Process() error {
 			dialog.ShowError(errors.New("Could not download remote version for "+c.tm.Mod.Name), state.Window)
 			return nil
 		}
-		if isVersionNewer(c.tm.Mod.ModKind.Hosted.Version, mod.ModKind.Hosted.Version) {
+		if isVersionNewer(c.tm.Mod.Version, mod.Version) {
 			markForUpdate(c.tm, &mod)
 		}
 		break
@@ -97,8 +97,7 @@ func (c *nexusUpdateChecker) Process() error {
 		c.err = err
 		return nil
 	}
-	nk := mod.ModKind.Nexus
-	if isVersionNewer(nk.Version, c.tm.Mod.ModKind.Nexus.Version) {
+	if isVersionNewer(mod.Version, c.tm.Mod.Version) {
 		markForUpdate(c.tm, mod)
 	}
 	return nil

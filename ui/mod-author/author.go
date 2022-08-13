@@ -134,6 +134,7 @@ func (a *ModAuthorer) Draw(w fyne.Window) {
 		a.getFormItem("Name"),
 		a.getFormItem("Author"),
 		a.getFormItem("Category"),
+		a.getFormItem("Version"),
 		a.getFormItem("Release Date"),
 		a.getFormItem("Link"),
 		a.getFormItem("Select Type"),
@@ -236,6 +237,7 @@ func (a *ModAuthorer) updateEntries(mod *mods.Mod) {
 	a.createFormItem("Author", mod.Author)
 	a.createFormItem("Release Date", mod.ReleaseDate)
 	a.createFormItem("Category", mod.Category)
+	a.createFormItem("Version", mod.Version)
 	a.description.SetText(mod.Description)
 	a.releaseNotes.SetText(mod.ReleaseNotes)
 	a.createFormItem("Link", mod.Link)
@@ -299,6 +301,7 @@ func (a *ModAuthorer) compileMod() (mod *mods.Mod) {
 		Author:              a.getString("Author"),
 		ReleaseDate:         a.getString("Release Date"),
 		Category:            a.getString("Category"),
+		Version:             a.getString("Version"),
 		Description:         a.description.String(),
 		ReleaseNotes:        a.releaseNotes.String(),
 		Link:                a.getString("Link"),

@@ -16,11 +16,9 @@ type ModKind struct {
 }
 
 type HostedModKind struct {
-	Version      string   `json:"Version" xml:"Version"`
 	ModFileLinks []string `json:"ModFileLink" xml:"ModFileLink"`
 }
 
 type NexusModKind struct {
-	ID      string `json:"ID" xml:"ID"`
-	Version string `json:"Version" xml:"Version"`
+	ID string `json:"ID" xml:"ID"`
 }
