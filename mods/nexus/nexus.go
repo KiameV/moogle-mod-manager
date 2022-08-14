@@ -46,6 +46,7 @@ const (
 	nexusApiModDlUrl       = "https://api.nexusmods.com/v1/games/%s/mods/%s/files.json%s"
 	nexusApiModDlUrlSuffix = "?category=main%2Cupdate%2Coptional%2Cmiscellaneous"
 	nexusUrl               = "https://www.nexusmods.com/%s/mods/%d"
+	nexusApiNewestModsUrl  = "https://api.nexusmods.com/v1/games/%s/mods/latest_added.json"
 
 	nexusUsersApiUrl = "https://users.nexusmods.com/oauth/token"
 
@@ -123,6 +124,10 @@ func GetModFromNexusForMod(in *mods.Mod) (mod *mods.Mod, err error) {
 	return GetModFromNexus(game, fmt.Sprintf(nexusUrl, GameToNexusGame(game), id))
 }
 
+func GetModFromNexusByID(game config.Game, id int) (*mods.Mod, error) {
+	return GetModFromNexus(game, fmt.Sprintf(nexusUrl, GameToNexusGame(game), id))
+}
+
 func GetModFromNexus(game config.Game, url string) (mod *mods.Mod, err error) {
 	var (
 		sp      = strings.Split(url, "/")
@@ -151,14 +156,55 @@ func GetModFromNexus(game config.Game, url string) (mod *mods.Mod, err error) {
 	if err = json.Unmarshal(b, &nMod); err != nil {
 		return
 	}
+	if nMod.Name == "" {
+		err = errors.New("no mod found for " + modID)
+		return
+	}
+	if nDls, err = getDownloads(NexusGame(nexusID), modID); err != nil {
+		return
+	}
+	return toMod(game, nMod, nDls.Files)
+}
 
+func GetNewestMods(game config.Game, lastID int) (result []*mods.Mod, err error) {
+	var (
+		b       []byte
+		nexusID = GameToNexusGame(game)
+		nDls    fileParent
+		mod     *mods.Mod
+	)
+	if b, err = sendRequest(fmt.Sprintf(nexusApiNewestModsUrl, GameToNexusGame(game))); err != nil {
+		return
+	}
+	var nMods []nexusMod
+	if err = json.Unmarshal(b, &nMods); err != nil {
+		return
+	}
+
+	result = make([]*mods.Mod, 0, len(nMods))
+	for _, nMod := range nMods {
+		if nMod.ModID > lastID {
+			if nDls, err = getDownloads(nexusID, fmt.Sprintf("%d", nMod.ModID)); err != nil {
+				return
+			}
+			if mod, err = toMod(game, nMod, nDls.Files); err != nil {
+				return
+			}
+			result = append(result, mod)
+		}
+	}
+	return
+}
+
+func getDownloads(nexusID NexusGame, modID string) (nDls fileParent, err error) {
+	var b []byte
 	if b, err = sendRequest(fmt.Sprintf(nexusApiModDlUrl, nexusID, modID, nexusApiModDlUrlSuffix)); err != nil {
 		return
 	}
 	if err = json.Unmarshal(b, &nDls); err != nil {
 		return
 	}
-	return toMod(game, nMod, nDls.Files)
+	return
 }
 
 func sendRequest(url string) (response []byte, err error) {

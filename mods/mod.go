@@ -164,14 +164,17 @@ type Configuration struct {
 	Preview     *Preview  `json:"Preview,omitempty" xml:"Preview, omitempty"`
 	Root        bool      `json:"Root" xml:"Root"`
 	Choices     []*Choice `json:"Choice" xml:"Choices"`
+
+	NextConfigurationName *string `json:"NextConfigurationName,omitempty" xml:"NextConfigurationName"`
 }
 
 type Choice struct {
-	Name                  string         `json:"Name" xml:"Name"`
-	Description           string         `json:"Description" xml:"Description"`
-	Preview               *Preview       `json:"Preview,omitempty" xml:"Preview,omitempty"`
-	DownloadFiles         *DownloadFiles `json:"DownloadFiles,omitempty" xml:"DownloadFiles,omitempty"`
-	NextConfigurationName *string        `json:"NextConfigurationName,omitempty" xml:"NextConfigurationName"`
+	Name          string         `json:"Name" xml:"Name"`
+	Description   string         `json:"Description" xml:"Description"`
+	Preview       *Preview       `json:"Preview,omitempty" xml:"Preview,omitempty"`
+	DownloadFiles *DownloadFiles `json:"DownloadFiles,omitempty" xml:"DownloadFiles,omitempty"`
+
+	NextConfigurationName *string `json:"NextConfigurationName,omitempty" xml:"NextConfigurationName"`
 }
 
 type DonationLink struct {

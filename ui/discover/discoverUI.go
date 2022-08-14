@@ -30,7 +30,8 @@ type discoverUI struct {
 func (ui *discoverUI) OnClose() {}
 
 func (ui *discoverUI) PreDraw() (err error) {
-	ui.mods, err = repo.GetMods(*state.CurrentGame)
+	// TODO apply overrides to tracked mods
+	ui.mods, _, err = repo.GetMods(*state.CurrentGame)
 	return
 }
 

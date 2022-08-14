@@ -16,7 +16,7 @@ import (
 type repo struct{}
 
 func (r repo) Clone() (err error) {
-	dir := r.dir()
+	dir := repoDir()
 	if _, err = os.Stat(dir); err != nil {
 		if err = os.MkdirAll(dir, 0755); err != nil {
 			return
@@ -68,8 +68,8 @@ func (r repo) Pull() (err error) {
 
 }
 
-func (r repo) GetMods(game config.Game) (mods []string, err error) {
-	dir := filepath.Join(r.dir(), config.String(game))
+func (r repo) GetMods(game config.Game) (mods []string, overrides []string, err error) {
+	dir := repoDir()
 	if _, err = os.Stat(dir); err != nil {
 		if err = r.Clone(); err != nil {
 			return
@@ -87,17 +87,16 @@ func (r repo) GetMods(game config.Game) (mods []string, err error) {
 		if d.Name() == "mod.json" || d.Name() == "mod.xml" {
 			mods = append(mods, path)
 		}
+		if d.Name() == "override.json" || d.Name() == "override.xml" {
+			overrides = append(overrides, path)
+		}
 		return nil
 	})
 	return
 }
 
-func (repo) dir() string {
-	return filepath.Join(config.PWD, "remote")
-}
-
 func (r repo) getWorkTree() (repo *git.Repository, w *git.Worktree, err error) {
-	if repo, err = git.PlainOpen(r.dir()); err != nil {
+	if repo, err = git.PlainOpen(repoDir()); err != nil {
 		return
 	}
 	w, err = r.getWorkTreeFromRepo(repo)
@@ -108,7 +107,9 @@ func (repo) getWorkTreeFromRepo(r *git.Repository) (w *git.Worktree, err error) 
 	if w, err = r.Worktree(); err != nil {
 		return
 	}
-	if err = w.Pull(&git.PullOptions{RemoteName: "origin"}); err != nil && err.Error() != "already up-to-date" {
+	ctx, cnl := context.WithTimeout(context.Background(), time.Second*5)
+	defer cnl()
+	if err = w.PullContext(ctx, &git.PullOptions{RemoteName: "origin"}); err != nil && err != git.NoErrAlreadyUpToDate {
 		return
 	}
 	err = nil
