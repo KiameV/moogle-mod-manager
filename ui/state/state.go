@@ -3,6 +3,7 @@ package state
 import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/data/binding"
+	"fyne.io/fyne/v2/dialog"
 	"github.com/kiamev/moogle-mod-manager/config"
 )
 
@@ -11,6 +12,7 @@ type GUI byte
 const (
 	None GUI = iota
 	LocalMods
+	DiscoverMods
 	ModAuthor
 	ConfigInstaller
 )
@@ -40,6 +42,7 @@ func appendGuiHistory(gui GUI) {
 }
 
 type Screen interface {
+	PreDraw() error
 	Draw(w fyne.Window)
 	OnClose()
 }
@@ -56,6 +59,10 @@ func GetScreen(gui GUI) Screen {
 }
 
 func ShowScreen(gui GUI) {
+	if err := screens[gui].PreDraw(); err != nil {
+		dialog.ShowError(err, Window)
+		return
+	}
 	appendGuiHistory(gui)
 	mainMenu.Draw(Window)
 	screens[gui].Draw(Window)

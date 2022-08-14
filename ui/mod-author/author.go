@@ -61,6 +61,8 @@ type ModAuthorer struct {
 	tabs *container.AppTabs
 }
 
+func (a *ModAuthorer) PreDraw() error { return nil }
+
 func (a *ModAuthorer) OnClose() {
 	if a.modBeingEdited != nil {
 		a.modBeingEdited = nil

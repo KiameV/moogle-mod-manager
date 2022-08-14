@@ -10,6 +10,7 @@ import (
 	"github.com/kiamev/moogle-mod-manager/mods/managed/authored"
 	config_installer "github.com/kiamev/moogle-mod-manager/ui/config-installer"
 	"github.com/kiamev/moogle-mod-manager/ui/configure"
+	"github.com/kiamev/moogle-mod-manager/ui/discover"
 	"github.com/kiamev/moogle-mod-manager/ui/game-select"
 	"github.com/kiamev/moogle-mod-manager/ui/local"
 	"github.com/kiamev/moogle-mod-manager/ui/menu"
@@ -80,6 +81,7 @@ func main() {
 	state.RegisterScreen(state.None, game_select.New())
 	state.RegisterScreen(state.ModAuthor, mod_author.New())
 	state.RegisterScreen(state.LocalMods, local.New())
+	state.RegisterScreen(state.DiscoverMods, discover.New())
 	state.RegisterScreen(state.ConfigInstaller, config_installer.New())
 
 	state.ShowScreen(state.None)

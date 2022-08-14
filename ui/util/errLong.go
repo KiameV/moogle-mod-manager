@@ -13,7 +13,7 @@ func ShowErrorLong(err error) {
 	text := widget.NewRichTextWithText(err.Error())
 	text.Wrapping = fyne.TextWrapBreak
 
-	button := widget.NewButton("Copy Error Text", func() {
+	button := widget.NewButton("Copy To Clipboard", func() {
 		clipboard.Write(clipboard.FmtText, []byte(err.Error()))
 	})
 

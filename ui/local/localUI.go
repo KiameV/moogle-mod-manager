@@ -7,15 +7,14 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/config"
-	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/mods/managed"
 	"github.com/kiamev/moogle-mod-manager/mods/managed/model"
 	ci "github.com/kiamev/moogle-mod-manager/ui/config-installer"
 	cw "github.com/kiamev/moogle-mod-manager/ui/custom-widgets"
+	mp "github.com/kiamev/moogle-mod-manager/ui/mod-preview"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
 	"github.com/kiamev/moogle-mod-manager/ui/util"
 	"github.com/ncruces/zenity"
-	"net/url"
 	"path/filepath"
 )
 
@@ -35,9 +34,9 @@ type localUI struct {
 	checkAll    *widget.Button
 }
 
-func (ui *localUI) OnClose() {
+func (ui *localUI) PreDraw() error { return nil }
 
-}
+func (ui *localUI) OnClose() {}
 
 func (ui *localUI) GetSelected() *model.TrackedMod {
 	return ui.selectedMod
@@ -65,6 +64,9 @@ func (ui *localUI) Draw(w fyne.Window) {
 				}
 			})
 		addButton = cw.NewButtonWithPopups("Add",
+			fyne.NewMenuItem("Find", func() {
+				state.ShowScreen(state.DiscoverMods)
+			}),
 			fyne.NewMenuItem("From File", func() {
 				ui.addFromFile()
 			}),
@@ -72,15 +74,17 @@ func (ui *localUI) Draw(w fyne.Window) {
 				ui.addFromUrl()
 			}))
 		removeButton = widget.NewButton("Remove", func() {
-			if ui.selectedMod != nil {
-				if err := managed.RemoveMod(*state.CurrentGame, ui.selectedMod); err != nil {
-					util.ShowErrorLong(err)
-					return
+			dialog.NewConfirm("Delete?", "Are you sure you want to delete this mod?", func(ok bool) {
+				if ok && ui.selectedMod != nil {
+					if err := managed.RemoveMod(*state.CurrentGame, ui.selectedMod); err != nil {
+						util.ShowErrorLong(err)
+						return
+					}
+					ui.removeModFromList(ui.selectedMod)
+					ui.selectedMod = nil
+					ui.split.Trailing = container.NewMax()
 				}
-				ui.removeModFromList(ui.selectedMod)
-				ui.selectedMod = nil
-				ui.split.Trailing = container.NewMax()
-			}
+			}, state.Window).Show()
 		})
 	)
 	ui.checkAll = widget.NewButton("Check All", func() {
@@ -113,7 +117,17 @@ func (ui *localUI) Draw(w fyne.Window) {
 			removeButton.Enable()
 			ui.split.Trailing = container.NewCenter(widget.NewLabel("Loading..."))
 			ui.split.Refresh()
-			ui.split.Trailing = ui.createPreview(ui.selectedMod)
+			ui.split.Trailing = mp.CreatePreview(ui.selectedMod.Mod, mp.ModPreviewOptions{
+				UpdateCallback: func(tm *model.TrackedMod) {
+					if err := managed.UpdateMod(*state.CurrentGame, tm); err != nil {
+						util.ShowErrorLong(err)
+						return
+					}
+					ui.enableMod(*state.CurrentGame, tm)
+					tm.DisplayName = tm.Mod.Name
+				},
+				TrackedMod: ui.selectedMod,
+			})
 			ui.split.Refresh()
 		}
 	}
@@ -136,97 +150,6 @@ func (ui *localUI) Draw(w fyne.Window) {
 			buttons,
 		), nil, nil, nil,
 		ui.split))
-}
-
-func (ui *localUI) createPreview(tm *model.TrackedMod) fyne.CanvasObject {
-	mod := tm.Mod
-	c := container.NewVBox()
-	if tm.UpdatedMod != nil {
-		c.Add(widget.NewButton("Update", func() {
-			if err := managed.UpdateMod(*state.CurrentGame, tm); err != nil {
-				util.ShowErrorLong(err)
-				return
-			}
-			ui.enableMod(*state.CurrentGame, tm)
-			tm.DisplayName = tm.Mod.Name
-		}))
-	}
-	c.Add(ui.createField("Name", mod.Name))
-	c.Add(ui.createLink("Link", mod.Link))
-	c.Add(ui.createField("Author", mod.Author))
-	c.Add(ui.createField("Version", mod.Version))
-	//c.Add(ui.createField("Category", mod.Category))
-	c.Add(ui.createField("Release Date", mod.ReleaseDate))
-
-	tabs := container.NewAppTabs(
-		container.NewTabItem("Description", widget.NewRichTextFromMarkdown(mod.Description)),
-	)
-	if mod.ReleaseNotes != "" {
-		container.NewTabItem("Release Notes", widget.NewRichTextFromMarkdown(mod.ReleaseNotes))
-	}
-	if mod.ModCompatibility != nil && mod.ModCompatibility.HasItems() {
-		tabs.Append(container.NewTabItem("Compatibility", ui.createCompatibility(mod.ModCompatibility)))
-	}
-	if mod.DonationLinks != nil && len(mod.DonationLinks) > 0 {
-		tabs.Append(container.NewTabItem("Donations", ui.createDonationLinks(mod.DonationLinks)))
-	}
-
-	c = container.NewBorder(c, nil, nil, nil, tabs)
-	if img := mod.Preview.Get(); img != nil {
-		c = container.NewBorder(img, nil, nil, nil, c)
-	}
-	return container.NewScroll(c)
-}
-
-func (ui *localUI) createField(name, value string) *fyne.Container {
-	return container.NewHBox(
-		widget.NewLabelWithStyle(name, fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
-		widget.NewLabel(value),
-	)
-}
-
-func (ui *localUI) createLink(name, value string) *fyne.Container {
-	url, err := url.ParseRequestURI(value)
-	if err != nil {
-		return ui.createField(name, value)
-	}
-	return container.NewHBox(
-		widget.NewLabelWithStyle(name, fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
-		widget.NewHyperlink(value, url),
-	)
-}
-
-func (ui *localUI) createCompatibility(compatibility *mods.ModCompatibility) fyne.CanvasObject {
-	c := container.NewVBox(
-		widget.NewLabelWithStyle("Compatibility", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
-	)
-	if len(compatibility.Requires) > 0 {
-		c.Add(widget.NewLabelWithStyle("  Requires", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}))
-		for _, r := range compatibility.Requires {
-			c.Add(widget.NewLabel("  - " + r.Name + ": " + r.Source))
-		}
-	}
-	if len(compatibility.Requires) > 0 {
-		c.Add(widget.NewLabelWithStyle("  Forbids", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}))
-		for _, r := range compatibility.Requires {
-			c.Add(widget.NewLabel("  - " + r.Name + ": " + r.Source))
-		}
-	}
-	return c
-}
-
-func (ui *localUI) createDonationLinks(links []*mods.DonationLink) fyne.CanvasObject {
-	c := container.NewVBox(
-		widget.NewLabelWithStyle("Support Project", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
-	)
-	for _, r := range links {
-		if u, err := url.Parse(r.Link); err != nil {
-			c.Add(widget.NewLabel("  - " + r.Name + ": " + r.Link))
-		} else {
-			c.Add(container.NewHBox(widget.NewLabel("  - "+r.Name), widget.NewHyperlink(r.Link, u)))
-		}
-	}
-	return c
 }
 
 func (ui *localUI) addFromFile() {

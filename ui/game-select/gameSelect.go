@@ -15,9 +15,9 @@ func New() state.Screen {
 
 type GameSelect struct{}
 
-func (s *GameSelect) OnClose() {
+func (ui *GameSelect) PreDraw() error { return nil }
 
-}
+func (s *GameSelect) OnClose() {}
 
 func (s *GameSelect) Draw(w fyne.Window) {
 	w.SetContent(container.NewCenter(

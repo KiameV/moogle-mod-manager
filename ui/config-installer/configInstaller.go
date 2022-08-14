@@ -35,9 +35,9 @@ type configInstallerUI struct {
 	currentChoice *mods.Choice
 }
 
-func (i *configInstallerUI) OnClose() {
+func (ui *configInstallerUI) PreDraw() error { return nil }
 
-}
+func (i *configInstallerUI) OnClose() {}
 
 func (i *configInstallerUI) Setup(mod *mods.Mod, baseDir string, callback func([]*model.ToInstall) error) error {
 	if len(mod.Configurations) == 0 || len(mod.Configurations[0].Choices) == 0 {
