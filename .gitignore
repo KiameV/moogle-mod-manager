@@ -12,3 +12,4 @@ temp
 moogle-mod-manager.exe
 moogle-mod-manager.zip
 !example/*
+!winres/*

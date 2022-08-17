@@ -1,7 +1,6 @@
 package mod_author
 
 import (
-	"fmt"
 	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
@@ -17,8 +16,8 @@ func newPreviewDef() *previewDef {
 	}
 	d.createFormItem("Preview Url", "")
 	d.createFileDialog("Preview Local", "", state.GetBaseDirBinding(), false, true)
-	d.createFormItem("Size X", "")
-	d.createFormItem("Size Y", "")
+	//d.createFormItem("Size X", "")
+	//d.createFormItem("Size Y", "")
 	return d
 }
 
@@ -35,8 +34,8 @@ func (d *previewDef) set(p *mods.Preview) {
 	}
 	d.createFormItem("Preview Url", url)
 	d.createFileDialog("Preview Local", local, state.GetBaseDirBinding(), false, true)
-	d.createFormItem("Size X", fmt.Sprintf("%d", p.Size.X))
-	d.createFormItem("Size Y", fmt.Sprintf("%d", p.Size.Y))
+	//d.createFormItem("Size X", fmt.Sprintf("%d", p.Size.X))
+	//d.createFormItem("Size Y", fmt.Sprintf("%d", p.Size.Y))
 }
 
 /*func (d *previewDef) draw() fyne.CanvasObject {
@@ -46,10 +45,10 @@ func (d *previewDef) set(p *mods.Preview) {
 func (d *previewDef) compile() *mods.Preview {
 	var (
 		p = &mods.Preview{
-			Size: mods.Size{
+			/*Size: &mods.Size{
 				X: d.getInt("Size X"),
 				Y: d.getInt("Size Y"),
-			},
+			},*/
 		}
 		url   = d.getString("Preview Url")
 		local = d.getString("Preview Local")
@@ -70,7 +69,7 @@ func (d *previewDef) getFormItems() []*widget.FormItem {
 	return []*widget.FormItem{
 		d.getFormItem("Preview Url"),
 		d.getFileDialog("Preview Local"),
-		d.getFormItem("Size X"),
-		d.getFormItem("Size Y"),
+		//d.getFormItem("Size X"),
+		//d.getFormItem("Size Y"),
 	}
 }

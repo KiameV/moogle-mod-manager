@@ -69,15 +69,14 @@ func (r repo) Pull() (err error) {
 }
 
 func (r repo) GetMods(game config.Game) (mods []string, overrides []string, err error) {
-	dir := repoDir()
-	if _, err = os.Stat(dir); err != nil {
+	if _, err = os.Stat(repoDir()); err != nil {
 		if err = r.Clone(); err != nil {
 			return
 		}
 	} else if err = r.Pull(); err != nil {
 		return
 	}
-	err = filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
+	err = filepath.WalkDir(repoGameDir(game), func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}

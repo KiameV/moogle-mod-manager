@@ -255,9 +255,9 @@ func toMod(game config.Game, n nexusMod, dls []NexusFile) (mod *mods.Mod, err er
 		ReleaseNotes: "",
 		Link:         fmt.Sprintf(nexusUrl, n.Game, n.ModID),
 		Preview: &mods.Preview{
-			Url:   nil,
+			Url:   &n.PictureUrl,
 			Local: nil,
-			Size:  mods.Size{},
+			//Size:  nil,
 		},
 		ModKind: &mods.ModKind{
 			Kind: mods.Nexus,

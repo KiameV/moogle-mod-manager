@@ -48,7 +48,6 @@ type Mod struct {
 type Preview struct {
 	Url   *string       `json:"Url,omitempty" xml:"Url,omitempty"`
 	Local *string       `json:"Local,omitempty" xml:"Local,omitempty"`
-	Size  Size          `json:"Size,omitempty" xml:"Size,omitempty"`
 	img   *canvas.Image `json:"-" xml:"-"`
 }
 
@@ -81,9 +80,7 @@ func (p *Preview) Get() *canvas.Image {
 			return nil
 		}
 		p.img = canvas.NewImageFromResource(r)
-		size := fyne.Size{Width: float32(p.Size.X), Height: float32(p.Size.Y)}
-		p.img.SetMinSize(size)
-		p.img.Resize(size)
+		p.img.SetMinSize(fyne.Size{Width: float32(300), Height: float32(300)})
 		p.img.FillMode = canvas.ImageFillContain
 	}
 	return p.img
@@ -209,11 +206,11 @@ func (m *Mod) Validate() string {
 		sb.WriteString("Link is required\n")
 	}
 
-	if m.Preview != nil {
+	/*if m.Preview != nil {
 		if m.Preview.Size.X <= 50 || m.Preview.Size.Y <= 50 {
 			sb.WriteString("Preview size must be greater than 50\n")
 		}
-	}
+	}*/
 
 	kind := m.ModKind.Kind
 	if kind == Hosted {
