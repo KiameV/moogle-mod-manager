@@ -5,16 +5,15 @@ import (
 	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/mods"
-	"github.com/kiamev/moogle-mod-manager/mods/managed/model"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
+	"github.com/kiamev/moogle-mod-manager/ui/util"
 )
 
 type ConfigInstaller interface {
 	state.Screen
-	Setup(mod *mods.Mod, baseDir string, callback func([]*model.ToInstall) error) error
+	Setup(mod *mods.Mod, baseDir string, done func([]*mods.ToInstall) error) error
 }
 
 func New() ConfigInstaller {
@@ -29,7 +28,7 @@ type configInstallerUI struct {
 	prevConfigs     []*mods.Configuration
 	choiceContainer *fyne.Container
 	baseDir         string
-	callback        func([]*model.ToInstall) error
+	done            func([]*mods.ToInstall) error
 
 	currentConfig *mods.Configuration
 	currentChoice *mods.Choice
@@ -37,101 +36,102 @@ type configInstallerUI struct {
 
 func (ui *configInstallerUI) PreDraw() error { return nil }
 
-func (i *configInstallerUI) OnClose() {}
+func (ui *configInstallerUI) OnClose() {}
 
-func (i *configInstallerUI) Setup(mod *mods.Mod, baseDir string, callback func([]*model.ToInstall) error) error {
+func (ui *configInstallerUI) Setup(mod *mods.Mod, baseDir string, done func([]*mods.ToInstall) error) error {
 	if len(mod.Configurations) == 0 || len(mod.Configurations[0].Choices) == 0 {
 		return fmt.Errorf("no configurations for %s", mod.Name)
 	}
-	i.mod = mod
-	for _, i.currentConfig = range mod.Configurations {
-		if i.currentConfig.Root {
+	ui.mod = mod
+	for _, ui.currentConfig = range mod.Configurations {
+		if ui.currentConfig.Root {
 			break
 		}
 	}
-	if i.currentConfig == nil || !i.currentConfig.Root {
+	if ui.currentConfig == nil || !ui.currentConfig.Root {
 		return errors.New("could not find root configuration")
 	}
-	i.prevConfigs = make([]*mods.Configuration, 0)
-	i.baseDir = baseDir
-	i.callback = callback
-	i.toInstall = make([]*mods.DownloadFiles, 0)
-	i.choiceContainer.RemoveAll()
+	ui.prevConfigs = make([]*mods.Configuration, 0)
+	ui.baseDir = baseDir
+	ui.done = done
+	ui.toInstall = make([]*mods.DownloadFiles, 0)
+	ui.choiceContainer.RemoveAll()
 	for _, dl := range mod.AlwaysDownload {
-		i.toInstall = append(i.toInstall, dl)
+		ui.toInstall = append(ui.toInstall, dl)
 	}
 	return nil
 }
 
-func (i *configInstallerUI) Draw(w fyne.Window) {
-	state.SetBaseDir(i.baseDir)
+func (ui *configInstallerUI) Draw(w fyne.Window) {
+	state.SetBaseDir(ui.baseDir)
 	c := container.NewVBox(
-		widget.NewLabelWithStyle(i.currentConfig.Name, fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
-		widget.NewRichTextFromMarkdown(i.currentConfig.Description),
-		i.getChoiceSelector(func(name string) {
-			for _, i.currentChoice = range i.currentConfig.Choices {
-				if i.currentChoice.Name == name {
-					i.choiceContainer.RemoveAll()
-					i.drawChoiceInfo()
+		widget.NewLabelWithStyle(ui.currentConfig.Name, fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
+		widget.NewRichTextFromMarkdown(ui.currentConfig.Description),
+		ui.getChoiceSelector(func(name string) {
+			for _, ui.currentChoice = range ui.currentConfig.Choices {
+				if ui.currentChoice.Name == name {
+					ui.choiceContainer.RemoveAll()
+					ui.drawChoiceInfo()
 					break
 				}
 			}
 		}))
 	buttons := container.NewHBox(
 		widget.NewButton("Select", func() {
-			if i.currentChoice == nil {
+			if ui.currentChoice == nil {
 				return
 			}
-			i.prevConfigs = append(i.prevConfigs, i.currentConfig)
-			i.toInstall = append(i.toInstall, i.currentChoice.DownloadFiles)
-			if i.currentChoice.NextConfigurationName == nil {
-				tis, err := model.NewToInstallForMod(i.mod.ModKind.Kind, i.mod, i.toInstall)
+			ui.prevConfigs = append(ui.prevConfigs, ui.currentConfig)
+			ui.toInstall = append(ui.toInstall, ui.currentChoice.DownloadFiles)
+			if ui.currentChoice.NextConfigurationName == nil {
+				tis, err := mods.NewToInstallForMod(ui.mod.ModKind.Kind, ui.mod, ui.toInstall)
 				if err != nil {
-					dialog.ShowError(err, w)
+					util.ShowErrorLong(err)
 					state.ShowPreviousScreen()
 					return
 				}
-				if err = i.callback(tis); err != nil {
-					dialog.ShowError(err, w)
+				state.ShowPreviousScreen()
+				if err = ui.done(tis); err != nil {
+					util.ShowErrorLong(err)
+					state.ShowPreviousScreen()
 					return
 				}
-				state.ShowPreviousScreen()
 			} else {
-				for _, i.currentConfig = range i.mod.Configurations {
-					if i.currentConfig.Name == *i.currentChoice.NextConfigurationName {
+				for _, ui.currentConfig = range ui.mod.Configurations {
+					if ui.currentConfig.Name == *ui.currentChoice.NextConfigurationName {
 						break
 					}
 				}
-				i.currentChoice = nil
-				i.choiceContainer.RemoveAll()
-				i.Draw(w)
+				ui.currentChoice = nil
+				ui.choiceContainer.RemoveAll()
+				ui.Draw(w)
 			}
 		}))
-	if len(i.prevConfigs) > 0 {
+	if len(ui.prevConfigs) > 0 {
 		buttons.Add(widget.NewButton("Back", func() {
-			i.popToInstall()
-			i.currentConfig = i.popChoice()
-			i.choiceContainer.RemoveAll()
-			i.Draw(w)
+			ui.popToInstall()
+			ui.currentConfig = ui.popChoice()
+			ui.choiceContainer.RemoveAll()
+			ui.Draw(w)
 		}))
 	}
 	c.Add(buttons)
-	if img := i.currentConfig.Preview.Get(); img != nil {
+	if img := ui.currentConfig.Preview.Get(); img != nil {
 		c = container.NewBorder(img, nil, nil, nil, c)
 	}
-	w.SetContent(container.NewBorder(c, nil, nil, nil, container.NewVScroll(i.choiceContainer)))
+	w.SetContent(container.NewBorder(c, nil, nil, nil, container.NewVScroll(ui.choiceContainer)))
 }
 
-func (i *configInstallerUI) getChoiceSelector(onChange func(choice string)) fyne.CanvasObject {
-	possible := make([]string, len(i.currentConfig.Choices))
-	for j, c := range i.currentConfig.Choices {
+func (ui *configInstallerUI) getChoiceSelector(onChange func(choice string)) fyne.CanvasObject {
+	possible := make([]string, len(ui.currentConfig.Choices))
+	for j, c := range ui.currentConfig.Choices {
 		possible[j] = c.Name
 	}
 
-	st := i.mod.ConfigSelectionType
+	st := ui.mod.ConfigSelectionType
 	if st == mods.Auto {
 		st = mods.Radio
-		if len(i.currentConfig.Choices) > 3 {
+		if len(ui.currentConfig.Choices) > 3 {
 			st = mods.Select
 		}
 	}
@@ -142,34 +142,34 @@ func (i *configInstallerUI) getChoiceSelector(onChange func(choice string)) fyne
 	return widget.NewSelect(possible, onChange)
 }
 
-func (i *configInstallerUI) drawChoiceInfo() {
+func (ui *configInstallerUI) drawChoiceInfo() {
 	c := container.NewVBox(
-		widget.NewLabelWithStyle(i.currentChoice.Name, fyne.TextAlignLeading, fyne.TextStyle{Bold: true}))
-	if i.currentChoice.Description != "" {
-		c.Add(widget.NewRichTextFromMarkdown(i.currentChoice.Description))
+		widget.NewLabelWithStyle(ui.currentChoice.Name, fyne.TextAlignLeading, fyne.TextStyle{Bold: true}))
+	if ui.currentChoice.Description != "" {
+		c.Add(widget.NewRichTextFromMarkdown(ui.currentChoice.Description))
 	}
-	if img := i.currentChoice.Preview.Get(); img != nil {
+	if img := ui.currentChoice.Preview.Get(); img != nil {
 		c = container.NewBorder(img, nil, nil, nil, c)
 	}
-	i.choiceContainer.Add(c)
+	ui.choiceContainer.Add(c)
 }
 
-func (i *configInstallerUI) popToInstall() {
-	l := len(i.toInstall) - 1
+func (ui *configInstallerUI) popToInstall() {
+	l := len(ui.toInstall) - 1
 	if l < 0 {
 		return
 	}
-	i.toInstall[l] = nil
-	i.toInstall = i.toInstall[:l]
+	ui.toInstall[l] = nil
+	ui.toInstall = ui.toInstall[:l]
 }
 
-func (i *configInstallerUI) popChoice() (c *mods.Configuration) {
-	l := len(i.prevConfigs) - 1
+func (ui *configInstallerUI) popChoice() (c *mods.Configuration) {
+	l := len(ui.prevConfigs) - 1
 	if l < 0 {
 		return nil
 	}
-	c = i.prevConfigs[l]
-	i.prevConfigs[l] = nil
-	i.prevConfigs = i.prevConfigs[:l]
+	c = ui.prevConfigs[l]
+	ui.prevConfigs[l] = nil
+	ui.prevConfigs = ui.prevConfigs[:l]
 	return
 }

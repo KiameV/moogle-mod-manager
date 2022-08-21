@@ -3,67 +3,69 @@ package downloads
 import (
 	"fmt"
 	"github.com/kiamev/moogle-mod-manager/browser"
-	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
-	"github.com/kiamev/moogle-mod-manager/mods/managed/model"
 	"github.com/kiamev/moogle-mod-manager/ui/confirm"
 	"os"
 	"path/filepath"
 )
 
-func Download(game config.Game, tm *model.TrackedMod, tis []*model.ToInstall, done confirm.DownloadCompleteCallback) error {
-	if tm.Mod.ModKind.Kind == mods.Hosted {
-		confirm.Hosted(game, tm, tis, done, hosted)
+func Download(enabler *mods.ModEnabler, done confirm.DownloadCompleteCallback) error {
+	if enabler.TrackedMod.Mod.ModKind.Kind == mods.Hosted {
+		confirm.Hosted(enabler, done, hosted)
 	} else {
-		if err := confirm.Nexus(game, tm, tis, done, nexus); err != nil {
+		if err := confirm.Nexus(enabler, done, nexus); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func hosted(game config.Game, tm *model.TrackedMod, tis []*model.ToInstall) (err error) {
+func hosted(enabler *mods.ModEnabler, done confirm.DownloadCompleteCallback, err error) {
 	var (
 		f         string
-		installed []*model.InstalledDownload
+		installed []*mods.InstalledDownload
 	)
-	for _, ti := range tis {
+	for _, ti := range enabler.ToInstall {
 		if len(ti.Download.Hosted.Sources) == 0 {
 			err = fmt.Errorf("%s has no download sources", ti.Download.Name)
+			done(enabler, err)
 			return
 		}
 		for _, source := range ti.Download.Hosted.Sources {
-			if f, err = ti.GetDownloadLocation(game, tm); err != nil {
+			if f, err = ti.GetDownloadLocation(enabler.Game, enabler.TrackedMod); err != nil {
+				done(enabler, err)
 				return
 			}
 			if f, err = browser.Download(source, f); err == nil {
 				// success
-				installed = append(installed, model.NewInstalledDownload(ti.Download.Name, ti.Download.Version))
+				installed = append(installed, mods.NewInstalledDownload(ti.Download.Name, ti.Download.Version))
 				ti.Download.DownloadedArchiveLocation = f
 				break
 			}
 		}
 	}
 
-	for _, ti := range tis {
+	for _, ti := range enabler.ToInstall {
 		if ti.Download.DownloadedArchiveLocation == "" {
-			fmt.Errorf("failed to download %s", ti.Download.Hosted.Sources[0])
+			done(enabler, fmt.Errorf("failed to download %s", ti.Download.Hosted.Sources[0]))
 			return
 		}
 	}
-	return
+	done(enabler, nil)
 }
 
-func nexus(game config.Game, tm *model.TrackedMod, tis []*model.ToInstall) (err error) {
+func nexus(enabler *mods.ModEnabler, done confirm.DownloadCompleteCallback, err error) {
 	var (
 		dir  []os.DirEntry
 		path string
 	)
-	for _, ti := range tis {
-		if path, err = ti.GetDownloadLocation(game, tm); err != nil {
+	for _, ti := range enabler.ToInstall {
+		if path, err = ti.GetDownloadLocation(enabler.Game, enabler.TrackedMod); err != nil {
+			done(enabler, err)
 			return
 		}
 		if dir, err = os.ReadDir(path); err != nil {
+			done(enabler, err)
 			return
 		}
 
@@ -75,9 +77,9 @@ func nexus(game config.Game, tm *model.TrackedMod, tis []*model.ToInstall) (err 
 			}
 		}
 		if ti.Download.DownloadedArchiveLocation == "" {
-			err = fmt.Errorf("failed to find %s in %s", ti.Download.Nexus.FileName, path)
+			done(enabler, fmt.Errorf("failed to find %s in %s", ti.Download.Nexus.FileName, path))
 			return
 		}
 	}
-	return
+	done(enabler, nil)
 }

@@ -6,22 +6,21 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
-	"github.com/kiamev/moogle-mod-manager/config"
-	"github.com/kiamev/moogle-mod-manager/mods/managed/model"
+	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/mods/nexus"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
 	"net/url"
 )
 
-func Nexus(game config.Game, tm *model.TrackedMod, tis []*model.ToInstall, done DownloadCompleteCallback, callback downloadCallback) (err error) {
+func Nexus(enabler *mods.ModEnabler, competeCallback DownloadCompleteCallback, done downloadCallback) (err error) {
 	var (
 		uri string
 		u   *url.URL
 		c   = container.NewVBox(widget.NewLabelWithStyle("Download the following file from Nexus", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}))
 		dll string
 	)
-	for _, ti := range tis {
-		uri = fmt.Sprintf(nexus.NexusFileDownload, ti.Download.Nexus.FileID, nexus.GameToID(game))
+	for _, ti := range enabler.ToInstall {
+		uri = fmt.Sprintf(nexus.NexusFileDownload, ti.Download.Nexus.FileID, nexus.GameToID(enabler.Game))
 		if u, err = url.Parse(uri); err != nil {
 			return
 		}
@@ -29,7 +28,7 @@ func Nexus(game config.Game, tm *model.TrackedMod, tis []*model.ToInstall, done 
 
 		c.Add(widget.NewLabelWithStyle("Place download in:", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}))
 
-		if dll, err = ti.GetDownloadLocation(game, tm); err != nil {
+		if dll, err = ti.GetDownloadLocation(enabler.Game, enabler.TrackedMod); err != nil {
 			return
 		}
 		if u, err = url.Parse(dll); err != nil {
@@ -39,7 +38,7 @@ func Nexus(game config.Game, tm *model.TrackedMod, tis []*model.ToInstall, done 
 	}
 	d := dialog.NewCustomConfirm("Download Files", "Done", "Cancel", container.NewVScroll(c), func(ok bool) {
 		if ok {
-			done(game, tm, tis, callback(game, tm, tis))
+			done(enabler, competeCallback, err)
 		}
 	}, state.Window)
 	d.Resize(fyne.NewSize(500, 400))

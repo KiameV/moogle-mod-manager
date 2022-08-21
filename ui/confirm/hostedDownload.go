@@ -6,19 +6,21 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
-	"github.com/kiamev/moogle-mod-manager/config"
-	"github.com/kiamev/moogle-mod-manager/mods/managed/model"
+	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
 	"strings"
 )
 
-type DownloadCompleteCallback func(game config.Game, tm *model.TrackedMod, tis []*model.ToInstall, err error)
+type DownloadCompleteCallback func(enabler *mods.ModEnabler, err error)
 
-type downloadCallback func(game config.Game, tm *model.TrackedMod, tis []*model.ToInstall) error
+type downloadCallback func(enabler *mods.ModEnabler, completeCallback DownloadCompleteCallback, err error)
 
-func Hosted(game config.Game, tm *model.TrackedMod, tis []*model.ToInstall, done DownloadCompleteCallback, callback downloadCallback) {
-	sb := strings.Builder{}
-	for i, ti := range tis {
+func Hosted(enabler *mods.ModEnabler, completeCallback DownloadCompleteCallback, done downloadCallback) {
+	var (
+		sb  = strings.Builder{}
+		err error
+	)
+	for i, ti := range enabler.ToInstall {
 		sb.WriteString(fmt.Sprintf("## Download %d\n\n", i+1))
 		if len(ti.Download.Hosted.Sources) == 1 {
 			sb.WriteString(ti.Download.Hosted.Sources[0] + "\n\n")
@@ -31,7 +33,7 @@ func Hosted(game config.Game, tm *model.TrackedMod, tis []*model.ToInstall, done
 	}
 	d := dialog.NewCustomConfirm("Download Files?", "Yes", "Cancel", container.NewVScroll(widget.NewRichTextFromMarkdown(sb.String())), func(ok bool) {
 		if ok {
-			done(game, tm, tis, callback(game, tm, tis))
+			done(enabler, completeCallback, err)
 		}
 	}, state.Window)
 	d.Resize(fyne.NewSize(500, 400))

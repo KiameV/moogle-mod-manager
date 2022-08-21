@@ -10,7 +10,6 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/mods/managed/authored"
-	"github.com/kiamev/moogle-mod-manager/mods/managed/model"
 	"github.com/kiamev/moogle-mod-manager/mods/nexus"
 	config_installer "github.com/kiamev/moogle-mod-manager/ui/config-installer"
 	cw "github.com/kiamev/moogle-mod-manager/ui/custom-widgets"
@@ -204,14 +203,14 @@ func (a *ModAuthorer) Draw(w fyne.Window) {
 		widget.NewButton("Test", func() {
 			mod := a.compileMod()
 			if len(a.configsDef.list.Items) == 0 {
-				tis, err := model.NewToInstallForMod(mod.ModKind.Kind, mod, mod.AlwaysDownload)
+				tis, err := mods.NewToInstallForMod(mod.ModKind.Kind, mod, mod.AlwaysDownload)
 				if err != nil {
 					util.ShowErrorLong(err)
 					return
 				}
 				util.DisplayDownloadsAndFiles(tis)
 			}
-			if err := state.GetScreen(state.ConfigInstaller).(config_installer.ConfigInstaller).Setup(mod, state.GetBaseDir(), func(tis []*model.ToInstall) error {
+			if err := state.GetScreen(state.ConfigInstaller).(config_installer.ConfigInstaller).Setup(mod, state.GetBaseDir(), func(tis []*mods.ToInstall) error {
 				util.DisplayDownloadsAndFiles(tis)
 				return nil
 			}); err != nil {

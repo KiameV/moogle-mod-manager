@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
-	"github.com/kiamev/moogle-mod-manager/mods/managed/model"
 	"io"
 	"io/ioutil"
 	"os"
@@ -32,7 +31,7 @@ type modFiles struct {
 	MovedFiles    map[string]*mods.ModFile
 }
 
-func AddModFiles(game config.Game, tm *model.TrackedMod, files []*mods.DownloadFiles) (err error) {
+func AddModFiles(game config.Game, tm *mods.TrackedMod, files []*mods.DownloadFiles) (err error) {
 	var (
 		mmf, ok = managed[game]
 		configs = config.Get()
@@ -100,7 +99,7 @@ func AddModFiles(game config.Game, tm *model.TrackedMod, files []*mods.DownloadF
 	return saveManagedJson()
 }
 
-func RemoveModFiles(game config.Game, tm *model.TrackedMod) (err error) {
+func RemoveModFiles(game config.Game, tm *mods.TrackedMod) (err error) {
 	var (
 		mmf, ok = managed[game]
 		mf      *modFiles

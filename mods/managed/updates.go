@@ -9,7 +9,6 @@ import (
 	"github.com/kiamev/moogle-mod-manager/browser"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
-	"github.com/kiamev/moogle-mod-manager/mods/managed/model"
 	"github.com/kiamev/moogle-mod-manager/mods/nexus"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
 	"strings"
@@ -54,7 +53,7 @@ type updateChecker interface {
 }
 
 type hostedUpdateChecker struct {
-	tm  *model.TrackedMod
+	tm  *mods.TrackedMod
 	wg  *sync.WaitGroup
 	err error
 }
@@ -85,7 +84,7 @@ func (c *hostedUpdateChecker) getError() error {
 }
 
 type nexusUpdateChecker struct {
-	tm  *model.TrackedMod
+	tm  *mods.TrackedMod
 	wg  *sync.WaitGroup
 	err error
 }
@@ -124,7 +123,7 @@ func isVersionNewer(new string, old string) bool {
 	return false
 }
 
-func markForUpdate(tm *model.TrackedMod, mod *mods.Mod) {
+func markForUpdate(tm *mods.TrackedMod, mod *mods.Mod) {
 	tm.UpdatedMod = mod
 	tm.DisplayName = mod.Name + updateAvailableFlag
 }

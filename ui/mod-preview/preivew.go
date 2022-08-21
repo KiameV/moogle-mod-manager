@@ -5,13 +5,12 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/mods"
-	"github.com/kiamev/moogle-mod-manager/mods/managed/model"
 	"net/url"
 )
 
 type ModPreviewOptions struct {
-	UpdateCallback func(mod *model.TrackedMod)
-	TrackedMod     *model.TrackedMod
+	UpdateCallback func(mod *mods.TrackedMod)
+	TrackedMod     *mods.TrackedMod
 }
 
 func CreatePreview(mod *mods.Mod, options ...ModPreviewOptions) fyne.CanvasObject {

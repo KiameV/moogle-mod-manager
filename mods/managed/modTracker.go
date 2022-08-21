@@ -11,9 +11,7 @@ import (
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/downloads"
 	"github.com/kiamev/moogle-mod-manager/mods"
-	"github.com/kiamev/moogle-mod-manager/mods/managed/model"
 	"github.com/kiamev/moogle-mod-manager/mods/nexus"
-	wu "github.com/kiamev/moogle-mod-manager/ui/util"
 	"github.com/kiamev/moogle-mod-manager/util"
 	archiver "github.com/mholt/archiver/v4"
 	"io"
@@ -27,8 +25,8 @@ const (
 )
 
 type trackedModsForGame struct {
-	Game config.Game         `json:"game"`
-	Mods []*model.TrackedMod `json:"mods"`
+	Game config.Game        `json:"game"`
+	Mods []*mods.TrackedMod `json:"mods"`
 }
 
 var lookup = make([]*trackedModsForGame, 6)
@@ -53,7 +51,7 @@ func Initialize() (err error) {
 	return initializeFiles()
 }
 
-func AddModFromFile(game config.Game, file string) (tm *model.TrackedMod, err error) {
+func AddModFromFile(game config.Game, file string) (tm *mods.TrackedMod, err error) {
 	var mod *mods.Mod
 	if err = util.LoadFromFile(file, &mod); err != nil {
 		return
@@ -62,14 +60,14 @@ func AddModFromFile(game config.Game, file string) (tm *model.TrackedMod, err er
 		return nil, fmt.Errorf("failed to load mod:\n%s", s)
 	}
 
-	tm = model.NewTrackerMod(mod, game)
+	tm = mods.NewTrackerMod(mod, game)
 	if err = AddMod(game, tm); err != nil {
 		return nil, err
 	}
 	return tm, saveToJson()
 }
 
-func AddModFromUrl(game config.Game, url string) (tm *model.TrackedMod, err error) {
+func AddModFromUrl(game config.Game, url string) (tm *mods.TrackedMod, err error) {
 	var (
 		mod *mods.Mod
 		b   []byte
@@ -95,21 +93,21 @@ func AddModFromUrl(game config.Game, url string) (tm *model.TrackedMod, err erro
 		}
 	}
 
-	tm = model.NewTrackerMod(mod, game)
+	tm = mods.NewTrackerMod(mod, game)
 	if err = AddMod(game, tm); err != nil {
 		return nil, err
 	}
 	return tm, saveToJson()
 }
 
-func AddMod(game config.Game, tm *model.TrackedMod) error {
+func AddMod(game config.Game, tm *mods.TrackedMod) error {
 	if err := addMod(game, tm); err != nil {
 		return err
 	}
 	return saveToJson()
 }
 
-func addMod(game config.Game, tm *model.TrackedMod) (err error) {
+func addMod(game config.Game, tm *mods.TrackedMod) (err error) {
 	if err = tm.GetMod().Supports(game); err != nil {
 		return
 	}
@@ -137,7 +135,7 @@ func addMod(game config.Game, tm *model.TrackedMod) (err error) {
 	return
 }
 
-func UpdateMod(game config.Game, tm *model.TrackedMod) (err error) {
+func UpdateMod(game config.Game, tm *mods.TrackedMod) (err error) {
 	if err = tm.GetMod().Supports(game); err != nil {
 		return
 	}
@@ -155,28 +153,30 @@ func UpdateMod(game config.Game, tm *model.TrackedMod) (err error) {
 	return saveToJson()
 }
 
-func GetMods(game config.Game) []*model.TrackedMod { return lookup[game].Mods }
+func GetMods(game config.Game) []*mods.TrackedMod { return lookup[game].Mods }
 
-func EnableMod(game config.Game, tm *model.TrackedMod, tis []*model.ToInstall) (err error) {
-	if err = downloads.Download(game, tm, tis, enableMod); err != nil {
-		wu.ShowErrorLong(err)
-	}
-	return
+func EnableMod(enabler *mods.ModEnabler) (err error) {
+	return downloads.Download(enabler, enableMod)
 }
 
-func enableMod(game config.Game, tm *model.TrackedMod, tis []*model.ToInstall, err error) {
+func enableMod(enabler *mods.ModEnabler, err error) {
+	var (
+		game = enabler.Game
+		tm   = enabler.TrackedMod
+		tis  = enabler.ToInstall
+	)
 	modPath := filepath.Join(config.Get().GetModsFullPath(game), tm.GetDirSuffix())
 	if err != nil {
-		wu.ShowErrorLong(err)
 		tm.Enabled = false
+		enabler.DoneCallback(err)
 		return
 	}
 
 	for _, ti := range tis {
 		to := filepath.Join(modPath, ti.Download.Name)
 		if err = decompress(ti.Download.DownloadedArchiveLocation, to); err != nil {
-			wu.ShowErrorLong(err)
 			tm.Enabled = false
+			enabler.DoneCallback(err)
 			return
 		}
 		if tm.Mod.ModKind.Kind == mods.Nexus {
@@ -192,14 +192,15 @@ func enableMod(game config.Game, tm *model.TrackedMod, tis []*model.ToInstall, e
 
 	for _, ti := range tis {
 		if err = AddModFiles(game, tm, ti.DownloadFiles); err != nil {
-			wu.ShowErrorLong(err)
 			tm.Enabled = false
+			enabler.DoneCallback(err)
 			return
 		}
 	}
 
+	tm.Enabled = true
 	_ = saveToJson()
-	return
+	enabler.DoneCallback(nil)
 }
 
 func decompress(from string, to string) error {
@@ -250,14 +251,15 @@ func decompress(from string, to string) error {
 	return err
 }
 
-func DisableMod(game config.Game, tm *model.TrackedMod) (err error) {
+func DisableMod(game config.Game, tm *mods.TrackedMod) (err error) {
 	if err = RemoveModFiles(game, tm); err != nil {
 		return
 	}
+	tm.Enabled = false
 	return saveToJson()
 }
 
-func RemoveMod(game config.Game, tm *model.TrackedMod) error {
+func RemoveMod(game config.Game, tm *mods.TrackedMod) error {
 	gm := lookup[game].Mods
 	for i, m := range gm {
 		if m.Mod.ID == tm.GetModID() {
@@ -277,6 +279,6 @@ func saveToJson() error {
 	return util.SaveToFile(filepath.Join(config.PWD, modTrackerName), &lookup)
 }
 
-func saveMoogle(tm *model.TrackedMod) (err error) {
+func saveMoogle(tm *mods.TrackedMod) (err error) {
 	return util.SaveToFile(tm.MoogleModFile, tm.Mod)
 }

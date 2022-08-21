@@ -8,7 +8,6 @@ import (
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/mods/managed"
-	"github.com/kiamev/moogle-mod-manager/mods/managed/model"
 	"github.com/kiamev/moogle-mod-manager/repo"
 	cw "github.com/kiamev/moogle-mod-manager/ui/custom-widgets"
 	mp "github.com/kiamev/moogle-mod-manager/ui/mod-preview"
@@ -78,7 +77,7 @@ func (ui *discoverUI) Draw(w fyne.Window) {
 		ui.split.Refresh()
 		ui.split.Trailing = container.NewBorder(
 			container.NewHBox(widget.NewButton("Install", func() {
-				if err := managed.AddMod(*state.CurrentGame, model.NewTrackerMod(ui.selectedMod, *state.CurrentGame)); err != nil {
+				if err := managed.AddMod(*state.CurrentGame, mods.NewTrackerMod(ui.selectedMod, *state.CurrentGame)); err != nil {
 					util.ShowErrorLong(err)
 					return
 				}

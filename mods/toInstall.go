@@ -1,31 +1,30 @@
-package model
+package mods
 
 import (
 	"fmt"
 	"github.com/kiamev/moogle-mod-manager/config"
-	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/util"
 	"os"
 	"path/filepath"
 )
 
 type ToInstall struct {
-	kind          mods.Kind
-	Download      *mods.Download
-	DownloadFiles []*mods.DownloadFiles
+	kind          Kind
+	Download      *Download
+	DownloadFiles []*DownloadFiles
 	downloadDir   string
 }
 
-func NewToInstall(kind mods.Kind, download *mods.Download, downloadFiles *mods.DownloadFiles) *ToInstall {
+func NewToInstall(kind Kind, download *Download, downloadFiles *DownloadFiles) *ToInstall {
 	return &ToInstall{
 		kind:          kind,
 		Download:      download,
-		DownloadFiles: []*mods.DownloadFiles{downloadFiles},
+		DownloadFiles: []*DownloadFiles{downloadFiles},
 	}
 }
 
-func NewToInstallForMod(kind mods.Kind, mod *mods.Mod, downloadFiles []*mods.DownloadFiles) (result []*ToInstall, err error) {
-	lookup := make(map[string]*mods.Download)
+func NewToInstallForMod(kind Kind, mod *Mod, downloadFiles []*DownloadFiles) (result []*ToInstall, err error) {
+	lookup := make(map[string]*Download)
 	for _, dl := range mod.Downloadables {
 		lookup[dl.Name] = dl
 	}
@@ -41,7 +40,7 @@ func NewToInstallForMod(kind mods.Kind, mod *mods.Mod, downloadFiles []*mods.Dow
 }
 
 func (ti *ToInstall) GetDownloadLocation(game config.Game, tm *TrackedMod) (string, error) {
-	if ti.kind == mods.Hosted {
+	if ti.kind == Hosted {
 		return ti.getHostedDownloadLocation(game, tm)
 	}
 	return ti.getNexusDownloadLocation(game, tm)

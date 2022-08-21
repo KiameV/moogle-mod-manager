@@ -7,7 +7,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/google/go-github/v45/github"
 	"github.com/kiamev/moogle-mod-manager/config"
-	"github.com/kiamev/moogle-mod-manager/mods/managed/model"
+	"github.com/kiamev/moogle-mod-manager/mods"
 	"os"
 	"path/filepath"
 	"time"
@@ -31,7 +31,7 @@ func (r repo) Clone() (err error) {
 	return
 }
 
-func (r repo) CommitMod(tm *model.TrackedMod) (url string, err error) {
+func (r repo) CommitMod(tm *mods.TrackedMod) (url string, err error) {
 	var (
 		w      *git.Worktree
 		branch = tm.GetBranchName()
