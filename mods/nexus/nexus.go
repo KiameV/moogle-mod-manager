@@ -319,7 +319,7 @@ func toMod(game config.Game, n nexusMod, dls []NexusFile) (mod *mods.Mod, err er
 			Dirs: []*mods.ModDir{
 				{
 					From:      string(GameToInstallBaseDir(game)),
-					To:        ".",
+					To:        string(GameToInstallBaseDir(game)),
 					Recursive: true,
 				},
 			},

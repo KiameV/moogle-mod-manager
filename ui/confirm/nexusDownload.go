@@ -10,31 +10,51 @@ import (
 	"github.com/kiamev/moogle-mod-manager/mods/nexus"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
 	"net/url"
+	"os"
+	"path/filepath"
 )
+
+type toDownload struct {
+	uri string
+	dir string
+}
 
 func Nexus(enabler *mods.ModEnabler, competeCallback DownloadCompleteCallback, done downloadCallback) (err error) {
 	var (
-		uri string
-		u   *url.URL
-		c   = container.NewVBox(widget.NewLabelWithStyle("Download the following file from Nexus", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}))
-		dll string
+		u    *url.URL
+		c    = container.NewVBox(widget.NewLabelWithStyle("Download the following file from Nexus", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}))
+		toDl []toDownload
 	)
 	for _, ti := range enabler.ToInstall {
-		uri = fmt.Sprintf(nexus.NexusFileDownload, ti.Download.Nexus.FileID, nexus.GameToID(enabler.Game))
-		if u, err = url.Parse(uri); err != nil {
+		dl := toDownload{
+			uri: fmt.Sprintf(nexus.NexusFileDownload, ti.Download.Nexus.FileID, nexus.GameToID(enabler.Game)),
+		}
+		if dl.dir, err = ti.GetDownloadLocation(enabler.Game, enabler.TrackedMod); err != nil {
 			return
 		}
-		c.Add(widget.NewHyperlink(uri, u))
+		if _, err = os.Stat(filepath.Join(dl.dir, ti.Download.Nexus.FileName)); err == nil {
+			continue
+		}
+		toDl = append(toDl, dl)
+	}
+
+	if len(toDl) == 0 {
+		done(enabler, competeCallback, err)
+		return
+	}
+
+	for _, td := range toDl {
+		if u, err = url.Parse(td.uri); err != nil {
+			return
+		}
+		c.Add(widget.NewHyperlink(td.uri, u))
 
 		c.Add(widget.NewLabelWithStyle("Place download in:", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}))
 
-		if dll, err = ti.GetDownloadLocation(enabler.Game, enabler.TrackedMod); err != nil {
+		if u, err = url.Parse(td.dir); err != nil {
 			return
 		}
-		if u, err = url.Parse(dll); err != nil {
-			return
-		}
-		c.Add(widget.NewHyperlink(dll, u))
+		c.Add(widget.NewHyperlink(td.dir, u))
 	}
 	d := dialog.NewCustomConfirm("Download Files", "Done", "Cancel", container.NewVScroll(c), func(ok bool) {
 		if ok {

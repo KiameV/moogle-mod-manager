@@ -30,6 +30,7 @@ type localUI struct {
 	data        binding.UntypedList
 	split       *container.Split
 	checkAll    *widget.Button
+	modList     *widget.List
 }
 
 func (ui *localUI) PreDraw() error { return nil }
@@ -42,49 +43,49 @@ func (ui *localUI) GetSelected() *mods.TrackedMod {
 
 func (ui *localUI) Draw(w fyne.Window) {
 	ui.data = binding.NewUntypedList()
-	var (
-		modList = widget.NewListWithData(
-			ui.data,
-			func() fyne.CanvasObject {
-				return container.NewBorder(nil, nil, nil, widget.NewCheck("", func(b bool) {}), widget.NewLabel(""))
-			},
-			func(item binding.DataItem, co fyne.CanvasObject) {
-				var tm *mods.TrackedMod
-				if i, ok := cw.GetValueFromDataItem(item); ok {
-					if tm, ok = i.(*mods.TrackedMod); ok {
-						if tm.DisplayName == "" {
-							tm.DisplayName = tm.Mod.Name
-						}
-						c := co.(*fyne.Container)
-						c.Objects[0].(*widget.Label).Bind(binding.BindString(&tm.DisplayName))
-						c.Objects[1].(*widget.Check).Bind(newEnableBind(tm, ui.enableDisableCallback))
+	ui.modList = widget.NewListWithData(
+		ui.data,
+		func() fyne.CanvasObject {
+			return container.NewBorder(nil, nil, nil, widget.NewCheck("", func(b bool) {}), widget.NewLabel(""))
+		},
+		func(item binding.DataItem, co fyne.CanvasObject) {
+			var tm *mods.TrackedMod
+			if i, ok := cw.GetValueFromDataItem(item); ok {
+				if tm, ok = i.(*mods.TrackedMod); ok {
+					if tm.DisplayName == "" {
+						tm.DisplayName = tm.Mod.Name
 					}
+					c := co.(*fyne.Container)
+					c.Objects[0].(*widget.Label).Bind(binding.BindString(&tm.DisplayName))
+					c.Objects[1].(*widget.Check).Bind(newEnableBind(tm, ui.startEnableDisableCallback, ui.endEnableDisableCallback))
 				}
-			})
-		addButton = cw.NewButtonWithPopups("Add",
-			fyne.NewMenuItem("Find", func() {
-				state.ShowScreen(state.DiscoverMods)
-			}),
-			fyne.NewMenuItem("From File", func() {
-				ui.addFromFile()
-			}),
-			fyne.NewMenuItem("From URL", func() {
-				ui.addFromUrl()
-			}))
-		removeButton = widget.NewButton("Remove", func() {
-			dialog.NewConfirm("Delete?", "Are you sure you want to delete this mod?", func(ok bool) {
-				if ok && ui.selectedMod != nil {
-					if err := managed.RemoveMod(*state.CurrentGame, ui.selectedMod); err != nil {
-						util.ShowErrorLong(err)
-						return
-					}
-					ui.removeModFromList(ui.selectedMod)
-					ui.selectedMod = nil
-					ui.split.Trailing = container.NewMax()
-				}
-			}, state.Window).Show()
+			}
 		})
-	)
+
+	addButton := cw.NewButtonWithPopups("Add",
+		fyne.NewMenuItem("Find", func() {
+			state.ShowScreen(state.DiscoverMods)
+		}),
+		fyne.NewMenuItem("From File", func() {
+			ui.addFromFile()
+		}),
+		fyne.NewMenuItem("From URL", func() {
+			ui.addFromUrl()
+		}))
+	removeButton := widget.NewButton("Remove", func() {
+		dialog.NewConfirm("Delete?", "Are you sure you want to delete this mod?", func(ok bool) {
+			if ok && ui.selectedMod != nil {
+				if err := managed.RemoveMod(*state.CurrentGame, ui.selectedMod); err != nil {
+					util.ShowErrorLong(err)
+					return
+				}
+				ui.removeModFromList(ui.selectedMod)
+				ui.selectedMod = nil
+				ui.split.Trailing = container.NewMax()
+			}
+		}, state.Window).Show()
+	})
+
 	ui.checkAll = widget.NewButton("Check All", func() {
 		ui.checkAll.Disable()
 		defer func() {
@@ -105,7 +106,7 @@ func (ui *localUI) Draw(w fyne.Window) {
 	}
 
 	removeButton.Disable()
-	modList.OnSelected = func(id widget.ListItemID) {
+	ui.modList.OnSelected = func(id widget.ListItemID) {
 		data, err := ui.data.GetItem(id)
 		if err != nil {
 			return
@@ -122,7 +123,7 @@ func (ui *localUI) Draw(w fyne.Window) {
 						util.ShowErrorLong(err)
 						return
 					}
-					if err = newEnableBind(ui.selectedMod, ui.enableDisableCallback).EnableMod(); err != nil {
+					if err = newEnableBind(ui.selectedMod, ui.startEnableDisableCallback, ui.endEnableDisableCallback).EnableMod(); err != nil {
 						util.ShowErrorLong(err)
 						return
 					}
@@ -133,7 +134,7 @@ func (ui *localUI) Draw(w fyne.Window) {
 			ui.split.Refresh()
 		}
 	}
-	modList.OnUnselected = func(id widget.ListItemID) {
+	ui.modList.OnUnselected = func(id widget.ListItemID) {
 		ui.selectedMod = nil
 		removeButton.Disable()
 		ui.split.Trailing = container.NewMax()
@@ -141,7 +142,7 @@ func (ui *localUI) Draw(w fyne.Window) {
 
 	buttons := container.NewHBox(addButton, removeButton, ui.checkAll)
 	ui.split = container.NewHSplit(
-		modList,
+		ui.modList,
 		container.NewMax())
 	ui.split.SetOffset(0.25)
 
@@ -219,15 +220,15 @@ func (ui *localUI) removeModFromList(mod *mods.TrackedMod) {
 	return
 }
 
-func (ui *localUI) showInputs(yes bool) {
-	if yes {
-		ui.split.Leading.Show()
-	} else {
-		ui.split.Leading.Hide()
-	}
-	ui.split.Refresh()
+func (ui *localUI) startEnableDisableCallback() {
+	ui.modList.Hide()
+	ui.split.Leading.Refresh()
 }
 
-func (ui *localUI) enableDisableCallback(err error) {
-
+func (ui *localUI) endEnableDisableCallback(err error) {
+	if err != nil {
+		util.ShowErrorLong(err)
+	}
+	ui.modList.Show()
+	ui.split.Leading.Refresh()
 }

@@ -234,7 +234,11 @@ func MoveFiles(files []*mods.ModFile, modDir string, toDir string, backupDir str
 }
 
 func MoveDirs(dirs []*mods.ModDir, modDir string, toDir string, backupDir string, replacedFiles *[]*mods.ModFile, movedFiles *[]*mods.ModFile, returnOnFail bool) (err error) {
-	var mf []*mods.ModFile
+	var (
+		mf   []*mods.ModFile
+		from string
+		to   string
+	)
 	for _, d := range dirs {
 		fromDir := strings.ReplaceAll(d.From, "\\", "/")
 		for len(fromDir) > 0 && (fromDir[0] == '.' || fromDir[0] == '/') {
@@ -252,18 +256,17 @@ func MoveDirs(dirs []*mods.ModDir, modDir string, toDir string, backupDir string
 					return nil
 				}
 
-				f := &mods.ModFile{
-					From: strings.ReplaceAll(path, "\\", "/"),
-					To:   d.To,
+				from = strings.ReplaceAll(path, "\\", "/")
+				if i := strings.Index(from, fromDir); i != -1 {
+					from = from[i:]
 				}
-				if i := strings.Index(f.From, fromDir); i != -1 {
-					f.From = f.From[i:]
-				}
-				if i := strings.Index(f.From, fromDir); i != -1 {
-					f.To = f.From[i:]
-				}
-				f.To = filepath.Join(d.To, f.To)
-				mf = append(mf, f)
+
+				to = strings.Replace(from, fromDir, "", 1)
+				to = filepath.Join(d.To, to)
+				mf = append(mf, &mods.ModFile{
+					From: from,
+					To:   to,
+				})
 				return nil
 			}); err != nil {
 			return

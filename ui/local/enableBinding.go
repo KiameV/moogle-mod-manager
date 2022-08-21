@@ -7,21 +7,22 @@ import (
 	"github.com/kiamev/moogle-mod-manager/mods/managed"
 	ci "github.com/kiamev/moogle-mod-manager/ui/config-installer"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
-	"github.com/kiamev/moogle-mod-manager/ui/util"
 	"path/filepath"
 )
 
 type enableBind struct {
 	binding.Bool
-	tm   *mods.TrackedMod
-	done mods.DoneCallback
+	tm    *mods.TrackedMod
+	start func()
+	done  mods.DoneCallback
 }
 
-func newEnableBind(tm *mods.TrackedMod, done mods.DoneCallback) *enableBind {
+func newEnableBind(tm *mods.TrackedMod, start func(), done mods.DoneCallback) *enableBind {
 	b := &enableBind{
-		Bool: binding.NewBool(),
-		tm:   tm,
-		done: done,
+		Bool:  binding.NewBool(),
+		tm:    tm,
+		start: start,
+		done:  done,
 	}
 	_ = b.Set(tm.Enabled)
 	b.AddListener(b)
@@ -32,15 +33,17 @@ func (b *enableBind) DataChanged() {
 	isChecked, _ := b.Get()
 	if isChecked != b.tm.Enabled {
 		if isChecked {
+			b.start()
 			if err := b.EnableMod(); err != nil {
 				if err != nil {
-					util.ShowErrorLong(err)
 					_ = b.Set(false)
+					b.done(err)
 				}
 			}
 		} else {
-			b.done(b.DisableMod())
-			_ = b.Set(b.tm.Enabled)
+			err := b.DisableMod()
+			_ = b.Set(false)
+			b.done(err)
 		}
 	}
 }

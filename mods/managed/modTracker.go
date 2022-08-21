@@ -161,11 +161,11 @@ func EnableMod(enabler *mods.ModEnabler) (err error) {
 
 func enableMod(enabler *mods.ModEnabler, err error) {
 	var (
-		game = enabler.Game
-		tm   = enabler.TrackedMod
-		tis  = enabler.ToInstall
+		game    = enabler.Game
+		tm      = enabler.TrackedMod
+		tis     = enabler.ToInstall
+		modPath = filepath.Join(config.Get().GetModsFullPath(game), tm.GetDirSuffix())
 	)
-	modPath := filepath.Join(config.Get().GetModsFullPath(game), tm.GetDirSuffix())
 	if err != nil {
 		tm.Enabled = false
 		enabler.DoneCallback(err)
@@ -186,6 +186,10 @@ func enableMod(enabler *mods.ModEnabler, err error) {
 				newTo := filepath.Join(to, string(nexus.GameToInstallBaseDir(game)))
 				_ = os.MkdirAll(newTo, 0777)
 				_ = os.Rename(sa, filepath.Join(newTo, "StreamingAssets"))
+			} else if _, err = os.Stat(filepath.Join(to, string(nexus.GameToInstallBaseDir(enabler.Game)))); err != nil {
+				tm.Enabled = false
+				enabler.DoneCallback(errors.New("unsupported nexus mod"))
+				return
 			}
 		}
 	}
