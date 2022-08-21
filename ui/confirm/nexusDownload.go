@@ -26,16 +26,18 @@ func Nexus(enabler *mods.ModEnabler, competeCallback DownloadCompleteCallback, d
 		toDl []toDownload
 	)
 	for _, ti := range enabler.ToInstall {
-		dl := toDownload{
-			uri: fmt.Sprintf(nexus.NexusFileDownload, ti.Download.Nexus.FileID, nexus.GameToID(enabler.Game)),
+		if ti.Download != nil {
+			dl := toDownload{
+				uri: fmt.Sprintf(nexus.NexusFileDownload, ti.Download.Nexus.FileID, nexus.GameToID(enabler.Game)),
+			}
+			if dl.dir, err = ti.GetDownloadLocation(enabler.Game, enabler.TrackedMod); err != nil {
+				return
+			}
+			if _, err = os.Stat(filepath.Join(dl.dir, ti.Download.Nexus.FileName)); err == nil {
+				continue
+			}
+			toDl = append(toDl, dl)
 		}
-		if dl.dir, err = ti.GetDownloadLocation(enabler.Game, enabler.TrackedMod); err != nil {
-			return
-		}
-		if _, err = os.Stat(filepath.Join(dl.dir, ti.Download.Nexus.FileName)); err == nil {
-			continue
-		}
-		toDl = append(toDl, dl)
 	}
 
 	if len(toDl) == 0 {

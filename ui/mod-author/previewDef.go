@@ -15,7 +15,7 @@ func newPreviewDef() *previewDef {
 		entryManager: newEntryManager(),
 	}
 	d.createFormItem("Preview Url", "")
-	d.createFileDialog("Preview Local", "", state.GetBaseDirBinding(), false, true)
+	d.createFileDialog("Preview Local", "", state.GetBaseDirBinding(), true, true)
 	//d.createFormItem("Size X", "")
 	//d.createFormItem("Size Y", "")
 	return d
@@ -33,7 +33,7 @@ func (d *previewDef) set(p *mods.Preview) {
 		local = *p.Local
 	}
 	d.createFormItem("Preview Url", url)
-	d.createFileDialog("Preview Local", local, state.GetBaseDirBinding(), false, true)
+	d.createFileDialog("Preview Local", local, state.GetBaseDirBinding(), true, true)
 	//d.createFormItem("Size X", fmt.Sprintf("%d", p.Size.X))
 	//d.createFormItem("Size Y", fmt.Sprintf("%d", p.Size.Y))
 }

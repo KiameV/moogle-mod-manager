@@ -313,6 +313,7 @@ func (a *ModAuthorer) compileMod() (mod *mods.Mod) {
 		Downloadables:       a.downloadDef.compile(),
 		DonationLinks:       a.donationsDef.compile(),
 		Games:               a.gamesDef.compile(),
+		IsManuallyCreated:   true,
 	}
 
 	m.AlwaysDownload = a.alwaysDownload.compile()
@@ -385,7 +386,7 @@ func (a *ModAuthorer) save(mod *mods.Mod, asJson bool) {
 }
 
 func (a *ModAuthorer) validate(mod *mods.Mod, showMessage bool) bool {
-	s := a.compileMod().Validate()
+	s := mod.Validate()
 	if showMessage {
 		if s != "" {
 			dialog.ShowError(errors.New(s), state.Window)

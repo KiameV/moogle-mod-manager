@@ -186,10 +186,13 @@ func enableMod(enabler *mods.ModEnabler, err error) {
 				newTo := filepath.Join(to, string(nexus.GameToInstallBaseDir(game)))
 				_ = os.MkdirAll(newTo, 0777)
 				_ = os.Rename(sa, filepath.Join(newTo, "StreamingAssets"))
-			} else if _, err = os.Stat(filepath.Join(to, string(nexus.GameToInstallBaseDir(enabler.Game)))); err != nil {
-				tm.Enabled = false
-				enabler.DoneCallback(errors.New("unsupported nexus mod"))
-				return
+			} else if !tm.Mod.IsManuallyCreated {
+				dir := filepath.Join(to, string(nexus.GameToInstallBaseDir(enabler.Game)))
+				if _, err = os.Stat(dir); err != nil {
+					tm.Enabled = false
+					enabler.DoneCallback(errors.New("unsupported nexus mod"))
+					return
+				}
 			}
 		}
 	}

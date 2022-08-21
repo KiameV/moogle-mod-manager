@@ -34,7 +34,6 @@ func (d *modKindDef) draw() fyne.CanvasObject {
 	if len(d.nexus.Items) == 0 {
 		d.nexus.AppendItem(d.getFormItem("Mod ID"))
 	}
-	d.kindSelect.SetSelected(string(mods.Hosted))
 
 	return container.NewBorder(d.kindSelect, nil, nil, nil, d.main)
 }
@@ -73,9 +72,11 @@ func (d *modKindDef) set(k *mods.ModKind) {
 	}
 	if k.Kind == mods.Hosted {
 		d.kindSelect.SetSelected(string(mods.Hosted))
+		d.onSelectChange(string(mods.Hosted))
 		d.createFormItem("'Mod File' Links", strings.Join(k.Hosted.ModFileLinks, ", "))
 	} else {
 		d.kindSelect.SetSelected(string(mods.Nexus))
+		d.onSelectChange(string(mods.Nexus))
 		d.createFormItem("Mod ID", k.Nexus.ID)
 	}
 }

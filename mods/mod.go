@@ -43,6 +43,7 @@ type Mod struct {
 	AlwaysDownload      []*DownloadFiles  `json:"AlwaysDownload,omitempty" xml:"AlwaysDownload,omitempty"`
 	Configurations      []*Configuration  `json:"Configuration,omitempty" xml:"Configurations,omitempty"`
 	ConfigSelectionType SelectType        `json:"ConfigSelectionType" xml:"ConfigSelectionType"`
+	IsManuallyCreated   bool              `json:"IsManuallyCreated" xml:"IsManuallyCreated"`
 }
 
 type Preview struct {
@@ -309,7 +310,7 @@ func (m *Mod) Validate() string {
 			sb.WriteString("Configuration's Name is required\n")
 		}
 		if c.Description == "" {
-			sb.WriteString(fmt.Sprintf("Configuration's [%s] Description is required\n", c.Name))
+			//sb.WriteString(fmt.Sprintf("Configuration's [%s] Description is required\n", c.Name))
 		}
 		if len(c.Choices) == 0 {
 			sb.WriteString(fmt.Sprintf("Configuration's [%s] must have Choices\n", c.Name))

@@ -8,18 +8,15 @@ import (
 )
 
 type richTextEditor struct {
-	s       *string
-	input   binding.ExternalString
+	input   binding.String
 	preview *widget.RichText
 }
 
 func newRichTextEditor() *richTextEditor {
-	s := ""
 	e := &richTextEditor{
-		s:       &s,
+		input:   binding.NewString(),
 		preview: widget.NewRichTextWithText(""),
 	}
-	e.input = binding.BindString(e.s)
 	e.input.AddListener(e)
 	return e
 }
@@ -27,20 +24,21 @@ func newRichTextEditor() *richTextEditor {
 func (e *richTextEditor) Draw() fyne.CanvasObject {
 	entry := widget.NewMultiLineEntry()
 	entry.Bind(e.input)
+	e.preview.Wrapping = fyne.TextWrapWord
 	return container.NewVSplit(
 		container.NewScroll(entry),
-		container.NewScroll(e.preview))
+		container.NewVScroll(e.preview))
 }
 
 func (e *richTextEditor) DataChanged() {
-	e.preview.ParseMarkdown(*e.s)
+	e.preview.ParseMarkdown(e.String())
 }
 
 func (e *richTextEditor) SetText(s string) {
-	*e.s = s
-	e.preview.ParseMarkdown(s)
+	e.input.Set(s)
 }
 
 func (e *richTextEditor) String() string {
-	return *e.s
+	s, _ := e.input.Get()
+	return s
 }

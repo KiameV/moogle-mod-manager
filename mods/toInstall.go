@@ -28,12 +28,8 @@ func NewToInstallForMod(kind Kind, mod *Mod, downloadFiles []*DownloadFiles) (re
 	for _, dl := range mod.Downloadables {
 		lookup[dl.Name] = dl
 	}
-
 	for _, f := range downloadFiles {
-		dl, ok := lookup[f.DownloadName]
-		if !ok {
-			return nil, fmt.Errorf("could not find download %s for mod %s", f.DownloadName, mod.Name)
-		}
+		dl, _ := lookup[f.DownloadName]
 		result = append(result, NewToInstall(kind, dl, f))
 	}
 	return

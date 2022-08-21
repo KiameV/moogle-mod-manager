@@ -119,7 +119,12 @@ func (ui *configInstallerUI) Draw(w fyne.Window) {
 	if img := ui.currentConfig.Preview.Get(); img != nil {
 		c = container.NewBorder(img, nil, nil, nil, c)
 	}
-	w.SetContent(container.NewBorder(c, nil, nil, nil, container.NewVScroll(ui.choiceContainer)))
+	cnlButton := widget.NewButton("Cancel", func() {
+		state.ShowPreviousScreen()
+	})
+	w.SetContent(
+		container.NewBorder(container.NewHBox(cnlButton), nil, nil, nil,
+			container.NewBorder(c, nil, nil, nil, container.NewVScroll(ui.choiceContainer))))
 }
 
 func (ui *configInstallerUI) getChoiceSelector(onChange func(choice string)) fyne.CanvasObject {
