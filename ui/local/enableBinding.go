@@ -12,17 +12,19 @@ import (
 
 type enableBind struct {
 	binding.Bool
-	tm    *mods.TrackedMod
-	start func()
-	done  mods.DoneCallback
+	tm          *mods.TrackedMod
+	start       func() bool
+	showWorking func()
+	done        mods.DoneCallback
 }
 
-func newEnableBind(tm *mods.TrackedMod, start func(), done mods.DoneCallback) *enableBind {
+func newEnableBind(tm *mods.TrackedMod, start func() bool, showWorking func(), done mods.DoneCallback) *enableBind {
 	b := &enableBind{
-		Bool:  binding.NewBool(),
-		tm:    tm,
-		start: start,
-		done:  done,
+		Bool:        binding.NewBool(),
+		tm:          tm,
+		start:       start,
+		showWorking: showWorking,
+		done:        done,
 	}
 	_ = b.Set(tm.Enabled)
 	b.AddListener(b)
@@ -33,7 +35,10 @@ func (b *enableBind) DataChanged() {
 	isChecked, _ := b.Get()
 	if isChecked != b.tm.Enabled {
 		if isChecked {
-			b.start()
+			if !b.start() {
+				_ = b.Set(false)
+				return
+			}
 			if err := b.EnableMod(); err != nil {
 				if err != nil {
 					_ = b.Set(false)
@@ -41,6 +46,10 @@ func (b *enableBind) DataChanged() {
 				}
 			}
 		} else {
+			if !b.start() {
+				_ = b.Set(false)
+				return
+			}
 			err := b.DisableMod()
 			_ = b.Set(false)
 			b.done(err)
@@ -76,7 +85,7 @@ func (b *enableBind) enableModWithConfig() (err error) {
 }
 
 func (b *enableBind) enableMod(toInstall []*mods.ToInstall) (err error) {
-	return managed.EnableMod(mods.NewModEnabler(*state.CurrentGame, b.tm, toInstall, func(err error) {
+	return managed.EnableMod(mods.NewModEnabler(*state.CurrentGame, b.tm, toInstall, b.showWorking, func(err error) {
 		_ = b.Set(b.tm.Enabled)
 		b.done(err)
 	}))

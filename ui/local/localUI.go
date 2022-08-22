@@ -26,11 +26,12 @@ func New() LocalUI {
 }
 
 type localUI struct {
-	selectedMod *mods.TrackedMod
-	data        binding.UntypedList
-	split       *container.Split
-	checkAll    *widget.Button
-	modList     *widget.List
+	selectedMod   *mods.TrackedMod
+	data          binding.UntypedList
+	split         *container.Split
+	checkAll      *widget.Button
+	modList       *widget.List
+	workingDialog dialog.Dialog
 }
 
 func (ui *localUI) PreDraw() error { return nil }
@@ -57,7 +58,7 @@ func (ui *localUI) Draw(w fyne.Window) {
 					}
 					c := co.(*fyne.Container)
 					c.Objects[0].(*widget.Label).Bind(binding.BindString(&tm.DisplayName))
-					c.Objects[1].(*widget.Check).Bind(newEnableBind(tm, ui.startEnableDisableCallback, ui.endEnableDisableCallback))
+					c.Objects[1].(*widget.Check).Bind(newEnableBind(tm, ui.startEnableDisableCallback, ui.showWorkingDialog, ui.endEnableDisableCallback))
 				}
 			}
 		})
@@ -123,7 +124,7 @@ func (ui *localUI) Draw(w fyne.Window) {
 						util.ShowErrorLong(err)
 						return
 					}
-					if err = newEnableBind(ui.selectedMod, ui.startEnableDisableCallback, ui.endEnableDisableCallback).EnableMod(); err != nil {
+					if err = newEnableBind(ui.selectedMod, ui.startEnableDisableCallback, ui.showWorkingDialog, ui.endEnableDisableCallback).EnableMod(); err != nil {
 						util.ShowErrorLong(err)
 						return
 					}
@@ -220,15 +221,24 @@ func (ui *localUI) removeModFromList(mod *mods.TrackedMod) {
 	return
 }
 
-func (ui *localUI) startEnableDisableCallback() {
-	ui.modList.Hide()
-	ui.split.Leading.Refresh()
+func (ui *localUI) startEnableDisableCallback() bool {
+	return ui.workingDialog == nil
+}
+
+func (ui *localUI) showWorkingDialog() {
+	if ui.workingDialog == nil {
+		ui.workingDialog = dialog.NewInformation("Working", "Working...", state.Window)
+		ui.workingDialog.Show()
+	}
 }
 
 func (ui *localUI) endEnableDisableCallback(err error) {
+	if ui.workingDialog != nil {
+		ui.workingDialog.Hide()
+		ui.workingDialog = nil
+	}
 	if err != nil {
 		util.ShowErrorLong(err)
 	}
-	ui.modList.Show()
 	ui.split.Leading.Refresh()
 }

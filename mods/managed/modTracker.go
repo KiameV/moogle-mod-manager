@@ -171,6 +171,7 @@ func enableMod(enabler *mods.ModEnabler, err error) {
 		enabler.DoneCallback(err)
 		return
 	}
+	enabler.ShowWorking()
 
 	for _, ti := range tis {
 		to := filepath.Join(modPath, ti.Download.Name)
