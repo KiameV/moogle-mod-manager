@@ -97,24 +97,6 @@ func (c *ModCompatibility) HasItems() bool {
 	return len(c.Requires) > 0 || len(c.Forbids) > 0
 }
 
-type ModCompat struct {
-	ModID    string          `json:"ModID" xml:"ModID"`
-	Name     string          `json:"Name" xml:"Name"`
-	Versions []string        `json:"Version,omitempty" xml:"Versions,omitempty"`
-	Source   string          `json:"Source" xml:"Source"`
-	Order    *ModCompatOrder `json:"Order,omitempty" xml:"Order,omitempty"`
-}
-
-type ModCompatOrder string
-
-const (
-	None   ModCompatOrder = ""
-	Before ModCompatOrder = "Before"
-	After  ModCompatOrder = "After"
-)
-
-var ModCompatOrders = []string{string(None), string(Before), string(After)}
-
 type InstallType string
 
 const (

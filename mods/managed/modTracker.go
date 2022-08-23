@@ -155,6 +155,28 @@ func UpdateMod(game config.Game, tm *mods.TrackedMod) (err error) {
 
 func GetMods(game config.Game) []*mods.TrackedMod { return lookup[game].Mods }
 
+func TryGetMod(game config.Game, id string) (*mods.TrackedMod, bool) {
+	var m *mods.TrackedMod
+	if gm := lookup[game]; gm != nil {
+		for _, m = range gm.Mods {
+			if m.Mod.ID == id {
+				return m, true
+			}
+		}
+	}
+	return nil, false
+}
+
+func GetDisplayName(game *config.Game, modID string) string {
+	if game != nil {
+		if mod, found := TryGetMod(*game, modID); found {
+			// success
+			return mod.DisplayName
+		}
+	}
+	return ""
+}
+
 func EnableMod(enabler *mods.ModEnabler) (err error) {
 	return downloads.Download(enabler, enableMod)
 }

@@ -7,7 +7,7 @@ const (
 	Nexus  Kind = "Nexus"
 )
 
-var Kinds = []string{string(Hosted), string(Nexus)}
+var Kinds = []string{string(Nexus), string(Hosted)}
 
 type ModKind struct {
 	Kind   Kind           `json:"Kind" xml:"Kind"`

@@ -4,7 +4,9 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
+	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
+	"github.com/kiamev/moogle-mod-manager/mods/managed"
 	"net/url"
 )
 
@@ -34,7 +36,11 @@ func CreatePreview(mod *mods.Mod, options ...ModPreviewOptions) fyne.CanvasObjec
 		container.NewTabItem("Release Notes", widget.NewRichTextFromMarkdown(mod.ReleaseNotes))
 	}
 	if mod.ModCompatibility != nil && mod.ModCompatibility.HasItems() {
-		tabs.Append(container.NewTabItem("Compatibility", createCompatibility(mod.ModCompatibility)))
+		var game config.Game
+		if len(mod.Games) > 0 {
+			game = config.NameToGame(mod.Games[0].Name)
+		}
+		tabs.Append(container.NewTabItem("Compatibility", createCompatibility(&game, mod.ModCompatibility)))
 	}
 	if mod.DonationLinks != nil && len(mod.DonationLinks) > 0 {
 		tabs.Append(container.NewTabItem("Donations", createDonationLinks(mod.DonationLinks)))
@@ -65,20 +71,35 @@ func createLink(name, value string) *fyne.Container {
 	)
 }
 
-func createCompatibility(compatibility *mods.ModCompatibility) fyne.CanvasObject {
-	c := container.NewVBox(
-		widget.NewLabelWithStyle("Compatibility", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
+func createCompatibility(game *config.Game, compatibility *mods.ModCompatibility) fyne.CanvasObject {
+	var (
+		c = container.NewVBox(
+			widget.NewLabelWithStyle("Compatibility", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
+		)
+		name string
 	)
+
+	// Requires
 	if len(compatibility.Requires) > 0 {
 		c.Add(widget.NewLabelWithStyle("  Requires", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}))
 		for _, r := range compatibility.Requires {
-			c.Add(widget.NewLabel("  - " + r.Name + ": " + r.Source))
+			name = managed.GetDisplayName(game, r.ModID())
+			if name == "" {
+				name = r.DisplayName()
+			}
+			c.Add(widget.NewLabel("  - " + name))
 		}
 	}
-	if len(compatibility.Requires) > 0 {
+
+	// Forbids
+	if len(compatibility.Forbids) > 0 {
 		c.Add(widget.NewLabelWithStyle("  Forbids", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}))
-		for _, r := range compatibility.Requires {
-			c.Add(widget.NewLabel("  - " + r.Name + ": " + r.Source))
+		for _, r := range compatibility.Forbids {
+			name = managed.GetDisplayName(game, r.ModID())
+			if name == "" {
+				name = r.DisplayName()
+			}
+			c.Add(widget.NewLabel("  - " + name))
 		}
 	}
 	return c

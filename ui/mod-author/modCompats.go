@@ -39,22 +39,11 @@ func (d *modCompatsDef) compile() []*mods.ModCompat {
 }
 
 func (d *modCompatsDef) getItemKey(item interface{}) string {
-	return item.(*mods.ModCompat).ModID
+	return item.(*mods.ModCompat).DisplayName()
 }
 
 func (d *modCompatsDef) getItemFields(item interface{}) []string {
-	m := item.(*mods.ModCompat)
-	s := []string{
-		m.ModID,
-		m.Source,
-	}
-	if len(m.Versions) > 0 {
-		s = append(s, strings.Join(m.Versions, ", "))
-	}
-	if m.Order != nil && *m.Order != mods.None {
-		s = append(s, string(*m.Order))
-	}
-	return s
+	return nil
 }
 
 func (d *modCompatsDef) onEditItem(item interface{}) {
@@ -63,30 +52,47 @@ func (d *modCompatsDef) onEditItem(item interface{}) {
 
 func (d *modCompatsDef) createItem(item interface{}, done ...func(interface{})) {
 	m := item.(*mods.ModCompat)
-	d.createFormItem("Mod ID", m.ModID)
-	d.createFormItem("Source", m.Source)
-	d.createFormItem("Versions", strings.Join(m.Versions, ", "))
-	order := mods.None
-	if m.Order != nil {
-		order = *m.Order
+	d.createFormItem("Mod ID", m.ModID())
+	if m.Kind == mods.Hosted {
+		d.createFormSelect("Kind", mods.Kinds, string(mods.Hosted))
+	} else {
+		d.createFormSelect("Kind", mods.Kinds, string(mods.Nexus))
 	}
-	d.createFormSelect("Order", mods.ModCompatOrders, string(order))
+	d.createFormItem("Versions", strings.Join(m.Versions, ", "))
+	//order := mods.None
+	//if m.Order != nil {
+	//	order = *m.Order
+	//}
+	//d.createFormSelect("Order", mods.ModCompatOrders, string(order))
 
 	fd := dialog.NewForm("Edit Mod Compatibility", "Save", "Cancel", []*widget.FormItem{
+		d.getFormItem("Kind"),
 		d.getFormItem("Mod ID"),
-		d.getFormItem("Source"),
 		d.getFormItem("Versions"),
-		d.getFormItem("Order"),
 	}, func(ok bool) {
 		if ok {
-			m.ModID = d.getString("Mod ID")
-			m.Source = d.getString("Source")
+			m.Hosted = nil
+			m.Nexus = nil
 			m.Versions = d.getStrings("Versions", ",")
-			o := d.getString("Order")
-			if o != "" && o != string(mods.None) {
-				m.Order = (*mods.ModCompatOrder)(&o)
+			if d.getString("kind") == string(mods.Hosted) {
+				m.Kind = mods.Hosted
+				m.Hosted = &mods.ModCompatHosted{
+					ModID: d.getString("Mod ID"),
+				}
 			} else {
-				m.Order = nil
+				m.Kind = mods.Nexus
+				m.Nexus = &mods.ModCompatNexus{
+					ModID: d.getString("Mod ID"),
+				}
+			}
+			//o := d.getString("Order")
+			//if o != "" && o != string(mods.None) {
+			//	m.Order = (*mods.ModCompatOrder)(&o)
+			//} else {
+			//	m.Order = nil
+			//}
+			if len(done) > 0 {
+				done[0](m)
 			}
 		}
 	}, state.Window)
