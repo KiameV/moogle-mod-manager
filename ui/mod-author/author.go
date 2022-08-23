@@ -19,6 +19,7 @@ import (
 	"github.com/ncruces/zenity"
 	"golang.design/x/clipboard"
 	"io/ioutil"
+	"net/url"
 	"os"
 	"path"
 	"strings"
@@ -339,11 +340,15 @@ func (a *ModAuthorer) submitForReview() {
 	if !a.validate(mod, false) {
 		dialog.ShowInformation("Invalid Mod Def", "The mod is not valid, please fix it first.", state.Window)
 	}
-	url, err := repo.NewCommitter(mod).Submit()
+	ur, err := repo.NewCommitter(mod).Submit()
 	if err != nil {
 		util.ShowErrorLong(err)
 	} else {
-		dialog.ShowInformation("Successfully submitted mod", url, state.Window)
+		u, _ := url.Parse(ur)
+		dialog.ShowCustom(
+			"Successfully submitted mod",
+			"ok",
+			container.NewMax(widget.NewHyperlink(ur, u)), state.Window)
 	}
 }
 

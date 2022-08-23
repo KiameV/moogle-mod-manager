@@ -11,6 +11,7 @@ import (
 	"golang.org/x/oauth2"
 	"io/ioutil"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -87,7 +88,7 @@ func (c *committer) Submit() (url string, err error) {
 		return
 	}
 
-	if err = c.createPR(branch); err != nil {
+	if url, err = c.createPR(branch); err != nil {
 		err = fmt.Errorf("unable to create the pull request: %s", err)
 	}
 	return
@@ -169,7 +170,7 @@ func (c *committer) pushCommit(ref *github.Reference, tree *github.Tree) (err er
 }
 
 // createPR creates a pull request. Based on: https://godoc.org/github.com/google/go-github/github#example-PullRequestsService-Create
-func (c *committer) createPR(commitBranch string) (err error) {
+func (c *committer) createPR(commitBranch string) (url string, err error) {
 	sbj := fmt.Sprintf("%s - %s", c.mod.Name, c.mod.Version)
 	base := "main"
 	commitBranch = author + ":" + commitBranch
@@ -186,11 +187,18 @@ func (c *committer) createPR(commitBranch string) (err error) {
 	ctx, cnl := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cnl()
 	if pr, _, err = c.client.PullRequests.Create(ctx, sourceOwner, sourceRepo, newPR); err != nil {
-		return err
+		if !strings.Contains(err.Error(), "pull request already exists") {
+			return
+		}
 	}
 
-	fmt.Printf("PR created: %s\n", pr.GetHTMLURL())
-	return nil
+	if err != nil {
+		url = fmt.Sprintf("https://github.com/%s/%s/pull", sourceOwner, sourceRepo)
+		err = nil
+	} else {
+		url = pr.GetHTMLURL()
+	}
+	return
 }
 
-const pat = "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"
+const pat = "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"
