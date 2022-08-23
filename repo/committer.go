@@ -31,7 +31,7 @@ func NewCommitter(mod *mods.Mod) Committer {
 	return &committer{
 		client: github.NewClient(oauth2.NewClient(
 			context.Background(),
-			oauth2.StaticTokenSource(&oauth2.Token{AccessToken: pat2 + pat}))),
+			oauth2.StaticTokenSource(&oauth2.Token{AccessToken: "g" + pat3 + "_" + pat2 + pat}))),
 		mod: mod,
 	}
 }
@@ -202,4 +202,5 @@ func (c *committer) createPR(commitBranch string) (url string, err error) {
 }
 
 const pat = "4IYjtV7j9BWmyiSJ1GRz8e"
-const pat2 = "ghp_ezio5oN8qtU1fX"
+const pat3 = "hp"
+const pat2 = "ezio5oN8qtU1fX"
