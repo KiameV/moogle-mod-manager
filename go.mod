@@ -13,6 +13,7 @@ require (
 	github.com/mholt/archiver/v4 v4.0.0-alpha.7
 	github.com/ncruces/zenity v0.8.9
 	golang.design/x/clipboard v0.6.2
+	golang.org/x/oauth2 v0.0.0-20210402161424-2e8d93401602
 	golang.org/x/sys v0.0.0-20220627191245-f75cf1eec38b
 )
 
@@ -78,6 +79,7 @@ require (
 	golang.org/x/mobile v0.0.0-20211207041440-4e6c2922fdee // indirect
 	golang.org/x/net v0.0.0-20210917221730-978cfadd31cf // indirect
 	golang.org/x/text v0.3.7 // indirect
+	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.26.0 // indirect
 	gopkg.in/Graylog2/go-gelf.v2 v2.0.0-20180326133423-4dbb9d721348 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect

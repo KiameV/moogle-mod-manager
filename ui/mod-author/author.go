@@ -11,6 +11,7 @@ import (
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/mods/managed/authored"
 	"github.com/kiamev/moogle-mod-manager/mods/nexus"
+	"github.com/kiamev/moogle-mod-manager/repo"
 	config_installer "github.com/kiamev/moogle-mod-manager/ui/config-installer"
 	cw "github.com/kiamev/moogle-mod-manager/ui/custom-widgets"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
@@ -162,14 +163,18 @@ func (a *ModAuthorer) Draw(w fyne.Window) {
 		tab.Content.Refresh()
 	}
 
-	smi := make([]*fyne.MenuItem, 0, 3)
+	smi := make([]*fyne.MenuItem, 0, 4)
 	smi = append(smi,
 		fyne.NewMenuItem("as json", func() {
 			a.saveFile(true)
 		}),
-		fyne.NewMenuItem("as xml", func() {
+		/*fyne.NewMenuItem("as xml", func() {
 			a.saveFile(false)
-		}))
+		})*/
+		fyne.NewMenuItem("submit for review", func() {
+			a.submitForReview()
+		}),
+	)
 	if a.modBeingEdited != nil {
 		smi = append(smi, fyne.NewMenuItem("modify and back", func() {
 			mod := a.compileMod()
@@ -253,7 +258,7 @@ func (a *ModAuthorer) updateEntries(mod *mods.Mod) {
 	a.modKindDef.set(mod.ModKind)
 	a.downloadDef.set(mod.Downloadables)
 	a.donationsDef.set(mod.DonationLinks)
-	a.gamesDef.set(mod.Games)
+	a.gamesDef.set(mod.Game)
 	a.alwaysDownload.set(mod.AlwaysDownload)
 	a.configsDef.set(mod.Configurations)
 }
@@ -312,7 +317,7 @@ func (a *ModAuthorer) compileMod() (mod *mods.Mod) {
 		ModCompatibility:    a.modCompatsDef.compile(),
 		Downloadables:       a.downloadDef.compile(),
 		DonationLinks:       a.donationsDef.compile(),
-		Games:               a.gamesDef.compile(),
+		Game:                a.gamesDef.compile(),
 		IsManuallyCreated:   true,
 	}
 
@@ -327,6 +332,19 @@ func (a *ModAuthorer) compileMod() (mod *mods.Mod) {
 	}
 	authored.SetDir(m.ID, state.GetBaseDir())
 	return m
+}
+
+func (a *ModAuthorer) submitForReview() {
+	mod := a.compileMod()
+	if !a.validate(mod, false) {
+		dialog.ShowInformation("Invalid Mod Def", "The mod is not valid, please fix it first.", state.Window)
+	}
+	url, err := repo.NewCommitter(mod).Submit()
+	if err != nil {
+		util.ShowErrorLong(err)
+	} else {
+		dialog.ShowInformation("Successfully submitted mod", url, state.Window)
+	}
 }
 
 func (a *ModAuthorer) saveFile(asJson bool) {

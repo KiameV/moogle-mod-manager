@@ -113,13 +113,11 @@ func addMod(game config.Game, tm *mods.TrackedMod) (err error) {
 	}
 
 	tm.Enabled = false
-	for _, g := range tm.Mod.Games {
-		i := int(config.NameToGame(g.Name))
-		m := lookup[i]
-		for i = range m.Mods {
-			if m.Mods[i].Mod.ID == tm.Mod.ID {
-				return errors.New("mod already added")
-			}
+	i := int(config.NameToGame(tm.Mod.Game.Name))
+	m := lookup[i]
+	for i = range m.Mods {
+		if m.Mods[i].Mod.ID == tm.Mod.ID {
+			return errors.New("mod already added")
 		}
 	}
 
@@ -127,11 +125,7 @@ func addMod(game config.Game, tm *mods.TrackedMod) (err error) {
 		return
 	}
 
-	for _, g := range tm.Mod.Games {
-		i := int(config.NameToGame(g.Name))
-		m := lookup[i]
-		m.Mods = append(m.Mods, tm)
-	}
+	m.Mods = append(m.Mods, tm)
 	return
 }
 

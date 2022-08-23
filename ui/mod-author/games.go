@@ -29,12 +29,14 @@ func newGamesDef() *gamesDef {
 	return d
 }
 
-func (d *gamesDef) compile() (games []*mods.Game) {
-	games = make([]*mods.Game, len(d.list.Items))
+func (d *gamesDef) compile() (game *mods.Game) {
+	/*game = make([]*mods.Game, len(d.list.Items))
 	for i, item := range d.list.Items {
 		games[i] = item.(*mods.Game)
 	}
-	return games
+	return games*/
+	// TODO
+	return nil
 }
 
 func (d *gamesDef) getItemKey(item interface{}) string {
@@ -98,9 +100,10 @@ func (d *gamesDef) draw() fyne.CanvasObject {
 		d.list.Draw())
 }
 
-func (d *gamesDef) set(game []*mods.Game) {
-	d.list.Clear()
+func (d *gamesDef) set(game *mods.Game) {
+	/*d.list.Clear()
 	for _, i := range game {
 		d.list.AddItem(i)
-	}
+	}*/
+	// TODO
 }

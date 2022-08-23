@@ -39,11 +39,27 @@ type Mod struct {
 	ModCompatibility    *ModCompatibility `json:"Compatibility,omitempty" xml:"ModCompatibility,omitempty"`
 	Downloadables       []*Download       `json:"Downloadable" xml:"Downloadables"`
 	DonationLinks       []*DonationLink   `json:"DonationLink" xml:"DonationLinks"`
-	Games               []*Game           `json:"Games" xml:"Games"`
+	Game                *Game             `json:"Game" xml:"Game"`
 	AlwaysDownload      []*DownloadFiles  `json:"AlwaysDownload,omitempty" xml:"AlwaysDownload,omitempty"`
 	Configurations      []*Configuration  `json:"Configuration,omitempty" xml:"Configurations,omitempty"`
 	ConfigSelectionType SelectType        `json:"ConfigSelectionType" xml:"ConfigSelectionType"`
 	IsManuallyCreated   bool              `json:"IsManuallyCreated" xml:"IsManuallyCreated"`
+}
+
+func (m *Mod) ModID() string {
+	if m.ModKind != nil {
+		if m.ModKind.Kind == Hosted {
+			return m.ID
+		}
+		if m.ModKind.Kind == Nexus && m.ModKind.Nexus != nil {
+			return m.ModKind.Nexus.ID
+		}
+	}
+	return ""
+}
+
+func (m *Mod) BranchName() string {
+	return fmt.Sprintf("%s_%s", m.ID, m.Version)
 }
 
 type Preview struct {
@@ -324,9 +340,9 @@ func (m *Mod) Validate() string {
 }
 
 func (m *Mod) Supports(game config.Game) error {
-	gs := " " + config.String(game)
-	for _, g := range m.Games {
-		if strings.HasSuffix(string(g.Name), gs) {
+	if m.Game != nil {
+		gs := " " + config.String(game)
+		if strings.HasSuffix(string(m.Game.Name), gs) {
 			return nil
 		}
 	}

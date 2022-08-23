@@ -37,8 +37,8 @@ func CreatePreview(mod *mods.Mod, options ...ModPreviewOptions) fyne.CanvasObjec
 	}
 	if mod.ModCompatibility != nil && mod.ModCompatibility.HasItems() {
 		var game config.Game
-		if len(mod.Games) > 0 {
-			game = config.NameToGame(mod.Games[0].Name)
+		if mod.Game != nil {
+			game = config.NameToGame(mod.Game.Name)
 		}
 		tabs.Append(container.NewTabItem("Compatibility", createCompatibility(&game, mod.ModCompatibility)))
 	}

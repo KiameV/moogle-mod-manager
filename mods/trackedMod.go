@@ -1,7 +1,6 @@
 package mods
 
 import (
-	"fmt"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/util"
 	"path/filepath"
@@ -54,10 +53,6 @@ func (m *TrackedMod) GetDirSuffix() string {
 
 func (m *TrackedMod) GetMod() *Mod {
 	return m.Mod
-}
-
-func (m *TrackedMod) GetBranchName() string {
-	return fmt.Sprintf("%s_%s", m.Mod.ID, m.Mod.Version)
 }
 
 type InstalledDownload struct {

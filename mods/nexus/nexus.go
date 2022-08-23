@@ -109,13 +109,13 @@ func GameToInstallBaseDir(game config.Game) InstallBaseDir {
 	}
 }
 func GetModFromNexusForMod(in *mods.Mod) (mod *mods.Mod, err error) {
-	if len(in.Games) == 0 || in.Games[0] == nil {
+	if in.Game == nil {
 		err = errors.New("no games found for mod " + in.Name)
 		return
 	}
 	var (
 		id   uint64
-		game = config.NameToGame(in.Games[0].Name)
+		game = config.NameToGame(in.Game.Name)
 	)
 	if id, err = strconv.ParseUint(in.ModKind.Nexus.ID, 0, 64); err != nil {
 		err = fmt.Errorf("could not parse mod id %s for %s", in.ModKind.Nexus.ID, in.Name)
@@ -265,10 +265,10 @@ func toMod(game config.Game, n nexusMod, dls []NexusFile) (mod *mods.Mod, err er
 				ID: modID,
 			},
 		},
-		Games: []*mods.Game{{
+		Game: &mods.Game{
 			Name:     config.GameToName(game),
 			Versions: nil,
-		}},
+		},
 		Downloadables:  make([]*mods.Download, len(dls)),
 		DonationLinks:  nil,
 		AlwaysDownload: nil,
@@ -288,17 +288,17 @@ func toMod(game config.Game, n nexusMod, dls []NexusFile) (mod *mods.Mod, err er
 
 	switch n.Game {
 	case FFI:
-		mod.Games[0].Name = config.FfPrI
+		mod.Game.Name = config.FfPrI
 	case FFII:
-		mod.Games[0].Name = config.FfPrII
+		mod.Game.Name = config.FfPrII
 	case FFIII:
-		mod.Games[0].Name = config.FfPrIII
+		mod.Game.Name = config.FfPrIII
 	case FFIV:
-		mod.Games[0].Name = config.FfPrIV
+		mod.Game.Name = config.FfPrIV
 	case FFV:
-		mod.Games[0].Name = config.FfPrV
+		mod.Game.Name = config.FfPrV
 	case FFVI:
-		mod.Games[0].Name = config.FfPrVI
+		mod.Game.Name = config.FfPrVI
 	default:
 		err = fmt.Errorf("unsupported game %s", n.Game)
 		return
