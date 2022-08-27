@@ -53,11 +53,11 @@ func AddModFiles(game config.Game, tm *mods.TrackedMod, files []*mods.DownloadFi
 
 	for _, df := range files {
 		modDir := filepath.Join(modPath, df.DownloadName)
-		if err = MoveFiles(df.Files, modDir, configs.DirVI, configs.GetBackupFullPath(game), &backedUp, &moved, false); err != nil {
+		if err = MoveFiles(df.Files, modDir, config.Get().GetGameDir(game), configs.GetBackupFullPath(game), &backedUp, &moved, false); err != nil {
 			break
 		}
 		if err == nil {
-			if err = MoveDirs(df.Dirs, modDir, configs.DirVI, configs.GetBackupFullPath(game), &backedUp, &moved, false); err != nil {
+			if err = MoveDirs(df.Dirs, modDir, config.Get().GetGameDir(game), configs.GetBackupFullPath(game), &backedUp, &moved, false); err != nil {
 				break
 			}
 		}

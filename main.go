@@ -8,6 +8,7 @@ import (
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods/managed"
 	"github.com/kiamev/moogle-mod-manager/mods/managed/authored"
+	"github.com/kiamev/moogle-mod-manager/repo"
 	config_installer "github.com/kiamev/moogle-mod-manager/ui/config-installer"
 	"github.com/kiamev/moogle-mod-manager/ui/configure"
 	"github.com/kiamev/moogle-mod-manager/ui/discover"
@@ -105,6 +106,10 @@ func initialize() {
 		util.ShowErrorLong(err)
 	}
 	config.GetSecrets().Initialize()
+
+	if err = repo.Initialize(); err != nil {
+		util.ShowErrorLong(err)
+	}
 
 	configs := config.Get()
 	if err = configs.Initialize(); err != nil {

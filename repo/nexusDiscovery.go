@@ -48,7 +48,7 @@ func addNewNexusMods(game config.Game, ms []*mods.Mod) (newMods []*mods.Mod, err
 	newMods = make([]*mods.Mod, 0, newModsLastID-lastID+1)
 	for id := lastID; id < newModsLastID; id++ {
 		// First time getting mods, get them all
-		file = filepath.Join(repoNexusIDDir(game, fmt.Sprintf("%d", id)), "mod.json")
+		file = filepath.Join(repoDefs[0].repoNexusIDDir(game, fmt.Sprintf("%d", id)), "mod.json")
 		if _, err = os.Stat(file); err != nil {
 			if mod, err = nexus.GetModFromNexusByID(game, id); err == nil {
 				newMods = append(newMods, mod)
@@ -71,14 +71,6 @@ func getLastNexusModID(ms []*mods.Mod) (lastID int) {
 		}
 	}
 	return
-}
-
-func repoNexusDir(game config.Game, mod *mods.Mod) string {
-	return repoNexusIDDir(game, mod.ModKind.Nexus.ID)
-}
-
-func repoNexusIDDir(game config.Game, id string) string {
-	return filepath.Join(repoGameDir(game), "nexus", id)
 }
 
 /*

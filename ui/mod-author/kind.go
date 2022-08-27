@@ -14,14 +14,16 @@ type modKindDef struct {
 	nexus      *widget.Form
 	main       *fyne.Container
 	kindSelect *widget.RadioGroup
+	kind       *mods.Kind
 }
 
-func newModKindDef() *modKindDef {
+func newModKindDef(kind *mods.Kind) *modKindDef {
 	d := &modKindDef{
 		entryManager: newEntryManager(),
 		main:         container.NewMax(),
 		hosted:       widget.NewForm(),
 		nexus:        widget.NewForm(),
+		kind:         kind,
 	}
 	d.kindSelect = widget.NewRadioGroup(mods.Kinds, d.onSelectChange)
 	return d
@@ -42,9 +44,11 @@ func (d *modKindDef) onSelectChange(kind string) {
 	if kind == string(mods.Hosted) {
 		d.main.RemoveAll()
 		d.main.Add(d.hosted)
+		*d.kind = mods.Hosted
 	} else {
 		d.main.RemoveAll()
 		d.main.Add(d.nexus)
+		*d.kind = mods.Nexus
 	}
 }
 

@@ -47,7 +47,7 @@ func LoadFromFile(file string, i interface{}) error {
 	return nil
 }
 
-func SaveToFile(file string, i interface{}) (err error) {
+func SaveToFile(file string, i interface{}, endFileChar ...byte) (err error) {
 	var (
 		b []byte
 		f *os.File
@@ -57,6 +57,9 @@ func SaveToFile(file string, i interface{}) (err error) {
 	}
 	if b, err = json.MarshalIndent(i, "", "\t"); err != nil {
 		return fmt.Errorf("failed to marshal %s: %v", file, err)
+	}
+	if len(endFileChar) > 0 {
+		b = append(b, endFileChar...)
 	}
 	if f, err = os.Create(file); err != nil {
 		return fmt.Errorf("failed to create %s: %v", file, err)

@@ -7,6 +7,11 @@ const (
 	Nexus  Kind = "Nexus"
 )
 
+func ToKind(kind Kind) *Kind {
+	k := kind
+	return &k
+}
+
 var Kinds = []string{string(Nexus), string(Hosted)}
 
 type ModKind struct {

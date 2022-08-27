@@ -24,13 +24,17 @@ func NewToInstall(kind Kind, download *Download, downloadFiles *DownloadFiles) *
 }
 
 func NewToInstallForMod(kind Kind, mod *Mod, downloadFiles []*DownloadFiles) (result []*ToInstall, err error) {
-	lookup := make(map[string]*Download)
+	mLookup := make(map[string]*Download)
+	dfLookup := make(map[string]*DownloadFiles)
 	for _, dl := range mod.Downloadables {
-		lookup[dl.Name] = dl
+		mLookup[dl.Name] = dl
 	}
-	for _, f := range downloadFiles {
-		dl, _ := lookup[f.DownloadName]
-		result = append(result, NewToInstall(kind, dl, f))
+	for _, df := range downloadFiles {
+		dfLookup[df.DownloadName] = df
+	}
+	for n, df := range dfLookup {
+		dl, _ := mLookup[n]
+		result = append(result, NewToInstall(kind, dl, df))
 	}
 	return
 }

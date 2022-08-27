@@ -70,6 +70,22 @@ func (c *Configs) GetBackupFullPath(game Game) string {
 	return filepath.Join(c.BackupDir, c.GetGameDirSuffix(game))
 }
 
+func (c *Configs) GetGameDir(game Game) string {
+	switch game {
+	case I:
+		return c.DirI
+	case II:
+		return c.DirII
+	case III:
+		return c.DirIII
+	case IV:
+		return c.DirIV
+	case V:
+		return c.DirV
+	}
+	return c.DirVI
+}
+
 func (c *Configs) GetGameDirSuffix(game Game) (s string) {
 	switch game {
 	case I:

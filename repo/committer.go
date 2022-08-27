@@ -17,7 +17,6 @@ import (
 
 var (
 	sourceOwner = "KiameV"
-	sourceRepo  = "moogle-mod-manager-mods"
 	author      = "moogle-modder"
 	authorName  = "Moogle Modder"
 	authorEmail = "moogle-modder@hotmail.com"
@@ -28,7 +27,7 @@ type Committer interface {
 }
 
 func NewCommitter(mod *mods.Mod) Committer {
-	return &committer{
+	return &repoClient{
 		client: github.NewClient(oauth2.NewClient(
 			context.Background(),
 			oauth2.StaticTokenSource(&oauth2.Token{AccessToken: "g" + pat3 + "_" + pat2 + pat}))),
@@ -36,40 +35,51 @@ func NewCommitter(mod *mods.Mod) Committer {
 	}
 }
 
-type committer struct {
+type repoClient struct {
 	client *github.Client
 	mod    *mods.Mod
 }
 
-func (c *committer) Submit() (url string, err error) {
+func (c *repoClient) Submit() (url string, err error) {
 	//if *sourceOwner == "" || *sourceRepo == "" || *commitBranch == "" || *sourceFiles == "" || *authorName == "" || *authorEmail == "" {
 	//	log.Fatal("You need to specify a non-empty value for the flags `-source-owner`, `-source-repo`, `-commit-branch`, `-files`, `-author-name` and `-author-email`")
 	//}
 	var (
+		rd   = repoDefs[0]
 		ref  *github.Reference
 		tree *github.Tree
 	)
 
 	var file string
-	if c.mod.Game != nil {
+	if len(c.mod.Games) == 1 {
 		if c.mod.ModKind.Kind == mods.Hosted {
-			file = filepath.Join(repoGameDir(config.NameToGame(c.mod.Game.Name)), c.mod.ID)
+			file = filepath.Join(rd.repoGameDir(config.NameToGame(c.mod.Games[0].Name)), util.CreateFileName(c.mod.ID))
 		} else if c.mod.ModKind.Kind == mods.Nexus && c.mod.ModKind.Nexus != nil {
-			file = repoNexusIDDir(config.NameToGame(c.mod.Game.Name), c.mod.ModKind.Nexus.ID)
+			file = rd.repoNexusIDDir(config.NameToGame(c.mod.Games[0].Name), c.mod.ModKind.Nexus.ID)
 		}
+	} else if len(c.mod.Games) > 1 {
+		if c.mod.ModKind.Kind != mods.Hosted {
+			err = errors.New("multi-game mods must be hosted")
+			return
+		}
+		file = filepath.Join(rd.repoDir(), "utilities", util.CreateFileName(c.mod.ID))
+	} else {
+		err = errors.New("no games specified")
+		return
 	}
+
 	if file == "" {
 		err = errors.New("unable to format remote directory")
 		return
 	}
 	file = filepath.Join(file, "mod.json")
 
-	if err = util.SaveToFile(file, c.mod); err != nil {
+	if err = util.SaveToFile(file, c.mod, '\n'); err != nil {
 		return
 	}
 
 	var branch string
-	if ref, branch, err = c.getRef(); err != nil {
+	if ref, branch, err = c.getRef(rd); err != nil {
 		err = fmt.Errorf("unable to get/create the commit reference: %s", err)
 		return
 	}
@@ -78,17 +88,17 @@ func (c *committer) Submit() (url string, err error) {
 		return
 	}
 
-	if tree, err = c.getTree(ref, file); err != nil {
+	if tree, err = c.getTree(rd, ref, file); err != nil {
 		err = fmt.Errorf("unable to create the tree based on the provided files: %s\n", err)
 		return
 	}
 
-	if err = c.pushCommit(ref, tree); err != nil {
+	if err = c.pushCommit(rd, ref, tree); err != nil {
 		err = fmt.Errorf("unable to create the commit: %s\n", err)
 		return
 	}
 
-	if url, err = c.createPR(branch); err != nil {
+	if url, err = c.createPR(rd, branch); err != nil {
 		err = fmt.Errorf("unable to create the pull request: %s", err)
 	}
 	return
@@ -96,13 +106,14 @@ func (c *committer) Submit() (url string, err error) {
 
 // getRef returns the commit branch reference object if it exists or creates it
 // from the base branch before returning it.
-func (c *committer) getRef() (ref *github.Reference, commitBranch string, err error) {
+func (c *repoClient) getRef(rd repoDef) (ref *github.Reference, commitBranch string, err error) {
 	commitBranch = "refs/heads/" + c.mod.BranchName()
+	sourceRepo := rd.Source()
 
 	ctx, cnl := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cnl()
 
-	if ref, _, err = c.client.Git.GetRef(ctx, author, sourceRepo, commitBranch); err == nil {
+	if ref, _, err = c.client.Git.GetRef(ctx, author, rd.Url, commitBranch); err == nil {
 		return
 	}
 
@@ -118,14 +129,21 @@ func (c *committer) getRef() (ref *github.Reference, commitBranch string, err er
 	}
 	newRef := &github.Reference{Ref: github.String(commitBranch), Object: &github.GitObject{SHA: baseRef.Object.SHA}}
 	ref, _, err = c.client.Git.CreateRef(ctx, author, sourceRepo, newRef)
+	if err != nil {
+		err = nil
+		ref = newRef
+	}
 	return
 }
 
 // getTree generates the tree to commit based on the given files and the commit
 // of the ref you got in getRef.
-func (c *committer) getTree(ref *github.Reference, file string) (tree *github.Tree, err error) {
+func (c *repoClient) getTree(rd repoDef, ref *github.Reference, file string) (tree *github.Tree, err error) {
 	// Create a tree with what to commit.
-	var entries []*github.TreeEntry
+	var (
+		entries    []*github.TreeEntry
+		sourceRepo = rd.Source()
+	)
 
 	// Load each file into the tree.
 	var b []byte
@@ -141,12 +159,15 @@ func (c *committer) getTree(ref *github.Reference, file string) (tree *github.Tr
 }
 
 // pushCommit creates the commit in the given reference using the given tree.
-func (c *committer) pushCommit(ref *github.Reference, tree *github.Tree) (err error) {
-	ctx, cnl := context.WithTimeout(context.Background(), 10*time.Second)
+func (c *repoClient) pushCommit(rd repoDef, ref *github.Reference, tree *github.Tree) (err error) {
+	var (
+		ctx, cnl   = context.WithTimeout(context.Background(), 10*time.Second)
+		parent     *github.RepositoryCommit
+		sourceRepo = rd.Source()
+	)
 	defer cnl()
 
 	// Get the parent commit to attach the commit to.
-	var parent *github.RepositoryCommit
 	if parent, _, err = c.client.Repositories.GetCommit(ctx, author, sourceRepo, *ref.Object.SHA, nil); err != nil {
 		return
 	}
@@ -170,22 +191,24 @@ func (c *committer) pushCommit(ref *github.Reference, tree *github.Tree) (err er
 }
 
 // createPR creates a pull request. Based on: https://godoc.org/github.com/google/go-github/github#example-PullRequestsService-Create
-func (c *committer) createPR(commitBranch string) (url string, err error) {
-	sbj := fmt.Sprintf("%s - %s", c.mod.Name, c.mod.Version)
-	base := "main"
+func (c *repoClient) createPR(rd repoDef, commitBranch string) (url string, err error) {
 	commitBranch = author + ":" + commitBranch
-	newPR := &github.NewPullRequest{
-		Title:               &sbj,
-		Head:                &commitBranch,
-		Base:                &base,
-		Body:                nil,
-		MaintainerCanModify: github.Bool(true),
-	}
-
-	var pr *github.PullRequest
-
-	ctx, cnl := context.WithTimeout(context.Background(), 10*time.Second)
+	var (
+		sbj   = fmt.Sprintf("%s - %s", c.mod.Name, c.mod.Version)
+		base  = "main"
+		newPR = &github.NewPullRequest{
+			Title:               &sbj,
+			Head:                &commitBranch,
+			Base:                &base,
+			Body:                nil,
+			MaintainerCanModify: github.Bool(true),
+		}
+		sourceRepo = rd.Source()
+		pr         *github.PullRequest
+		ctx, cnl   = context.WithTimeout(context.Background(), 10*time.Second)
+	)
 	defer cnl()
+
 	if pr, _, err = c.client.PullRequests.Create(ctx, sourceOwner, sourceRepo, newPR); err != nil {
 		if !strings.Contains(err.Error(), "pull request already exists") {
 			return

@@ -26,12 +26,16 @@ import (
 	"time"
 )
 
+var modKind = mods.ToKind(mods.Hosted)
+
 func New() state.Screen {
-	dl := newDownloadsDef()
+	var (
+		dl = newDownloadsDef(modKind)
+	)
 	return &ModAuthorer{
 		entryManager:   newEntryManager(),
 		previewDef:     newPreviewDef(),
-		modKindDef:     newModKindDef(),
+		modKindDef:     newModKindDef(modKind),
 		modCompatsDef:  newModCompatibilityDef(),
 		downloadDef:    dl,
 		donationsDef:   newDonationsDef(),
@@ -71,6 +75,7 @@ func (a *ModAuthorer) OnClose() {
 }
 
 func (a *ModAuthorer) NewMod() {
+	*modKind = mods.Hosted
 	a.updateEntries(&mods.Mod{
 		ReleaseDate:         time.Now().Format("Jan 02 2006"),
 		ConfigSelectionType: mods.Auto,
@@ -118,6 +123,7 @@ func (a *ModAuthorer) LoadModToEdit() (successfullyLoadedMod bool) {
 	} else {
 		err = json.Unmarshal(b, &mod)
 	}
+	*modKind = mod.ModKind.Kind
 	a.updateEntries(&mod)
 	return true
 }
@@ -243,7 +249,7 @@ func (a *ModAuthorer) updateEntries(mod *mods.Mod) {
 	a.createFormItem("Name", mod.Name)
 	a.createFormItem("Author", mod.Author)
 	a.createFormItem("Release Date", mod.ReleaseDate)
-	a.createFormItem("Category", mod.Category)
+	a.createFormSelect("Category", mods.Categories, string(mod.Category))
 	a.createFormItem("Version", mod.Version)
 	a.description.SetText(mod.Description)
 	a.releaseNotes.SetText(mod.ReleaseNotes)
@@ -259,7 +265,7 @@ func (a *ModAuthorer) updateEntries(mod *mods.Mod) {
 	a.modKindDef.set(mod.ModKind)
 	a.downloadDef.set(mod.Downloadables)
 	a.donationsDef.set(mod.DonationLinks)
-	a.gamesDef.set(mod.Game)
+	a.gamesDef.set(mod.Games)
 	a.alwaysDownload.set(mod.AlwaysDownload)
 	a.configsDef.set(mod.Configurations)
 }
@@ -307,7 +313,7 @@ func (a *ModAuthorer) compileMod() (mod *mods.Mod) {
 		Name:                a.getString("Name"),
 		Author:              a.getString("Author"),
 		ReleaseDate:         a.getString("Release Date"),
-		Category:            a.getString("Category"),
+		Category:            mods.Category(a.getString("Category")),
 		Version:             a.getString("Version"),
 		Description:         a.description.String(),
 		ReleaseNotes:        a.releaseNotes.String(),
@@ -318,7 +324,7 @@ func (a *ModAuthorer) compileMod() (mod *mods.Mod) {
 		ModCompatibility:    a.modCompatsDef.compile(),
 		Downloadables:       a.downloadDef.compile(),
 		DonationLinks:       a.donationsDef.compile(),
-		Game:                a.gamesDef.compile(),
+		Games:               a.gamesDef.compile(),
 		IsManuallyCreated:   true,
 	}
 

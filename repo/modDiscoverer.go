@@ -4,7 +4,6 @@ import (
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/util"
-	"path/filepath"
 )
 
 var lookup = make([]*discoveredMods, 6)
@@ -25,8 +24,6 @@ func GetMods(game config.Game) ([]*mods.Mod, []*mods.Override, error) {
 	)
 	if d == nil {
 		d = &discoveredMods{}
-		lookup[game] = d
-
 		if modFiles, overrideFiles, err = r.GetMods(game); err != nil {
 			return nil, nil, err
 		}
@@ -46,17 +43,10 @@ func GetMods(game config.Game) ([]*mods.Mod, []*mods.Override, error) {
 			}
 			d.Overrides = append(d.Overrides, &override)
 		}
+		lookup[game] = d
 	}
 	if d.Mods, err = getNexusMods(game, d.Mods, d.Overrides); err != nil {
 		return nil, nil, err
 	}
 	return d.Mods, d.Overrides, nil
-}
-
-func repoDir() string {
-	return filepath.Join(config.PWD, "remote")
-}
-
-func repoGameDir(game config.Game) string {
-	return filepath.Join(repoDir(), config.String(game))
 }

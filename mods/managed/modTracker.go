@@ -113,7 +113,7 @@ func addMod(game config.Game, tm *mods.TrackedMod) (err error) {
 	}
 
 	tm.Enabled = false
-	i := int(config.NameToGame(tm.Mod.Game.Name))
+	i := int(config.NameToGame(tm.Mod.Games[0].Name))
 	m := lookup[i]
 	for i = range m.Mods {
 		if m.Mods[i].Mod.ID == tm.Mod.ID {

@@ -15,11 +15,13 @@ import (
 type downloadsDef struct {
 	*entryManager
 	list *cw.DynamicList
+	kind *mods.Kind
 }
 
-func newDownloadsDef() *downloadsDef {
+func newDownloadsDef(kind *mods.Kind) *downloadsDef {
 	d := &downloadsDef{
 		entryManager: newEntryManager(),
+		kind:         kind,
 	}
 	d.list = cw.NewDynamicList(cw.Callbacks{
 		GetItemKey:    d.getItemKey,
@@ -62,35 +64,51 @@ func (d *downloadsDef) createItem(item interface{}, done ...func(interface{})) {
 	d.createFormItem("Name", m.Name)
 	d.createFormItem("Version", m.Version)
 	//d.createFormSelect("Install Type", mods.InstallTypes, string(m.InstallType))
-	if m.Nexus != nil {
-		d.createFormItem("File Name", m.Nexus.FileName)
-		d.createFormItem("File ID", fmt.Sprintf("%d", m.Nexus.FileID))
+	if *d.kind == mods.Nexus {
+		if m.Nexus != nil {
+			var fileName, fileID string
+			if m.Nexus != nil {
+				fileName = m.Nexus.FileName
+				fileID = fmt.Sprintf("%d", m.Nexus.FileID)
+			}
+			d.createFormItem("File Name", fileName)
+			d.createFormItem("File ID", fileID)
+		}
 	}
-	if m.Hosted != nil {
-		d.createFormMultiLine("Sources", strings.Join(m.Hosted.Sources, "\n"))
+	if *d.kind == mods.Hosted {
+		var sources []string
+		if m.Hosted != nil {
+			sources = m.Hosted.Sources
+		}
+		d.createFormMultiLine("Sources", strings.Join(sources, "\n"))
 	}
 
 	items := []*widget.FormItem{
 		d.getFormItem("Name"),
 		d.getFormItem("Version"),
 	}
-	if m.Hosted != nil {
-		items = append(items, d.getFormItem("Sources"))
-	}
-	if m.Nexus != nil {
+	if *d.kind == mods.Nexus {
 		items = append(items, d.getFormItem("File Name"))
 		items = append(items, d.getFormItem("File ID"))
+	}
+	if *d.kind == mods.Hosted {
+		items = append(items, d.getFormItem("Sources"))
 	}
 
 	fd := dialog.NewForm("Edit Downloadable", "Save", "Cancel", items, func(ok bool) {
 		if ok {
 			m.Name = d.getString("Name")
 			m.Version = d.getString("Version")
-			if m.Nexus != nil {
+			if *d.kind == mods.Nexus {
+				if m.Nexus == nil {
+					m.Nexus = &mods.NexusDownloadable{}
+				}
 				m.Nexus.FileName = d.getString("File Name")
 				m.Nexus.FileID = d.getInt("File ID")
-			}
-			if m.Hosted != nil {
+			} else if *d.kind == mods.Hosted {
+				if m.Hosted == nil {
+					m.Hosted = &mods.HostedDownloadable{}
+				}
 				m.Hosted.Sources = d.getStrings("Sources", "\n")
 			}
 			//m.InstallType = mods.InstallType(d.getString("Install Type"))

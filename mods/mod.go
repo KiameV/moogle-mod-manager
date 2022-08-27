@@ -23,13 +23,34 @@ const (
 
 var SelectTypes = []string{string(Auto), string(Select), string(Radio)}
 
+type Category string
+
+const (
+	BattleScene        Category = "Battle Scene"
+	EnemySprite        Category = "Enemy Sprite"
+	GameOverhauls      Category = "Game Overhauls"
+	Gameplay           Category = "Gameplay"
+	Soundtrack         Category = "Soundtrack"
+	PlayerNpcSprites   Category = "Player/NPC Sprite"
+	ScriptText         Category = "Script/Text"
+	TitleScreen        Category = "Title Screen"
+	TileSet            Category = "Tile Set"
+	UIGeneral          Category = "UI: General"
+	UiMenuPortraits    Category = "UI: Menu Portraits"
+	UiTextBoxPortraits Category = "UI: Textbox Portraits"
+	UiWindowFrames     Category = "UI: Window Frames"
+	Utility            Category = "Utility"
+)
+
+var Categories = []string{"", string(Soundtrack), string(Gameplay), string(UiWindowFrames), string(UiMenuPortraits), string(UiTextBoxPortraits), string(UIGeneral), string(TitleScreen), string(BattleScene), string(TileSet), string(PlayerNpcSprites), string(EnemySprite), string(ScriptText), string(GameOverhauls), string(Utility)}
+
 type Mod struct {
 	ID                  string            `json:"ID" xml:"ID"`
 	Name                string            `json:"Name" xml:"Name"`
 	Author              string            `json:"Author" xml:"Author"`
 	AuthorLink          string            `json:"AuthorLink" xml:"AuthorLink"`
 	ReleaseDate         string            `json:"ReleaseDate" xml:"ReleaseDate"`
-	Category            string            `json:"Category" xml:"Category"`
+	Category            Category          `json:"Category" xml:"Category"`
 	Description         string            `json:"Description" xml:"Description"`
 	ReleaseNotes        string            `json:"ReleaseNotes" xml:"ReleaseNotes"`
 	Link                string            `json:"Link" xml:"Link"`
@@ -39,7 +60,7 @@ type Mod struct {
 	ModCompatibility    *ModCompatibility `json:"Compatibility,omitempty" xml:"ModCompatibility,omitempty"`
 	Downloadables       []*Download       `json:"Downloadable" xml:"Downloadables"`
 	DonationLinks       []*DonationLink   `json:"DonationLink" xml:"DonationLinks"`
-	Game                *Game             `json:"Game" xml:"Game"`
+	Games               []*Game           `json:"Games" xml:"Games"`
 	AlwaysDownload      []*DownloadFiles  `json:"AlwaysDownload,omitempty" xml:"AlwaysDownload,omitempty"`
 	Configurations      []*Configuration  `json:"Configuration,omitempty" xml:"Configurations,omitempty"`
 	ConfigSelectionType SelectType        `json:"ConfigSelectionType" xml:"ConfigSelectionType"`
@@ -340,10 +361,11 @@ func (m *Mod) Validate() string {
 }
 
 func (m *Mod) Supports(game config.Game) error {
-	if m.Game != nil {
-		gs := " " + config.String(game)
-		if strings.HasSuffix(string(m.Game.Name), gs) {
-			return nil
+	if len(m.Games) > 0 {
+		for _, g := range m.Games {
+			if m.Games[0].Name == g.Name {
+				return nil
+			}
 		}
 	}
 	return fmt.Errorf("%s does not support %s", m.Name, config.GameNameString(game))
