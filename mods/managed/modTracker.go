@@ -45,6 +45,11 @@ func Initialize() (err error) {
 			if err = util.LoadFromFile(tm.MoogleModFile, &mod); err != nil {
 				return
 			}
+			if len(mod.Games) == 0 && mod.Game != nil {
+				mod.Games = append(mod.Games, mod.Game)
+				mod.Game = nil
+				_ = util.SaveToFile(tm.MoogleModFile, mod)
+			}
 			tm.Mod = mod
 		}
 	}
@@ -113,7 +118,7 @@ func addMod(game config.Game, tm *mods.TrackedMod) (err error) {
 	}
 
 	tm.Enabled = false
-	i := int(config.NameToGame(tm.Mod.Game.Name))
+	i := int(config.NameToGame(tm.Mod.Games[0].Name))
 	m := lookup[i]
 	for i = range m.Mods {
 		if m.Mods[i].Mod.ID == tm.Mod.ID {
@@ -200,11 +205,11 @@ func enableMod(enabler *mods.ModEnabler, err error) {
 			var fi os.FileInfo
 			sa := filepath.Join(to, "StreamingAssets")
 			if fi, err = os.Stat(sa); err == nil && fi.IsDir() {
-				newTo := filepath.Join(to, string(nexus.GameToInstallBaseDir(game)))
+				newTo := filepath.Join(to, string(mods.GameToInstallBaseDir(game)))
 				_ = os.MkdirAll(newTo, 0777)
 				_ = os.Rename(sa, filepath.Join(newTo, "StreamingAssets"))
 			} else if !tm.Mod.IsManuallyCreated {
-				dir := filepath.Join(to, string(nexus.GameToInstallBaseDir(enabler.Game)))
+				dir := filepath.Join(to, string(mods.GameToInstallBaseDir(enabler.Game)))
 				if _, err = os.Stat(dir); err != nil {
 					tm.Enabled = false
 					enabler.DoneCallback(errors.New("unsupported nexus mod"))

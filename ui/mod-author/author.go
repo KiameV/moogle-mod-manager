@@ -259,7 +259,7 @@ func (a *ModAuthorer) updateEntries(mod *mods.Mod) {
 	a.modKindDef.set(mod.ModKind)
 	a.downloadDef.set(mod.Downloadables)
 	a.donationsDef.set(mod.DonationLinks)
-	a.gamesDef.set(mod.Game)
+	a.gamesDef.set(mod.Games)
 	a.alwaysDownload.set(mod.AlwaysDownload)
 	a.configsDef.set(mod.Configurations)
 }
@@ -318,7 +318,7 @@ func (a *ModAuthorer) compileMod() (mod *mods.Mod) {
 		ModCompatibility:    a.modCompatsDef.compile(),
 		Downloadables:       a.downloadDef.compile(),
 		DonationLinks:       a.donationsDef.compile(),
-		Game:                a.gamesDef.compile(),
+		Games:               a.gamesDef.compile(),
 		IsManuallyCreated:   true,
 	}
 

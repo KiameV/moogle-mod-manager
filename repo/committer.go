@@ -51,11 +51,12 @@ func (c *committer) Submit() (url string, err error) {
 	)
 
 	var file string
-	if c.mod.Game != nil {
+	if len(c.mod.Games) > 0 {
+		game := config.NameToGame(c.mod.Games[0].Name)
 		if c.mod.ModKind.Kind == mods.Hosted {
-			file = filepath.Join(repoGameDir(config.NameToGame(c.mod.Game.Name)), c.mod.ID)
+			file = filepath.Join(repoGameDir(game), c.mod.ID)
 		} else if c.mod.ModKind.Kind == mods.Nexus && c.mod.ModKind.Nexus != nil {
-			file = repoNexusIDDir(config.NameToGame(c.mod.Game.Name), c.mod.ModKind.Nexus.ID)
+			file = repoNexusIDDir(game, c.mod.ModKind.Nexus.ID)
 		}
 	}
 	if file == "" {

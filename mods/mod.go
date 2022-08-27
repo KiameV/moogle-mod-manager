@@ -24,26 +24,28 @@ const (
 var SelectTypes = []string{string(Auto), string(Select), string(Radio)}
 
 type Mod struct {
-	ID                  string            `json:"ID" xml:"ID"`
-	Name                string            `json:"Name" xml:"Name"`
-	Author              string            `json:"Author" xml:"Author"`
-	AuthorLink          string            `json:"AuthorLink" xml:"AuthorLink"`
-	ReleaseDate         string            `json:"ReleaseDate" xml:"ReleaseDate"`
-	Category            string            `json:"Category" xml:"Category"`
-	Description         string            `json:"Description" xml:"Description"`
-	ReleaseNotes        string            `json:"ReleaseNotes" xml:"ReleaseNotes"`
-	Link                string            `json:"Link" xml:"Link"`
-	Version             string            `json:"Version"`
-	Preview             *Preview          `json:"Preview,omitempty" xml:"Preview,omitempty"`
-	ModKind             *ModKind          `json:"ModKind" xml:"ModKind"`
-	ModCompatibility    *ModCompatibility `json:"Compatibility,omitempty" xml:"ModCompatibility,omitempty"`
-	Downloadables       []*Download       `json:"Downloadable" xml:"Downloadables"`
-	DonationLinks       []*DonationLink   `json:"DonationLink" xml:"DonationLinks"`
-	Game                *Game             `json:"Game" xml:"Game"`
-	AlwaysDownload      []*DownloadFiles  `json:"AlwaysDownload,omitempty" xml:"AlwaysDownload,omitempty"`
-	Configurations      []*Configuration  `json:"Configuration,omitempty" xml:"Configurations,omitempty"`
-	ConfigSelectionType SelectType        `json:"ConfigSelectionType" xml:"ConfigSelectionType"`
-	IsManuallyCreated   bool              `json:"IsManuallyCreated" xml:"IsManuallyCreated"`
+	ID               string            `json:"ID" xml:"ID"`
+	Name             string            `json:"Name" xml:"Name"`
+	Author           string            `json:"Author" xml:"Author"`
+	AuthorLink       string            `json:"AuthorLink" xml:"AuthorLink"`
+	ReleaseDate      string            `json:"ReleaseDate" xml:"ReleaseDate"`
+	Category         string            `json:"Category" xml:"Category"`
+	Description      string            `json:"Description" xml:"Description"`
+	ReleaseNotes     string            `json:"ReleaseNotes" xml:"ReleaseNotes"`
+	Link             string            `json:"Link" xml:"Link"`
+	Version          string            `json:"Version"`
+	Preview          *Preview          `json:"Preview,omitempty" xml:"Preview,omitempty"`
+	ModKind          *ModKind          `json:"ModKind" xml:"ModKind"`
+	ModCompatibility *ModCompatibility `json:"Compatibility,omitempty" xml:"ModCompatibility,omitempty"`
+	Downloadables    []*Download       `json:"Downloadable" xml:"Downloadables"`
+	DonationLinks    []*DonationLink   `json:"DonationLink" xml:"DonationLinks"`
+	// Game DON'T USE
+	Game                *Game            `json:"Game,omitempty" xml:"Game,omitempty"`
+	Games               []*Game          `json:"Games" xml:"Games"`
+	AlwaysDownload      []*DownloadFiles `json:"AlwaysDownload,omitempty" xml:"AlwaysDownload,omitempty"`
+	Configurations      []*Configuration `json:"Configuration,omitempty" xml:"Configurations,omitempty"`
+	ConfigSelectionType SelectType       `json:"ConfigSelectionType" xml:"ConfigSelectionType"`
+	IsManuallyCreated   bool             `json:"IsManuallyCreated" xml:"IsManuallyCreated"`
 }
 
 func (m *Mod) ModID() string {
@@ -196,7 +198,7 @@ func (m *Mod) Validate() string {
 		sb.WriteString("Release Date is required\n")
 	}
 	if m.Category == "" {
-		sb.WriteString("Category is required\n")
+		//	sb.WriteString("Category is required\n")
 	}
 	if m.Description == "" {
 		sb.WriteString("Description is required\n")
@@ -340,10 +342,11 @@ func (m *Mod) Validate() string {
 }
 
 func (m *Mod) Supports(game config.Game) error {
-	if m.Game != nil {
-		gs := " " + config.String(game)
-		if strings.HasSuffix(string(m.Game.Name), gs) {
-			return nil
+	if len(m.Games) > 0 {
+		for _, g := range m.Games {
+			if config.NameToGame(g.Name) == game {
+				return nil
+			}
 		}
 	}
 	return fmt.Errorf("%s does not support %s", m.Name, config.GameNameString(game))

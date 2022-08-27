@@ -88,6 +88,24 @@ func (c *Configs) GetGameDirSuffix(game Game) (s string) {
 	return
 }
 
+func (c *Configs) GetGameDir(game Game) (s string) {
+	switch game {
+	case I:
+		s = c.DirI
+	case II:
+		s = c.DirII
+	case III:
+		s = c.DirIII
+	case IV:
+		s = c.DirIV
+	case V:
+		s = c.DirV
+	case VI:
+		s = c.DirVI
+	}
+	return
+}
+
 func (c *Configs) Initialize() (err error) {
 	if PWD, err = os.Getwd(); err != nil {
 		PWD = "."
