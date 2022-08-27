@@ -57,7 +57,7 @@ func AddModFiles(game config.Game, tm *mods.TrackedMod, files []*mods.DownloadFi
 			break
 		}
 		if err == nil {
-			if err = MoveDirs(df.Dirs, modDir, config.Get().GetGameDir(game), configs.GetBackupFullPath(game), &backedUp, &moved, false); err != nil {
+			if err = MoveDirs(game, df.Dirs, modDir, config.Get().GetGameDir(game), configs.GetBackupFullPath(game), &backedUp, &moved, false); err != nil {
 				break
 			}
 		}
@@ -233,12 +233,14 @@ func MoveFiles(files []*mods.ModFile, modDir string, toDir string, backupDir str
 	return
 }
 
-func MoveDirs(dirs []*mods.ModDir, modDir string, toDir string, backupDir string, replacedFiles *[]*mods.ModFile, movedFiles *[]*mods.ModFile, returnOnFail bool) (err error) {
+func MoveDirs(game config.Game, dirs []*mods.ModDir, modDir string, toDir string, backupDir string, replacedFiles *[]*mods.ModFile, movedFiles *[]*mods.ModFile, returnOnFail bool) (err error) {
 	var (
 		mf   []*mods.ModFile
 		from string
 		to   string
 	)
+	toBaseDir := mods.GameToInstallBaseDir(game)
+	modDir = strings.ReplaceAll(modDir, "\\", "/")
 	for _, d := range dirs {
 		fromDir := strings.ReplaceAll(d.From, "\\", "/")
 		for len(fromDir) > 0 && (fromDir[0] == '.' || fromDir[0] == '/') {
@@ -257,12 +259,19 @@ func MoveDirs(dirs []*mods.ModDir, modDir string, toDir string, backupDir string
 				}
 
 				from = strings.ReplaceAll(path, "\\", "/")
-				if i := strings.Index(from, fromDir); i != -1 {
-					from = from[i:]
+				from = strings.ReplaceAll(from, modDir, "")
+
+				to = strings.ReplaceAll(from, modDir, "")
+				to = filepath.Join(d.To, to)
+				to = strings.ReplaceAll(to, "\\", "/")
+				to = strings.TrimLeft(to, "/")
+				c := strings.Count(to, string(toBaseDir)+"/")
+				if c == 0 && strings.HasPrefix(to, mods.StreamingAssetsDir) {
+					to = filepath.Join(string(toBaseDir), to)
+				} else if c > 1 {
+					to = strings.Replace(to, string(toBaseDir)+"/", "", 1)
 				}
 
-				to = strings.Replace(from, fromDir, "", 1)
-				to = filepath.Join(d.To, to)
 				mf = append(mf, &mods.ModFile{
 					From: from,
 					To:   to,

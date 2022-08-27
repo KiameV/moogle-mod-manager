@@ -21,9 +21,11 @@ func New() state.Screen {
 
 type MainMenu struct{}
 
-func (m *MainMenu) PreDraw() error { return nil }
+func (m *MainMenu) PreDraw(w fyne.Window) error { return nil }
 
 func (m *MainMenu) OnClose() {}
+
+func (m *MainMenu) DrawAsDialog(fyne.Window) {}
 
 func (m *MainMenu) Draw(w fyne.Window) {
 	file := fyne.NewMenu("File")

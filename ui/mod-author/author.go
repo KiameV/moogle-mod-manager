@@ -66,7 +66,9 @@ type ModAuthorer struct {
 	tabs *container.AppTabs
 }
 
-func (a *ModAuthorer) PreDraw() error { return nil }
+func (a *ModAuthorer) PreDraw(w fyne.Window) error { return nil }
+
+func (a *ModAuthorer) DrawAsDialog(fyne.Window) {}
 
 func (a *ModAuthorer) OnClose() {
 	if a.modBeingEdited != nil {

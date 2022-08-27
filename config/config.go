@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fyne.io/fyne/v2"
 	"github.com/kiamev/moogle-mod-manager/util"
 	"os"
 	"path/filepath"
@@ -58,6 +59,17 @@ func Get() *Configs {
 	return configs
 }
 
+func (c *Configs) Size() fyne.Size {
+	size := fyne.NewSize(WindowWidth, WindowHeight)
+	if x := configs.WindowX; x != 0 {
+		size.Width = float32(x)
+	}
+	if y := configs.WindowY; y != 0 {
+		size.Height = float32(y)
+	}
+	return size
+}
+
 func (c *Configs) GetModsFullPath(game Game) string {
 	return filepath.Join(c.ModsDir, c.GetGameDirSuffix(game))
 }
@@ -70,20 +82,22 @@ func (c *Configs) GetBackupFullPath(game Game) string {
 	return filepath.Join(c.BackupDir, c.GetGameDirSuffix(game))
 }
 
-func (c *Configs) GetGameDir(game Game) string {
+func (c *Configs) GetGameDir(game Game) (s string) {
 	switch game {
 	case I:
-		return c.DirI
+		s = c.DirI
 	case II:
-		return c.DirII
+		s = c.DirII
 	case III:
-		return c.DirIII
+		s = c.DirIII
 	case IV:
-		return c.DirIV
+		s = c.DirIV
 	case V:
-		return c.DirV
+		s = c.DirV
+	case VI:
+		s = c.DirVI
 	}
-	return c.DirVI
+	return
 }
 
 func (c *Configs) GetGameDirSuffix(game Game) (s string) {

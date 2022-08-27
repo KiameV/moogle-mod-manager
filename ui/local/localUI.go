@@ -34,13 +34,15 @@ type localUI struct {
 	workingDialog dialog.Dialog
 }
 
-func (ui *localUI) PreDraw() error { return nil }
+func (ui *localUI) PreDraw(w fyne.Window) error { return nil }
 
 func (ui *localUI) OnClose() {}
 
 func (ui *localUI) GetSelected() *mods.TrackedMod {
 	return ui.selectedMod
 }
+
+func (ui *localUI) DrawAsDialog(fyne.Window) {}
 
 func (ui *localUI) Draw(w fyne.Window) {
 	ui.data = binding.NewUntypedList()
@@ -64,15 +66,15 @@ func (ui *localUI) Draw(w fyne.Window) {
 		})
 
 	addButton := cw.NewButtonWithPopups("Add",
-		fyne.NewMenuItem("Find", func() {
-			state.ShowScreen(state.DiscoverMods)
-		}),
 		fyne.NewMenuItem("From File", func() {
 			ui.addFromFile()
 		}),
 		fyne.NewMenuItem("From URL", func() {
 			ui.addFromUrl()
 		}))
+	findButton := widget.NewButton("Find", func() {
+		state.ShowScreen(state.DiscoverMods)
+	})
 	removeButton := widget.NewButton("Remove", func() {
 		dialog.NewConfirm("Delete?", "Are you sure you want to delete this mod?", func(ok bool) {
 			if ok && ui.selectedMod != nil {
@@ -141,7 +143,7 @@ func (ui *localUI) Draw(w fyne.Window) {
 		ui.split.Trailing = container.NewMax()
 	}
 
-	buttons := container.NewHBox(addButton, removeButton, ui.checkAll)
+	buttons := container.NewHBox(findButton, addButton, removeButton, ui.checkAll)
 	ui.split = container.NewHSplit(
 		ui.modList,
 		container.NewMax())

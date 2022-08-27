@@ -115,14 +115,8 @@ func initialize() {
 	if err = configs.Initialize(); err != nil {
 		util.ShowErrorLong(err)
 	}
-	size := fyne.NewSize(config.WindowWidth, config.WindowHeight)
-	if x := configs.WindowX; x != 0 {
-		size.Width = float32(x)
-	}
-	if y := configs.WindowY; y != 0 {
-		size.Height = float32(y)
-	}
-	state.Window.Resize(size)
+
+	state.Window.Resize(config.Get().Size())
 
 	if configs.Theme == config.LightThemeColor {
 		fyne.CurrentApp().Settings().SetTheme(theme.LightTheme())

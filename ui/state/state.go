@@ -21,6 +21,7 @@ var (
 	CurrentGame *config.Game
 	App         fyne.App
 	Window      fyne.Window
+	popupWindow fyne.Window
 
 	guiHistories []*guiHistory
 	mainMenu     Screen
@@ -42,8 +43,9 @@ func appendGuiHistory(gui GUI) {
 }
 
 type Screen interface {
-	PreDraw() error
+	PreDraw(w fyne.Window) error
 	Draw(w fyne.Window)
+	DrawAsDialog(window fyne.Window)
 	OnClose()
 }
 
@@ -59,9 +61,23 @@ func GetScreen(gui GUI) Screen {
 }
 
 func ShowScreen(gui GUI) {
-	if err := screens[gui].PreDraw(); err != nil {
-		dialog.ShowError(err, Window)
+	if gui == DiscoverMods {
+		if popupWindow == nil {
+			popupWindow = App.NewWindow("Finder")
+			popupWindow.Resize(config.Get().Size())
+			popupWindow.Show()
+			if err := screens[gui].PreDraw(popupWindow); err != nil {
+				dialog.ShowError(err, Window)
+				return
+			}
+			screens[gui].DrawAsDialog(popupWindow)
+		}
 		return
+	} else {
+		if err := screens[gui].PreDraw(Window); err != nil {
+			dialog.ShowError(err, Window)
+			return
+		}
 	}
 	appendGuiHistory(gui)
 	mainMenu.Draw(Window)
@@ -81,6 +97,11 @@ func ShowPreviousScreen() {
 	}
 	Window.MainMenu().Refresh()
 	mainMenu.Draw(Window)
+	s.Draw(Window)
+}
+
+func UpdateCurrentScreen() {
+	s := screens[GetCurrentGUI()]
 	s.Draw(Window)
 }
 

@@ -34,9 +34,11 @@ type configInstallerUI struct {
 	currentChoice *mods.Choice
 }
 
-func (ui *configInstallerUI) PreDraw() error { return nil }
+func (ui *configInstallerUI) PreDraw(w fyne.Window) error { return nil }
 
 func (ui *configInstallerUI) OnClose() {}
+
+func (ui *configInstallerUI) DrawAsDialog(fyne.Window) {}
 
 func (ui *configInstallerUI) Setup(mod *mods.Mod, baseDir string, done func([]*mods.ToInstall) error) error {
 	if len(mod.Configurations) == 0 || len(mod.Configurations[0].Choices) == 0 {

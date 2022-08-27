@@ -4,6 +4,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
+	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
@@ -28,13 +29,25 @@ type discoverUI struct {
 
 func (ui *discoverUI) OnClose() {}
 
-func (ui *discoverUI) PreDraw() (err error) {
+func (ui *discoverUI) PreDraw(w fyne.Window) (err error) {
 	// TODO apply overrides to tracked mods
+	d := dialog.NewInformation("", "Finding Mods...", w)
+	defer d.Hide()
+	d.Show()
+
 	ui.mods, _, err = repo.GetMods(*state.CurrentGame)
 	return
 }
 
+func (ui *discoverUI) DrawAsDialog(w fyne.Window) {
+	ui.draw(w, true)
+}
+
 func (ui *discoverUI) Draw(w fyne.Window) {
+	ui.draw(w, false)
+}
+
+func (ui *discoverUI) draw(w fyne.Window, isPopup bool) {
 	if len(ui.mods) == 0 {
 		// TODO
 		return
@@ -81,6 +94,7 @@ func (ui *discoverUI) Draw(w fyne.Window) {
 					util.ShowErrorLong(err)
 					return
 				}
+				state.UpdateCurrentScreen()
 			})), nil, nil, nil,
 			mp.CreatePreview(ui.selectedMod))
 		ui.split.Refresh()
@@ -90,10 +104,13 @@ func (ui *discoverUI) Draw(w fyne.Window) {
 		container.NewVBox(
 			widget.NewLabelWithStyle(config.GameNameString(*state.CurrentGame), fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
 			widget.NewSeparator(),
-		), nil, nil, nil,
-		container.NewBorder(
+		), nil, nil, nil, container.NewBorder(
 			container.NewHBox(widget.NewButton("Back", func() {
-				state.ShowPreviousScreen()
+				if isPopup {
+					w.Close()
+				} else {
+					state.ShowPreviousScreen()
+				}
 			})), nil, nil, nil,
 			ui.split)))
 }

@@ -217,7 +217,7 @@ func (m *Mod) Validate() string {
 		sb.WriteString("Release Date is required\n")
 	}
 	if m.Category == "" {
-		sb.WriteString("Category is required\n")
+		//	sb.WriteString("Category is required\n")
 	}
 	if m.Description == "" {
 		sb.WriteString("Description is required\n")
