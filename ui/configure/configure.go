@@ -22,7 +22,7 @@ func Show(w fyne.Window) {
 		createDirRow("FF IV Dir", &configs.DirIV),
 		createDirRow("FF V Dir", &configs.DirV),
 		createDirRow("FF VI Dir", &configs.DirVI),
-		createDirRow("Mods Dir", &configs.ModsDir),
+		//createDirRow("Mods Dir", &configs.ModsDir),
 		createDirRow("Download Dir", &configs.DownloadDir),
 		createDirRow("Backup Dir", &configs.BackupDir),
 		createDirRow("Image Cache Dir", &configs.ImgCacheDir),

@@ -4,23 +4,34 @@ import (
 	"context"
 	"github.com/go-git/go-git/v5"
 	"github.com/kiamev/moogle-mod-manager/config"
+	"github.com/kiamev/moogle-mod-manager/mods"
+	"github.com/kiamev/moogle-mod-manager/util"
 	"os"
 	"path/filepath"
 	"time"
 )
 
+type Getter interface {
+	GetMods(game config.Game) ([]*mods.Mod, error)
+	pull(rd repoDef) error
+}
+
 type repo struct{}
 
-func (r *repo) Clone() (err error) {
+func NewGetter() Getter {
+	return &repo{}
+}
+
+func (r *repo) clone() (err error) {
 	for _, rd := range repoDefs {
-		if err = r.clone(rd); err == nil {
+		if err = r.cloneRepo(rd); err == nil {
 			return
 		}
 	}
 	return
 }
 
-func (r *repo) clone(rd repoDef) (err error) {
+func (r *repo) cloneRepo(rd repoDef) (err error) {
 	dir := rd.repoDir()
 	if _, err = os.Stat(filepath.Join(dir, ".git")); err != nil {
 		if err = os.MkdirAll(dir, 0755); err != nil {
@@ -51,20 +62,31 @@ func (r *repo) pull(rd repoDef) (err error) {
 
 }
 
-func (r *repo) GetMods(game config.Game) (mods []string, err error) {
-	var m []string
+func (r *repo) GetMods(game config.Game) (result []*mods.Mod, err error) {
+	var (
+		m  []string
+		ok error
+	)
 	for _, rd := range repoDefs {
 		if m, err = r.getMods(rd, game); err != nil {
 			return nil, err
 		}
-		mods = append(mods, m...)
+		for _, f := range m {
+			mod := &mods.Mod{}
+			if err = util.LoadFromFile(f, mod); err != nil {
+				return
+			}
+			if ok = mod.Supports(game); ok == nil {
+				result = append(result, mod)
+			}
+		}
 	}
 	return
 }
 
 func (r *repo) getMods(rd repoDef, game config.Game) (mods []string, err error) {
 	if _, err = os.Stat(rd.repoDir()); err != nil {
-		if err = r.Clone(); err != nil {
+		if err = r.clone(); err != nil {
 			return
 		}
 	} else if err = r.Pull(); err != nil {

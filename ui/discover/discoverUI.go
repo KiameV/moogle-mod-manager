@@ -1,6 +1,7 @@
 package discover
 
 import (
+	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
@@ -9,11 +10,15 @@ import (
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/mods/managed"
+	"github.com/kiamev/moogle-mod-manager/remote"
 	"github.com/kiamev/moogle-mod-manager/repo"
 	cw "github.com/kiamev/moogle-mod-manager/ui/custom-widgets"
 	mp "github.com/kiamev/moogle-mod-manager/ui/mod-preview"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
 	"github.com/kiamev/moogle-mod-manager/ui/util"
+	"golang.org/x/sync/errgroup"
+	"sort"
+	"strings"
 )
 
 func New() state.Screen {
@@ -26,15 +31,20 @@ type discoverUI struct {
 	split       *container.Split
 	mods        []*mods.Mod
 	localMods   map[string]bool
+	prevSearch  string
 }
 
 func (ui *discoverUI) OnClose() {}
 
 func (ui *discoverUI) PreDraw(w fyne.Window, args ...interface{}) (err error) {
 	var (
-		d        = dialog.NewInformation("", "Finding Mods...", w)
-		repoMods []*mods.Mod
-		ok       bool
+		d          = dialog.NewInformation("", "Finding Mods...", w)
+		remoteMods []*mods.Mod
+		repoMods   []*mods.Mod
+		found      *mods.Mod
+		repoGetter = repo.NewGetter()
+		eg         errgroup.Group
+		ok         bool
 	)
 	defer d.Hide()
 	d.Show()
@@ -44,12 +54,34 @@ func (ui *discoverUI) PreDraw(w fyne.Window, args ...interface{}) (err error) {
 		ui.localMods[tm.GetModID()] = true
 	}
 
-	if repoMods, err = repo.GetMods(*state.CurrentGame); err != nil {
+	eg.Go(func() (e error) {
+		remoteMods, e = remote.GetMods(*state.CurrentGame)
+		return
+	})
+	eg.Go(func() (e error) {
+		repoMods, e = repoGetter.GetMods(*state.CurrentGame)
+		return
+	})
+	if err = eg.Wait(); err != nil {
 		return
 	}
 
-	ui.mods = make([]*mods.Mod, 0, len(repoMods))
+	lookup := make(map[string]*mods.Mod)
 	for _, m := range repoMods {
+		if _, ok = lookup[m.ModUniqueID(*state.CurrentGame)]; !ok {
+			lookup[m.ModUniqueID(*state.CurrentGame)] = m
+		}
+	}
+	for _, m := range remoteMods {
+		if found, ok = lookup[m.ModUniqueID(*state.CurrentGame)]; !ok {
+			lookup[m.ModUniqueID(*state.CurrentGame)] = m
+		} else {
+			found.Merge(m)
+		}
+	}
+
+	ui.mods = make([]*mods.Mod, 0, len(lookup))
+	for _, m := range lookup {
 		if _, ok = ui.localMods[m.ID]; !ok {
 			ui.mods = append(ui.mods, m)
 		}
@@ -84,12 +116,9 @@ func (ui *discoverUI) draw(w fyne.Window, isPopup bool) {
 				}
 			}
 		})
-	for _, m := range ui.mods {
-		if err := ui.data.Append(m); err != nil {
-			util.ShowErrorLong(err)
-			// TODO
-			return
-		}
+	if err := ui.showSorted(ui.mods); err != nil {
+		util.ShowErrorLong(err, w)
+		return
 	}
 
 	ui.split = container.NewHSplit(modList, container.NewMax())
@@ -98,7 +127,7 @@ func (ui *discoverUI) draw(w fyne.Window, isPopup bool) {
 	modList.OnSelected = func(id widget.ListItemID) {
 		data, err := ui.data.GetItem(id)
 		if err != nil {
-			util.ShowErrorLong(err)
+			util.ShowErrorLong(err, w)
 			return
 		}
 		if i, ok := cw.GetValueFromDataItem(data); ok {
@@ -110,7 +139,7 @@ func (ui *discoverUI) draw(w fyne.Window, isPopup bool) {
 			container.NewHBox(widget.NewButton("Include Mod", func() {
 				mod := ui.selectedMod
 				if err := managed.AddMod(*state.CurrentGame, mods.NewTrackerMod(mod, *state.CurrentGame)); err != nil {
-					util.ShowErrorLong(err)
+					util.ShowErrorLong(err, w)
 					return
 				}
 				for i, m := range ui.mods {
@@ -124,7 +153,7 @@ func (ui *discoverUI) draw(w fyne.Window, isPopup bool) {
 					sl[i] = m
 				}
 				if err := ui.data.Set(sl); err != nil {
-					util.ShowErrorLong(err)
+					util.ShowErrorLong(err, w)
 					return
 				}
 				ui.selectedMod = nil
@@ -136,17 +165,66 @@ func (ui *discoverUI) draw(w fyne.Window, isPopup bool) {
 		ui.split.Refresh()
 	}
 
+	searchTb := widget.NewEntry()
+	searchTb.OnChanged = func(s string) {
+		if err := ui.search(s); err != nil {
+			util.ShowErrorLong(err, w)
+		}
+	}
+
 	w.SetContent(container.NewBorder(
 		container.NewVBox(
 			widget.NewLabelWithStyle(config.GameNameString(*state.CurrentGame), fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
 			widget.NewSeparator(),
 		), nil, nil, nil, container.NewBorder(
-			container.NewHBox(widget.NewButton("Back", func() {
+			container.NewAdaptiveGrid(8, container.NewHBox(widget.NewButton("Back", func() {
 				if isPopup {
 					state.ClosePopupWindow()
 				} else {
 					state.ShowPreviousScreen()
 				}
-			})), nil, nil, nil,
+
+			})), widget.NewLabelWithStyle("Search", fyne.TextAlignTrailing, fyne.TextStyle{}), searchTb), nil, nil, nil,
 			ui.split)))
+}
+
+func (ui *discoverUI) search(s string) error {
+	if s == ui.prevSearch || (len(s) < 3 && ui.prevSearch == "") {
+		s = ""
+		if ui.data.Length() == len(ui.mods) {
+			return nil
+		}
+	}
+	s = strings.ToLower(s)
+	ui.prevSearch = s
+
+	var ms []*mods.Mod
+	for _, m := range ui.mods {
+		if strings.Contains(strings.ToLower(m.Name), s) ||
+			strings.Contains(strings.ToLower(string(m.Category)), s) ||
+			strings.Contains(strings.ToLower(m.Description), s) ||
+			strings.Contains(strings.ToLower(m.Author), s) {
+			ms = append(ms, m)
+		}
+	}
+	return ui.showSorted(ms)
+}
+
+func (ui *discoverUI) showSorted(ms []*mods.Mod) error {
+	lookup := make(map[string]*mods.Mod)
+	sorted := make([]string, len(ms))
+	for i, m := range ms {
+		key := fmt.Sprintf("%s%s", m.Name, m.ID)
+		lookup[key] = m
+		sorted[i] = key
+	}
+	sort.Strings(sorted)
+
+	_ = ui.data.Set(nil)
+	for _, s := range sorted {
+		if err := ui.data.Append(lookup[s]); err != nil {
+			return err
+		}
+	}
+	return nil
 }

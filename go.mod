@@ -14,6 +14,7 @@ require (
 	github.com/ncruces/zenity v0.8.9
 	golang.design/x/clipboard v0.6.2
 	golang.org/x/oauth2 v0.0.0-20210402161424-2e8d93401602
+	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/sys v0.0.0-20220627191245-f75cf1eec38b
 )
 

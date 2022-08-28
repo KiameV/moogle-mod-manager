@@ -10,7 +10,6 @@ import (
 	"github.com/kiamev/moogle-mod-manager/util"
 	"golang.org/x/oauth2"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -49,23 +48,25 @@ func (c *repoClient) Submit() (url string, err error) {
 		rd   = repoDefs[0]
 		ref  *github.Reference
 		tree *github.Tree
+		file string
 	)
 
-	_ = os.RemoveAll(rd.commitDir())
+	if err = NewGetter().pull(rd); err != nil {
+		return
+	}
 
-	var file string
 	if len(c.mod.Games) == 1 {
 		if c.mod.ModKind.Kind == mods.Hosted {
-			file = filepath.Join(rd.commitGameDir(config.NameToGame(c.mod.Games[0].Name)), util.CreateFileName(c.mod.ID))
+			file = filepath.Join(rd.repoGameDir(config.NameToGame(c.mod.Games[0].Name)), util.CreateFileName(c.mod.ID))
 		} else if c.mod.ModKind.Kind == mods.Nexus && c.mod.ModKind.Nexus != nil {
-			file = rd.commitNexusIDDir(config.NameToGame(c.mod.Games[0].Name), c.mod.ModKind.Nexus.ID)
+			file = rd.repoNexusIDDir(config.NameToGame(c.mod.Games[0].Name), c.mod.ModKind.Nexus.ID)
 		}
 	} else if len(c.mod.Games) > 1 {
 		if c.mod.ModKind.Kind != mods.Hosted {
 			err = errors.New("multi-game mods must be hosted")
 			return
 		}
-		file = filepath.Join(rd.commitDir(), "utilities", util.CreateFileName(c.mod.ID))
+		file = filepath.Join(rd.repoDir(), "utilities", util.CreateFileName(c.mod.ID))
 	} else {
 		err = errors.New("no games specified")
 		return
@@ -153,7 +154,7 @@ func (c *repoClient) getTree(rd repoDef, ref *github.Reference, file string) (tr
 	if b, err = ioutil.ReadFile(file); err != nil {
 		return nil, err
 	}
-	file = strings.TrimPrefix(strings.TrimPrefix(strings.TrimPrefix(file, rd.commitDir()), "\\"), "/")
+	file = strings.TrimPrefix(strings.TrimPrefix(strings.TrimPrefix(file, rd.repoDir()), "\\"), "/")
 	file = strings.ReplaceAll(file, "\\", "/")
 	entries = append(entries, &github.TreeEntry{Path: github.String(file), Type: github.String("blob"), Content: github.String(string(b)), Mode: github.String("100644")})
 

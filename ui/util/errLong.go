@@ -9,15 +9,21 @@ import (
 	"golang.design/x/clipboard"
 )
 
-func ShowErrorLong(err error) {
-	text := widget.NewRichTextWithText(err.Error())
+func ShowErrorLong(err error, w ...fyne.Window) {
+	var (
+		window = state.Window
+		text   = widget.NewRichTextWithText(err.Error())
+	)
+	if len(w) > 0 && w[0] != nil {
+		window = w[0]
+	}
 	text.Wrapping = fyne.TextWrapBreak
 
 	button := widget.NewButton("Copy To Clipboard", func() {
 		clipboard.Write(clipboard.FmtText, []byte(err.Error()))
 	})
 
-	errDialog := dialog.NewCustom("Error", "OK", container.NewBorder(button, nil, nil, nil, container.NewVScroll(text)), state.Window)
+	errDialog := dialog.NewCustom("Error", "OK", container.NewBorder(button, nil, nil, nil, container.NewVScroll(text)), window)
 	errDialog.Resize(fyne.NewSize(500, 400))
 	errDialog.Show()
 }

@@ -81,12 +81,12 @@ type Mod struct {
 	IsManuallyCreated   bool              `json:"IsManuallyCreated" xml:"IsManuallyCreated"`
 }
 
-func (m *Mod) ModID() string {
+func (m *Mod) ModUniqueID(game config.Game) string {
 	if m.ModKind.Kind == Hosted {
 		return m.ID
 	}
 	if m.ModKind.Kind == Nexus && m.ModKind.Nexus != nil {
-		return m.ModKind.Nexus.ID
+		return fmt.Sprintf("%s-%s", config.String(game), m.ModKind.Nexus.ID)
 	}
 	return ""
 }
@@ -379,4 +379,26 @@ func (m *Mod) Supports(game config.Game) error {
 		}
 	}
 	return fmt.Errorf("%s does not support %s", m.Name, config.GameNameString(game))
+}
+
+func (m *Mod) Merge(from *Mod) {
+	if m.IsManuallyCreated {
+		m.Author = from.Author
+		m.AuthorLink = from.AuthorLink
+		m.Version = from.Version
+		m.ReleaseDate = from.ReleaseDate
+		m.ReleaseNotes = from.ReleaseNotes
+		m.Downloadables = from.Downloadables
+		m.Games = from.Games
+		m.Link = from.Link
+	} else if from.IsManuallyCreated {
+		m.Name = from.Name
+		m.Category = from.Category
+		m.Description = from.Description
+		m.ModCompatibility = from.ModCompatibility
+		m.DonationLinks = from.DonationLinks
+		m.AlwaysDownload = from.AlwaysDownload
+		m.Configurations = from.Configurations
+	}
+	return
 }

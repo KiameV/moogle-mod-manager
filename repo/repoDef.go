@@ -27,24 +27,8 @@ func (d repoDef) Source() string {
 	return sp[len(sp)-1]
 }
 
-func (d repoDef) commitDir() string {
-	return filepath.Join(config.PWD, "commit", d.Name)
-}
-
-func (d repoDef) commitGameDir(game config.Game) string {
-	return filepath.Join(d.commitDir(), config.String(game))
-}
-
-func (d repoDef) commitNexusIDDir(game config.Game, id string) string {
-	return filepath.Join(d.commitGameDir(game), "nexus", id)
-}
-
-func (d repoDef) commitDirNexusIDDir(game config.Game, id string) string {
-	return filepath.Join(d.commitGameDir(game), "nexus", id)
-}
-
 func (d repoDef) repoDir() string {
-	return filepath.Join(config.PWD, "remote", d.Name)
+	return filepath.Join(config.PWD, "repo", d.Name)
 }
 
 func (d repoDef) repoUtilDir() string {
