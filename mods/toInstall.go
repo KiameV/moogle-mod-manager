@@ -52,7 +52,12 @@ func (ti *ToInstall) getHostedDownloadLocation(game config.Game, tm *TrackedMod)
 		if v == "" {
 			v = "nv"
 		}
-		ti.downloadDir = filepath.Join(config.Get().GetDownloadFullPath(game), tm.GetDirSuffix(), util.CreateFileName(v))
+		if len(tm.Mod.Games) > 0 && tm.Mod.Category == Utility {
+			ti.downloadDir = config.Get().GetDownloadFullPathForUtility()
+		} else {
+			ti.downloadDir = config.Get().GetDownloadFullPathForGame(game)
+		}
+		ti.downloadDir = filepath.Join(ti.downloadDir, tm.GetDirSuffix(), util.CreateFileName(v))
 		if err := createPath(ti.downloadDir); err != nil {
 			return "", err
 		}
@@ -62,7 +67,7 @@ func (ti *ToInstall) getHostedDownloadLocation(game config.Game, tm *TrackedMod)
 
 func (ti *ToInstall) getNexusDownloadLocation(game config.Game, tm *TrackedMod) (string, error) {
 	if ti.downloadDir == "" {
-		ti.downloadDir = filepath.Join(config.Get().GetDownloadFullPath(game), tm.GetDirSuffix(), util.CreateFileName(ti.Download.Version))
+		ti.downloadDir = filepath.Join(config.Get().GetDownloadFullPathForGame(game), tm.GetDirSuffix(), util.CreateFileName(ti.Download.Version))
 		if err := createPath(ti.downloadDir); err != nil {
 			return "", err
 		}

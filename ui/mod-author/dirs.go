@@ -61,7 +61,7 @@ func (d *dirsDef) createItem(item interface{}, done ...func(interface{})) {
 
 	fd := dialog.NewForm("Edit Directory Copy", "Save", "Cancel", []*widget.FormItem{
 		d.getFileDialog("From"),
-		d.getFormItem("To"),
+		d.getFormItem("To FF_data/"),
 		d.getFormItem("Recursive"),
 	}, func(ok bool) {
 		if ok {
@@ -74,7 +74,7 @@ func (d *dirsDef) createItem(item interface{}, done ...func(interface{})) {
 			d.list.Refresh()
 		}
 	}, state.Window)
-	fd.Resize(fyne.NewSize(400, 400))
+	fd.Resize(fyne.NewSize(600, 400))
 	fd.Show()
 }
 

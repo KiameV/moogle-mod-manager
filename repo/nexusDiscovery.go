@@ -11,27 +11,9 @@ import (
 	"strconv"
 )
 
-func getNexusMods(game config.Game, ms []*mods.Mod, overrides []*mods.Override) (result []*mods.Mod, err error) {
-	var newMods []*mods.Mod
-	if newMods, err = addNewNexusMods(game, ms); err != nil {
-		return
-	}
-
-	l := make(map[string]*mods.Override)
-	for _, o := range overrides {
-		l[o.NexusModID] = o
-	}
-
-	result = append(ms, newMods...)
-	for _, m := range result {
-		if m.ModKind.Kind == mods.Nexus {
-			if o, ok := l[m.ModKind.Nexus.ID]; ok {
-				o.Override(m)
-			}
-		}
-	}
-
-	return result, nil
+func getNexusMods(game config.Game, ms []*mods.Mod) ([]*mods.Mod, error) {
+	newMods, err := addNewNexusMods(game, ms)
+	return append(ms, newMods...), err
 }
 
 func addNewNexusMods(game config.Game, ms []*mods.Mod) (newMods []*mods.Mod, err error) {

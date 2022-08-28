@@ -24,6 +24,7 @@ func newRichTextEditor() *richTextEditor {
 func (e *richTextEditor) Draw() fyne.CanvasObject {
 	entry := widget.NewMultiLineEntry()
 	entry.Bind(e.input)
+	entry.Wrapping = fyne.TextWrapWord
 	e.preview.Wrapping = fyne.TextWrapWord
 	return container.NewVSplit(
 		container.NewScroll(entry),

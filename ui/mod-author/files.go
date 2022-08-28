@@ -60,7 +60,7 @@ func (d *filesDef) createItem(item interface{}, done ...func(interface{})) {
 
 	fd := dialog.NewForm("Edit File Copy", "Save", "Cancel", []*widget.FormItem{
 		d.getFileDialog("From"),
-		d.getFormItem("To"),
+		d.getFormItem("To FF_data/"),
 	}, func(ok bool) {
 		if ok {
 			f.From = d.getString("From")
@@ -71,7 +71,7 @@ func (d *filesDef) createItem(item interface{}, done ...func(interface{})) {
 			d.list.Refresh()
 		}
 	}, state.Window)
-	fd.Resize(fyne.NewSize(400, 400))
+	fd.Resize(fyne.NewSize(600, 400))
 	fd.Show()
 }
 

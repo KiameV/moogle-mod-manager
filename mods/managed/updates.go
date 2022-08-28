@@ -63,7 +63,7 @@ func (c *hostedUpdateChecker) Process() error {
 	var mod mods.Mod
 	for _, l := range c.tm.Mod.ModKind.Hosted.ModFileLinks {
 		if b, err := browser.DownloadAsBytes(l); err == nil {
-			if e := json.Unmarshal(b, &mod); e != nil && mod.ModKind != nil && mod.ModKind.Kind == mods.Hosted && mod.ModKind.Hosted != nil {
+			if e := json.Unmarshal(b, &mod); e != nil && mod.ModKind.Kind == mods.Hosted && mod.ModKind.Hosted != nil {
 				continue
 			}
 		}

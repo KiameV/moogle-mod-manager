@@ -74,7 +74,11 @@ func (c *Configs) GetModsFullPath(game Game) string {
 	return filepath.Join(c.ModsDir, c.GetGameDirSuffix(game))
 }
 
-func (c *Configs) GetDownloadFullPath(game Game) string {
+func (c *Configs) GetDownloadFullPathForUtility() string {
+	return filepath.Join(c.DownloadDir, "utility")
+}
+
+func (c *Configs) GetDownloadFullPathForGame(game Game) string {
 	return filepath.Join(c.DownloadDir, c.GetGameDirSuffix(game))
 }
 

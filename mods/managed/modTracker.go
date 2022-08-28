@@ -113,7 +113,7 @@ func addMod(game config.Game, tm *mods.TrackedMod) (err error) {
 	}
 
 	tm.Enabled = false
-	i := int(config.NameToGame(tm.Mod.Games[0].Name))
+	i := int(game)
 	m := lookup[i]
 	for i = range m.Mods {
 		if m.Mods[i].Mod.ID == tm.Mod.ID {
@@ -147,7 +147,9 @@ func UpdateMod(game config.Game, tm *mods.TrackedMod) (err error) {
 	return saveToJson()
 }
 
-func GetMods(game config.Game) []*mods.TrackedMod { return lookup[game].Mods }
+func GetMods(game config.Game) []*mods.TrackedMod {
+	return lookup[game].Mods
+}
 
 func TryGetMod(game config.Game, id string) (*mods.TrackedMod, bool) {
 	var m *mods.TrackedMod

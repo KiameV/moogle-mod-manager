@@ -84,12 +84,12 @@ Contributors:
 	author := fyne.NewMenu("Author")
 	if state.GetCurrentGUI() != state.ModAuthor {
 		author.Items = append(author.Items,
-			fyne.NewMenuItem("New Mod", func() {
-				state.GetScreen(state.ModAuthor).(*a.ModAuthorer).NewMod()
+			fyne.NewMenuItem("New Hosted Mod", func() {
+				state.GetScreen(state.ModAuthor).(*a.ModAuthorer).NewHostedMod()
 				state.ShowScreen(state.ModAuthor)
 			}),
 			fyne.NewMenuItem("New From Nexus", func() {
-				state.GetScreen(state.ModAuthor).(*a.ModAuthorer).NewFromNexus()
+				state.GetScreen(state.ModAuthor).(*a.ModAuthorer).NewNexusMod()
 				state.ShowScreen(state.ModAuthor)
 			}),
 			fyne.NewMenuItem("Edit Mod", func() {

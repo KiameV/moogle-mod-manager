@@ -233,7 +233,7 @@ func toMod(game config.Game, n nexusMod, dls []NexusFile) (mod *mods.Mod, err er
 			Local: nil,
 			//Size:  nil,
 		},
-		ModKind: &mods.ModKind{
+		ModKind: mods.ModKind{
 			Kind: mods.Nexus,
 			Nexus: &mods.NexusModKind{
 				ID: modID,

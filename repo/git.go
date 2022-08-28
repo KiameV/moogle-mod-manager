@@ -51,22 +51,18 @@ func (r *repo) pull(rd repoDef) (err error) {
 
 }
 
-func (r *repo) GetMods(game config.Game) (mods []string, overrides []string, err error) {
-	var (
-		m []string
-		o []string
-	)
+func (r *repo) GetMods(game config.Game) (mods []string, err error) {
+	var m []string
 	for _, rd := range repoDefs {
-		if m, o, err = r.getMods(rd, game); err != nil {
-			return nil, nil, err
+		if m, err = r.getMods(rd, game); err != nil {
+			return nil, err
 		}
 		mods = append(mods, m...)
-		overrides = append(overrides, o...)
 	}
 	return
 }
 
-func (r *repo) getMods(rd repoDef, game config.Game) (mods []string, overrides []string, err error) {
+func (r *repo) getMods(rd repoDef, game config.Game) (mods []string, err error) {
 	if _, err = os.Stat(rd.repoDir()); err != nil {
 		if err = r.Clone(); err != nil {
 			return
@@ -83,9 +79,6 @@ func (r *repo) getMods(rd repoDef, game config.Game) (mods []string, overrides [
 		}
 		if d.Name() == "mod.json" || d.Name() == "mod.xml" {
 			mods = append(mods, path)
-		}
-		if d.Name() == "override.json" || d.Name() == "override.xml" {
-			overrides = append(overrides, path)
 		}
 		return nil
 	})

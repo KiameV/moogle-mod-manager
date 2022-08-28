@@ -9,23 +9,21 @@ import (
 var lookup = make([]*discoveredMods, 6)
 
 type discoveredMods struct {
-	Mods      []*mods.Mod
-	Overrides []*mods.Override
+	Mods []*mods.Mod
 }
 
-func GetMods(game config.Game) ([]*mods.Mod, []*mods.Override, error) {
+func GetMods(game config.Game) ([]*mods.Mod, error) {
 	var (
-		d             = lookup[game]
-		modFiles      []string
-		overrideFiles []string
-		r             repo
-		f             string
-		err           error
+		d        = lookup[game]
+		modFiles []string
+		r        repo
+		f        string
+		err      error
 	)
 	if d == nil {
 		d = &discoveredMods{}
-		if modFiles, overrideFiles, err = r.GetMods(game); err != nil {
-			return nil, nil, err
+		if modFiles, err = r.GetMods(game); err != nil {
+			return nil, err
 		}
 		for _, f = range modFiles {
 			var mod mods.Mod
@@ -35,18 +33,11 @@ func GetMods(game config.Game) ([]*mods.Mod, []*mods.Override, error) {
 			}
 			d.Mods = append(d.Mods, &mod)
 		}
-		for _, f = range overrideFiles {
-			var override mods.Override
-			if err = util.LoadFromFile(f, &override); err != nil {
-				// TODO log error
-				continue
-			}
-			d.Overrides = append(d.Overrides, &override)
-		}
+
 		lookup[game] = d
 	}
-	if d.Mods, err = getNexusMods(game, d.Mods, d.Overrides); err != nil {
-		return nil, nil, err
+	if d.Mods, err = getNexusMods(game, d.Mods); err != nil {
+		return nil, err
 	}
-	return d.Mods, d.Overrides, nil
+	return d.Mods, nil
 }

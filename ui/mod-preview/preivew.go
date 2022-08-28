@@ -29,11 +29,15 @@ func CreatePreview(mod *mods.Mod, options ...ModPreviewOptions) fyne.CanvasObjec
 	//c.Add(createField("Category", mod.Category))
 	c.Add(createField("Release Date", mod.ReleaseDate))
 
+	text := widget.NewRichTextFromMarkdown(mod.Description)
+	text.Wrapping = fyne.TextWrapWord
 	tabs := container.NewAppTabs(
-		container.NewTabItem("Description", widget.NewRichTextFromMarkdown(mod.Description)),
+		container.NewTabItem("Description", text),
 	)
 	if mod.ReleaseNotes != "" {
-		container.NewTabItem("Release Notes", widget.NewRichTextFromMarkdown(mod.ReleaseNotes))
+		text = widget.NewRichTextFromMarkdown(mod.ReleaseNotes)
+		text.Wrapping = fyne.TextWrapWord
+		container.NewTabItem("Release Notes", text)
 	}
 	if mod.ModCompatibility != nil && mod.ModCompatibility.HasItems() {
 		var game config.Game

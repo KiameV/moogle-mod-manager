@@ -30,12 +30,11 @@ type discoverUI struct {
 func (ui *discoverUI) OnClose() {}
 
 func (ui *discoverUI) PreDraw(w fyne.Window) (err error) {
-	// TODO apply overrides to tracked mods
 	d := dialog.NewInformation("", "Finding Mods...", w)
 	defer d.Hide()
 	d.Show()
 
-	ui.mods, _, err = repo.GetMods(*state.CurrentGame)
+	ui.mods, err = repo.GetMods(*state.CurrentGame)
 	return
 }
 

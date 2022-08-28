@@ -30,11 +30,11 @@ const (
 	EnemySprite        Category = "Enemy Sprite"
 	GameOverhauls      Category = "Game Overhauls"
 	Gameplay           Category = "Gameplay"
-	Soundtrack         Category = "Soundtrack"
 	PlayerNpcSprites   Category = "Player/NPC Sprite"
 	ScriptText         Category = "Script/Text"
-	TitleScreen        Category = "Title Screen"
+	Soundtrack         Category = "Soundtrack"
 	TileSet            Category = "Tile Set"
+	TitleScreen        Category = "Title Screen"
 	UIGeneral          Category = "UI: General"
 	UiMenuPortraits    Category = "UI: Menu Portraits"
 	UiTextBoxPortraits Category = "UI: Textbox Portraits"
@@ -42,7 +42,21 @@ const (
 	Utility            Category = "Utility"
 )
 
-var Categories = []string{"", string(Soundtrack), string(Gameplay), string(UiWindowFrames), string(UiMenuPortraits), string(UiTextBoxPortraits), string(UIGeneral), string(TitleScreen), string(BattleScene), string(TileSet), string(PlayerNpcSprites), string(EnemySprite), string(ScriptText), string(GameOverhauls), string(Utility)}
+var Categories = []string{
+	string(BattleScene),
+	string(EnemySprite),
+	string(GameOverhauls),
+	string(Gameplay),
+	string(PlayerNpcSprites),
+	string(ScriptText),
+	string(Soundtrack),
+	string(TileSet),
+	string(TitleScreen),
+	string(UIGeneral),
+	string(UiMenuPortraits),
+	string(UiWindowFrames),
+	string(UiTextBoxPortraits),
+	string(Utility)}
 
 type Mod struct {
 	ID                  string            `json:"ID" xml:"ID"`
@@ -56,7 +70,7 @@ type Mod struct {
 	Link                string            `json:"Link" xml:"Link"`
 	Version             string            `json:"Version"`
 	Preview             *Preview          `json:"Preview,omitempty" xml:"Preview,omitempty"`
-	ModKind             *ModKind          `json:"ModKind" xml:"ModKind"`
+	ModKind             ModKind           `json:"ModKind" xml:"ModKind"`
 	ModCompatibility    *ModCompatibility `json:"Compatibility,omitempty" xml:"ModCompatibility,omitempty"`
 	Downloadables       []*Download       `json:"Downloadable" xml:"Downloadables"`
 	DonationLinks       []*DonationLink   `json:"DonationLink" xml:"DonationLinks"`
@@ -68,13 +82,11 @@ type Mod struct {
 }
 
 func (m *Mod) ModID() string {
-	if m.ModKind != nil {
-		if m.ModKind.Kind == Hosted {
-			return m.ID
-		}
-		if m.ModKind.Kind == Nexus && m.ModKind.Nexus != nil {
-			return m.ModKind.Nexus.ID
-		}
+	if m.ModKind.Kind == Hosted {
+		return m.ID
+	}
+	if m.ModKind.Kind == Nexus && m.ModKind.Nexus != nil {
+		return m.ModKind.Nexus.ID
 	}
 	return ""
 }
@@ -238,9 +250,9 @@ func (m *Mod) Validate() string {
 		if h == nil {
 			sb.WriteString("Hosted is required\n")
 		} else {
-			if len(h.ModFileLinks) == 0 {
-				sb.WriteString("Hosted 'Mod File' Links is required\n")
-			}
+			//if len(h.ModFileLinks) == 0 {
+			//	sb.WriteString("Hosted 'Mod File' Links is required\n")
+			//}
 			for _, mfl := range h.ModFileLinks {
 				if strings.HasSuffix(mfl, ".json") == false && strings.HasSuffix(mfl, ".xml") == false {
 					sb.WriteString(fmt.Sprintf("Hosted 'Mod File' Link [%s] must be json or xml\n", mfl))
@@ -353,8 +365,6 @@ func (m *Mod) Validate() string {
 	}
 	if len(m.Configurations) > 1 && roots == 0 {
 		sb.WriteString("Must have at least one 'Root' Configuration\n")
-	} else if roots > 1 {
-		sb.WriteString("Only one 'Root' Configuration is allowed\n")
 	}
 
 	return sb.String()

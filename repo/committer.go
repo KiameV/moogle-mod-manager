@@ -150,6 +150,8 @@ func (c *repoClient) getTree(rd repoDef, ref *github.Reference, file string) (tr
 	if b, err = ioutil.ReadFile(file); err != nil {
 		return nil, err
 	}
+	file = strings.TrimPrefix(strings.TrimPrefix(strings.TrimPrefix(file, rd.repoDir()), "\\"), "/")
+	file = strings.ReplaceAll(file, "\\", "/")
 	entries = append(entries, &github.TreeEntry{Path: github.String(file), Type: github.String("blob"), Content: github.String(string(b)), Mode: github.String("100644")})
 
 	ctx, cnl := context.WithTimeout(context.Background(), 5*time.Second)
@@ -186,7 +188,7 @@ func (c *repoClient) pushCommit(rd repoDef, ref *github.Reference, tree *github.
 
 	// Attach the commit to the master branch.
 	ref.Object.SHA = nc.SHA
-	_, _, err = c.client.Git.UpdateRef(ctx, author, sourceRepo, ref, false)
+	_, _, err = c.client.Git.UpdateRef(ctx, author, sourceRepo, ref, true)
 	return
 }
 

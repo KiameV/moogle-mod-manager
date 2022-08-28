@@ -8,6 +8,7 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
+	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/mods/managed/authored"
 	"github.com/kiamev/moogle-mod-manager/mods/nexus"
@@ -26,30 +27,29 @@ import (
 	"time"
 )
 
-var modKind = mods.ToKind(mods.Hosted)
-
 func New() state.Screen {
-	var (
-		dl = newDownloadsDef(modKind)
-	)
-	return &ModAuthorer{
-		entryManager:   newEntryManager(),
-		previewDef:     newPreviewDef(),
-		modKindDef:     newModKindDef(modKind),
-		modCompatsDef:  newModCompatibilityDef(),
-		downloadDef:    dl,
-		donationsDef:   newDonationsDef(),
-		gamesDef:       newGamesDef(),
-		alwaysDownload: newAlwaysDownloadDef(dl),
-		configsDef:     newConfigurationsDef(dl),
-		description:    newRichTextEditor(),
-		releaseNotes:   newRichTextEditor(),
+	var kind = mods.Hosted
+	a := &ModAuthorer{
+		kind:          &kind,
+		entryManager:  newEntryManager(),
+		previewDef:    newPreviewDef(),
+		modCompatsDef: newModCompatibilityDef(),
+		donationsDef:  newDonationsDef(),
+		gamesDef:      newGamesDef(),
+		description:   newRichTextEditor(),
+		releaseNotes:  newRichTextEditor(),
 	}
+	a.modKindDef = newModKindDef(a.kind)
+	a.downloadDef = newDownloadsDef(a.kind)
+	a.alwaysDownload = newAlwaysDownloadDef(a.downloadDef)
+	a.configsDef = newConfigurationsDef(a.downloadDef)
+	return a
 }
 
 type ModAuthorer struct {
 	*entryManager
 	modBeingEdited *mods.Mod
+	kind           *mods.Kind
 
 	previewDef     *previewDef
 	modKindDef     *modKindDef
@@ -76,16 +76,25 @@ func (a *ModAuthorer) OnClose() {
 	}
 }
 
-func (a *ModAuthorer) NewMod() {
-	*modKind = mods.Hosted
+func (a *ModAuthorer) NewHostedMod() {
 	a.updateEntries(&mods.Mod{
+		ModKind: mods.ModKind{
+			Kind: mods.Hosted,
+		},
 		ReleaseDate:         time.Now().Format("Jan 02 2006"),
 		ConfigSelectionType: mods.Auto,
 	})
 }
 
-func (a *ModAuthorer) NewFromNexus() {
-	a.NewMod()
+func (a *ModAuthorer) NewNexusMod() {
+	a.updateEntries(&mods.Mod{
+		ModKind: mods.ModKind{
+			Kind: mods.Nexus,
+		},
+		ReleaseDate:         time.Now().Format("Jan 02 2006"),
+		ConfigSelectionType: mods.Auto,
+	})
+
 	e := widget.NewEntry()
 	dialog.ShowForm("", "Ok", "Cancel", []*widget.FormItem{widget.NewFormItem("Link", e)},
 		func(ok bool) {
@@ -125,7 +134,7 @@ func (a *ModAuthorer) LoadModToEdit() (successfullyLoadedMod bool) {
 	} else {
 		err = json.Unmarshal(b, &mod)
 	}
-	*modKind = mod.ModKind.Kind
+	*a.kind = mod.ModKind.Kind
 	a.updateEntries(&mod)
 	return true
 }
@@ -139,38 +148,24 @@ func (a *ModAuthorer) Draw(w fyne.Window) {
 	if dir, found := authored.GetDir(a.getString("ID")); found {
 		state.SetBaseDir(dir)
 	}
-	items := []*widget.FormItem{
-		a.getBaseDirFormItem("Working Dir"),
-		a.getFormItem("ID"),
-		a.getFormItem("Name"),
-		a.getFormItem("Author"),
-		a.getFormItem("Category"),
-		a.getFormItem("Version"),
-		a.getFormItem("Release Date"),
-		a.getFormItem("Link"),
-		a.getFormItem("Select Type"),
-	}
-	items = append(items, a.previewDef.getFormItems()...)
 
-	a.tabs = container.NewAppTabs(
-		container.NewTabItem("Mod", container.NewVScroll(widget.NewForm(items...))),
-		container.NewTabItem("Description", a.description.Draw()),
-		container.NewTabItem("Kind", container.NewVScroll(a.modKindDef.draw())),
-		container.NewTabItem("Compatibility", container.NewVScroll(a.modCompatsDef.draw())),
-		container.NewTabItem("Release Notes", a.releaseNotes.Draw()),
-		container.NewTabItem("Downloadables", container.NewVScroll(a.downloadDef.draw())),
-		container.NewTabItem("Donation Links", container.NewVScroll(a.donationsDef.draw())),
-		container.NewTabItem("Games", container.NewVScroll(a.gamesDef.draw())),
-		container.NewTabItem("Always Install", container.NewVScroll(a.alwaysDownload.draw())),
-		container.NewTabItem("Configurations", container.NewVScroll(a.configsDef.draw())))
-	a.tabs.OnSelected = func(tab *container.TabItem) {
+	switch *a.kind {
+	case mods.Hosted:
+		a.tabs = a.createHostedInputs()
+	case mods.Nexus:
+		a.tabs = a.createNexusInputs()
+	default:
+		panic("invalid mod kind")
+	}
+
+	/*a.tabs.OnSelected = func(tab *container.TabItem) {
 		if len(a.configsDef.list.Items) > 0 {
 			a.getFormItem("Select Type").Widget.(*widget.Select).Enable()
 		} else {
 			a.getFormItem("Select Type").Widget.(*widget.Select).Disable()
 		}
 		tab.Content.Refresh()
-	}
+	}*/
 
 	smi := make([]*fyne.MenuItem, 0, 4)
 	smi = append(smi,
@@ -246,6 +241,19 @@ func (a *ModAuthorer) Draw(w fyne.Window) {
 }
 
 func (a *ModAuthorer) updateEntries(mod *mods.Mod) {
+	*a.kind = mod.ModKind.Kind
+	if *a.kind == mods.Hosted {
+		if mod.ModKind.Hosted == nil {
+			mod.ModKind.Hosted = &mods.HostedModKind{}
+		}
+	} else if *a.kind == mods.Nexus {
+		if mod.ModKind.Nexus == nil {
+			mod.ModKind.Nexus = &mods.NexusModKind{}
+		}
+	} else {
+		panic("invalid mod kind")
+	}
+
 	a.createBaseDir(state.GetBaseDirBinding())
 	a.createFormItem("ID", mod.ID)
 	a.createFormItem("Name", mod.Name)
@@ -256,15 +264,16 @@ func (a *ModAuthorer) updateEntries(mod *mods.Mod) {
 	a.description.SetText(mod.Description)
 	a.releaseNotes.SetText(mod.ReleaseNotes)
 	a.createFormItem("Link", mod.Link)
-	a.createFormSelect("Select Type", mods.SelectTypes, string(mod.ConfigSelectionType))
+	//a.createFormSelect("Select Type", mods.SelectTypes, string(mod.ConfigSelectionType))
 
+	a.createFormItem("Working Dir", config.PWD)
 	if dir, ok := authored.GetDir(mod.ID); ok && dir != "" {
 		a.createFormItem("Working Dir", dir)
 	}
 
 	a.previewDef.set(mod.Preview)
 	a.modCompatsDef.set(mod.ModCompatibility)
-	a.modKindDef.set(mod.ModKind)
+	a.modKindDef.set(&mod.ModKind)
 	a.downloadDef.set(mod.Downloadables)
 	a.donationsDef.set(mod.DonationLinks)
 	a.gamesDef.set(mod.Games)
@@ -311,18 +320,19 @@ func (a *ModAuthorer) Marshal(mod *mods.Mod, asJson bool) (b []byte, err error) 
 
 func (a *ModAuthorer) compileMod() (mod *mods.Mod) {
 	m := &mods.Mod{
-		ID:                  a.getString("ID"),
-		Name:                a.getString("Name"),
-		Author:              a.getString("Author"),
-		ReleaseDate:         a.getString("Release Date"),
-		Category:            mods.Category(a.getString("Category")),
-		Version:             a.getString("Version"),
-		Description:         a.description.String(),
-		ReleaseNotes:        a.releaseNotes.String(),
-		Link:                a.getString("Link"),
-		Preview:             a.previewDef.compile(),
-		ModKind:             a.modKindDef.compile(),
-		ConfigSelectionType: mods.SelectType(a.getString("Select Type")),
+		ID:           a.getString("ID"),
+		Name:         a.getString("Name"),
+		Author:       a.getString("Author"),
+		ReleaseDate:  a.getString("Release Date"),
+		Category:     mods.Category(a.getString("Category")),
+		Version:      a.getString("Version"),
+		Description:  a.description.String(),
+		ReleaseNotes: a.releaseNotes.String(),
+		Link:         a.getString("Link"),
+		Preview:      a.previewDef.compile(),
+		ModKind:      *a.modKindDef.compile(),
+		//ConfigSelectionType: mods.SelectType(a.getString("Select Type")),
+		ConfigSelectionType: mods.Auto,
 		ModCompatibility:    a.modCompatsDef.compile(),
 		Downloadables:       a.downloadDef.compile(),
 		DonationLinks:       a.donationsDef.compile(),
@@ -426,4 +436,52 @@ func (a *ModAuthorer) validate(mod *mods.Mod, showMessage bool) bool {
 		}
 	}
 	return s == ""
+}
+
+func (a *ModAuthorer) createHostedInputs() *container.AppTabs {
+	var entries = []*widget.FormItem{
+		a.getBaseDirFormItem("Working Dir"),
+		a.getFormItem("ID"),
+		a.getFormItem("Name"),
+		a.getFormItem("Author"),
+		a.getFormItem("Category"),
+		a.getFormItem("Version"),
+		a.getFormItem("Release Date"),
+		a.getFormItem("Link"),
+		//a.getFormItem("Select Type"),
+	}
+	entries = append(entries, a.previewDef.getFormItems()...)
+
+	return container.NewAppTabs(
+		container.NewTabItem("Mod", container.NewVScroll(widget.NewForm(entries...))),
+		container.NewTabItem("Description", a.description.Draw()),
+		container.NewTabItem("Kind", container.NewVScroll(a.modKindDef.draw())),
+		container.NewTabItem("Compatibility", container.NewVScroll(a.modCompatsDef.draw())),
+		container.NewTabItem("Release Notes", a.releaseNotes.Draw()),
+		container.NewTabItem("Downloadables", container.NewVScroll(a.downloadDef.draw())),
+		container.NewTabItem("Donation Links", container.NewVScroll(a.donationsDef.draw())),
+		container.NewTabItem("Games", container.NewVScroll(a.gamesDef.draw())),
+		container.NewTabItem("Always Install", container.NewVScroll(a.alwaysDownload.draw())),
+		container.NewTabItem("Configurations", container.NewVScroll(a.configsDef.draw())))
+}
+
+func (a *ModAuthorer) createNexusInputs() *container.AppTabs {
+	var entries = []*widget.FormItem{
+		a.getBaseDirFormItem("Working Dir"),
+		a.getFormItem("Name"),
+		a.getFormItem("Category"),
+		//a.getFormItem("Select Type"),
+	}
+	entries = append(entries, a.previewDef.getFormItems()...)
+
+	return container.NewAppTabs(
+		container.NewTabItem("Mod", container.NewVScroll(widget.NewForm(entries...))),
+		container.NewTabItem("Description", a.description.Draw()),
+		container.NewTabItem("Compatibility", container.NewVScroll(a.modCompatsDef.draw())),
+		//container.NewTabItem("Release Notes", a.releaseNotes.Draw()),
+		//container.NewTabItem("Downloadables", container.NewVScroll(a.downloadDef.draw())),
+		container.NewTabItem("Donation Links", container.NewVScroll(a.donationsDef.draw())),
+		//container.NewTabItem("Games", container.NewVScroll(a.gamesDef.draw())),
+		container.NewTabItem("Always Install", container.NewVScroll(a.alwaysDownload.draw())),
+		container.NewTabItem("Configurations", container.NewVScroll(a.configsDef.draw())))
 }
