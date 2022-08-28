@@ -31,7 +31,9 @@ func GetMods(game config.Game) ([]*mods.Mod, error) {
 				// TODO log error
 				continue
 			}
-			d.Mods = append(d.Mods, &mod)
+			if e := mod.Supports(game); e == nil {
+				d.Mods = append(d.Mods, &mod)
+			}
 		}
 
 		lookup[game] = d

@@ -34,7 +34,7 @@ type configInstallerUI struct {
 	currentChoice *mods.Choice
 }
 
-func (ui *configInstallerUI) PreDraw(w fyne.Window) error { return nil }
+func (ui *configInstallerUI) PreDraw(fyne.Window, ...interface{}) error { return nil }
 
 func (ui *configInstallerUI) OnClose() {}
 

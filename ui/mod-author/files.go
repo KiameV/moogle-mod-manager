@@ -56,15 +56,15 @@ func (d *filesDef) onEditItem(item interface{}) {
 func (d *filesDef) createItem(item interface{}, done ...func(interface{})) {
 	f := item.(*mods.ModFile)
 	d.createFileDialog("From", f.From, state.GetBaseDirBinding(), false, true)
-	d.createFormItem("To FF_Data/", f.To)
+	d.createFormItem("To FF PR/", f.To)
 
 	fd := dialog.NewForm("Edit File Copy", "Save", "Cancel", []*widget.FormItem{
 		d.getFileDialog("From"),
-		d.getFormItem("To FF_Data/"),
+		d.getFormItem("To FF PR/"),
 	}, func(ok bool) {
 		if ok {
 			f.From = d.getString("From")
-			f.To = d.getString("To FF_Data/")
+			f.To = d.getString("To FF PR/")
 			if len(done) > 0 {
 				done[0](f)
 			}

@@ -32,9 +32,10 @@ type localUI struct {
 	checkAll      *widget.Button
 	modList       *widget.List
 	workingDialog dialog.Dialog
+	mods          []*mods.TrackedMod
 }
 
-func (ui *localUI) PreDraw(w fyne.Window) error { return nil }
+func (ui *localUI) PreDraw(fyne.Window, ...interface{}) error { return nil }
 
 func (ui *localUI) OnClose() {}
 
@@ -46,6 +47,7 @@ func (ui *localUI) DrawAsDialog(fyne.Window) {}
 
 func (ui *localUI) Draw(w fyne.Window) {
 	ui.data = binding.NewUntypedList()
+	ui.mods = make([]*mods.TrackedMod, 0)
 	ui.modList = widget.NewListWithData(
 		ui.data,
 		func() fyne.CanvasObject {
@@ -73,7 +75,7 @@ func (ui *localUI) Draw(w fyne.Window) {
 			ui.addFromUrl()
 		}))
 	findButton := widget.NewButton("Find", func() {
-		state.ShowScreen(state.DiscoverMods)
+		state.ShowScreen(state.DiscoverMods, ui.mods)
 	})
 	removeButton := widget.NewButton("Remove", func() {
 		dialog.NewConfirm("Delete?", "Are you sure you want to delete this mod?", func(ok bool) {
@@ -81,6 +83,12 @@ func (ui *localUI) Draw(w fyne.Window) {
 				if err := managed.RemoveMod(*state.CurrentGame, ui.selectedMod); err != nil {
 					util.ShowErrorLong(err)
 					return
+				}
+				for i, m := range ui.mods {
+					if m == ui.selectedMod {
+						ui.mods = append(ui.mods[:i], ui.mods[i+1:]...)
+						break
+					}
 				}
 				ui.removeModFromList(ui.selectedMod)
 				ui.selectedMod = nil
@@ -196,6 +204,7 @@ func (ui *localUI) addModToList(mod *mods.TrackedMod) {
 	if err := u.Set(mod); err == nil {
 		_ = ui.data.Append(u)
 	}
+	ui.mods = append(ui.mods, mod)
 }
 
 func (ui *localUI) removeModFromList(mod *mods.TrackedMod) {
@@ -218,6 +227,12 @@ func (ui *localUI) removeModFromList(mod *mods.TrackedMod) {
 				}
 				return
 			}
+		}
+	}
+	for i, m := range ui.mods {
+		if m == mod {
+			ui.mods = append(ui.mods[:i], ui.mods[i+1:]...)
+			return
 		}
 	}
 	return

@@ -56,17 +56,17 @@ func (d *dirsDef) onEditItem(item interface{}) {
 func (d *dirsDef) createItem(item interface{}, done ...func(interface{})) {
 	f := item.(*mods.ModDir)
 	d.createFileDialog("From", f.From, state.GetBaseDirBinding(), true, true)
-	d.createFormItem("To FF_Data/", f.To)
+	d.createFormItem("To FF PR/", f.To)
 	d.createFormBool("Recursive", f.Recursive)
 
 	fd := dialog.NewForm("Edit Directory Copy", "Save", "Cancel", []*widget.FormItem{
 		d.getFileDialog("From"),
-		d.getFormItem("To FF_Data/"),
+		d.getFormItem("To FF PR/"),
 		d.getFormItem("Recursive"),
 	}, func(ok bool) {
 		if ok {
 			f.From = d.getString("From")
-			f.To = d.getString("To FF_Data/")
+			f.To = d.getString("To FF PR/")
 			f.Recursive = d.getBool("Recursive")
 			if len(done) > 0 {
 				done[0](f)

@@ -43,7 +43,7 @@ func appendGuiHistory(gui GUI) {
 }
 
 type Screen interface {
-	PreDraw(w fyne.Window) error
+	PreDraw(w fyne.Window, args ...interface{}) error
 	Draw(w fyne.Window)
 	DrawAsDialog(window fyne.Window)
 	OnClose()
@@ -60,13 +60,14 @@ func GetScreen(gui GUI) Screen {
 	return screens[gui]
 }
 
-func ShowScreen(gui GUI) {
+func ShowScreen(gui GUI, args ...interface{}) {
 	if gui == DiscoverMods {
 		if popupWindow == nil {
 			popupWindow = App.NewWindow("Finder")
 			popupWindow.Resize(config.Get().Size())
+			popupWindow.SetOnClosed(func() { popupWindow = nil })
 			popupWindow.Show()
-			if err := screens[gui].PreDraw(popupWindow); err != nil {
+			if err := screens[gui].PreDraw(popupWindow, args); err != nil {
 				dialog.ShowError(err, Window)
 				return
 			}
@@ -74,7 +75,7 @@ func ShowScreen(gui GUI) {
 		}
 		return
 	} else {
-		if err := screens[gui].PreDraw(Window); err != nil {
+		if err := screens[gui].PreDraw(Window, args); err != nil {
 			dialog.ShowError(err, Window)
 			return
 		}
@@ -82,6 +83,10 @@ func ShowScreen(gui GUI) {
 	appendGuiHistory(gui)
 	mainMenu.Draw(Window)
 	screens[gui].Draw(Window)
+}
+
+func ClosePopupWindow() {
+	popupWindow.Close()
 }
 
 func ShowPreviousScreen() {

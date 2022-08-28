@@ -278,9 +278,9 @@ func (m *Mod) Validate() string {
 		if d.Name == "" {
 			sb.WriteString("Downloadables' name is required\n")
 		}
-		if strings.Index(d.Name, " ") != -1 {
-			sb.WriteString(fmt.Sprintf("Downloadables [%s]'s name cannot contain spaces\n"))
-		}
+		//if strings.Index(d.Name, " ") != -1 {
+		//	sb.WriteString(fmt.Sprintf("Downloadables [%s]'s name cannot contain spaces\n"))
+		//}
 		if kind == Hosted {
 			if d.Hosted == nil {
 				sb.WriteString(fmt.Sprintf("Downloadables [%s]'s Hosted is required\n", d.Name))

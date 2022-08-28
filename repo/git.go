@@ -82,6 +82,18 @@ func (r *repo) getMods(rd repoDef, game config.Game) (mods []string, err error) 
 		}
 		return nil
 	})
+	err = filepath.WalkDir(rd.repoUtilDir(), func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			return nil
+		}
+		if d.Name() == "mod.json" || d.Name() == "mod.xml" {
+			mods = append(mods, path)
+		}
+		return nil
+	})
 	return
 }
 
@@ -99,8 +111,11 @@ func (*repo) getWorkTreeFromRepo(r *git.Repository) (w *git.Worktree, err error)
 	}
 	ctx, cnl := context.WithTimeout(context.Background(), time.Second*5)
 	defer cnl()
-	if err = w.PullContext(ctx, &git.PullOptions{RemoteName: "origin"}); err != nil && err != git.NoErrAlreadyUpToDate {
-		return
+	if err = w.PullContext(ctx, &git.PullOptions{
+		RemoteName: "origin",
+		Force:      true,
+	}); err != nil && err != git.NoErrAlreadyUpToDate {
+		_, _ = r.ResolveRevision("origin/main")
 	}
 	err = nil
 	return

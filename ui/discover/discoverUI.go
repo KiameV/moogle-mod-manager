@@ -25,16 +25,35 @@ type discoverUI struct {
 	data        binding.UntypedList
 	split       *container.Split
 	mods        []*mods.Mod
+	localMods   map[string]bool
 }
 
 func (ui *discoverUI) OnClose() {}
 
-func (ui *discoverUI) PreDraw(w fyne.Window) (err error) {
-	d := dialog.NewInformation("", "Finding Mods...", w)
+func (ui *discoverUI) PreDraw(w fyne.Window, args ...interface{}) (err error) {
+	var (
+		d        = dialog.NewInformation("", "Finding Mods...", w)
+		repoMods []*mods.Mod
+		ok       bool
+	)
 	defer d.Hide()
 	d.Show()
 
-	ui.mods, err = repo.GetMods(*state.CurrentGame)
+	ui.localMods = make(map[string]bool)
+	for _, tm := range args[0].([]interface{})[0].([]*mods.TrackedMod) {
+		ui.localMods[tm.GetModID()] = true
+	}
+
+	if repoMods, err = repo.GetMods(*state.CurrentGame); err != nil {
+		return
+	}
+
+	ui.mods = make([]*mods.Mod, 0, len(repoMods))
+	for _, m := range repoMods {
+		if _, ok = ui.localMods[m.ID]; !ok {
+			ui.mods = append(ui.mods, m)
+		}
+	}
 	return
 }
 
@@ -88,11 +107,29 @@ func (ui *discoverUI) draw(w fyne.Window, isPopup bool) {
 		ui.split.Trailing = container.NewCenter(widget.NewLabel("Loading..."))
 		ui.split.Refresh()
 		ui.split.Trailing = container.NewBorder(
-			container.NewHBox(widget.NewButton("Install", func() {
-				if err := managed.AddMod(*state.CurrentGame, mods.NewTrackerMod(ui.selectedMod, *state.CurrentGame)); err != nil {
+			container.NewHBox(widget.NewButton("Include Mod", func() {
+				mod := ui.selectedMod
+				if err := managed.AddMod(*state.CurrentGame, mods.NewTrackerMod(mod, *state.CurrentGame)); err != nil {
 					util.ShowErrorLong(err)
 					return
 				}
+				for i, m := range ui.mods {
+					if m == mod {
+						ui.mods = append(ui.mods[:i], ui.mods[i+1:]...)
+						break
+					}
+				}
+				sl := make([]interface{}, len(ui.mods))
+				for i, m := range ui.mods {
+					sl[i] = m
+				}
+				if err := ui.data.Set(sl); err != nil {
+					util.ShowErrorLong(err)
+					return
+				}
+				ui.selectedMod = nil
+				ui.split.Trailing = container.NewMax()
+				ui.split.Refresh()
 				state.UpdateCurrentScreen()
 			})), nil, nil, nil,
 			mp.CreatePreview(ui.selectedMod))
@@ -106,7 +143,7 @@ func (ui *discoverUI) draw(w fyne.Window, isPopup bool) {
 		), nil, nil, nil, container.NewBorder(
 			container.NewHBox(widget.NewButton("Back", func() {
 				if isPopup {
-					w.Close()
+					state.ClosePopupWindow()
 				} else {
 					state.ShowPreviousScreen()
 				}

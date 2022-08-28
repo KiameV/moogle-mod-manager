@@ -15,7 +15,7 @@ func New() state.Screen {
 
 type GameSelect struct{}
 
-func (s *GameSelect) PreDraw(w fyne.Window) error { return nil }
+func (s *GameSelect) PreDraw(fyne.Window, ...interface{}) error { return nil }
 
 func (s *GameSelect) OnClose() {}
 
