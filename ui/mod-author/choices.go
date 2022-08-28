@@ -129,12 +129,15 @@ func (d *choicesDef) draw(includeLabel bool) fyne.CanvasObject {
 	return c
 }
 
-func (d *choicesDef) getPossibleConfigs(configs []*mods.Configuration) []string {
-	possible := make([]string, len(configs))
-	for i, cfg := range d.configDef.compile() {
-		possible[i] = cfg.Name
+func (d *choicesDef) getPossibleConfigs(configs []*mods.Configuration) (possible []string) {
+	if len(configs) > 0 {
+		possible = make([]string, len(configs)+1)
+		possible[0] = ""
+		for i, cfg := range d.configDef.compile() {
+			possible[i+1] = cfg.Name
+		}
 	}
-	return possible
+	return
 }
 
 func (d *choicesDef) populate(choices []*mods.Choice) {

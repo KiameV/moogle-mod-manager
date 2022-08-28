@@ -7,11 +7,13 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/browser"
+	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/ui/configure"
 	"github.com/kiamev/moogle-mod-manager/ui/local"
 	a "github.com/kiamev/moogle-mod-manager/ui/mod-author"
 	"github.com/kiamev/moogle-mod-manager/ui/secret"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
+	"github.com/kiamev/moogle-mod-manager/ui/util"
 	"net/url"
 )
 
@@ -100,7 +102,12 @@ Contributors:
 			fyne.NewMenuItem("Edit Current Mod", func() {
 				if state.GetCurrentGUI() == state.LocalMods {
 					if tm := state.GetScreen(state.LocalMods).(local.LocalUI).GetSelected(); tm != nil {
-						state.GetScreen(state.ModAuthor).(*a.ModAuthorer).EditMod(tm.Mod)
+						state.GetScreen(state.ModAuthor).(*a.ModAuthorer).EditMod(tm.Mod, func(mod *mods.Mod) {
+							tm.Mod = mod
+							if err := tm.Save(); err != nil {
+								util.ShowErrorLong(err)
+							}
+						})
 						state.ShowScreen(state.ModAuthor)
 					}
 				}

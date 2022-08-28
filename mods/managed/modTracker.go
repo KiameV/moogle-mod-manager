@@ -306,5 +306,5 @@ func saveToJson() error {
 }
 
 func saveMoogle(tm *mods.TrackedMod) (err error) {
-	return util.SaveToFile(tm.MoogleModFile, tm.Mod)
+	return tm.Save()
 }

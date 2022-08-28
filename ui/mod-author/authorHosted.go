@@ -48,8 +48,8 @@ func New() state.Screen {
 
 type ModAuthorer struct {
 	*entryManager
-	modBeingEdited *mods.Mod
-	kind           *mods.Kind
+	kind         *mods.Kind
+	editCallback func(*mods.Mod)
 
 	previewDef     *previewDef
 	modKindDef     *modKindDef
@@ -71,8 +71,8 @@ func (a *ModAuthorer) PreDraw(w fyne.Window) error { return nil }
 func (a *ModAuthorer) DrawAsDialog(fyne.Window) {}
 
 func (a *ModAuthorer) OnClose() {
-	if a.modBeingEdited != nil {
-		a.modBeingEdited = nil
+	if a.editCallback != nil {
+		a.editCallback = nil
 	}
 }
 
@@ -139,8 +139,8 @@ func (a *ModAuthorer) LoadModToEdit() (successfullyLoadedMod bool) {
 	return true
 }
 
-func (a *ModAuthorer) EditMod(mod *mods.Mod) {
-	a.modBeingEdited = mod
+func (a *ModAuthorer) EditMod(mod *mods.Mod, editCallback func(*mods.Mod)) {
+	a.editCallback = editCallback
 	a.updateEntries(mod)
 }
 
@@ -169,21 +169,21 @@ func (a *ModAuthorer) Draw(w fyne.Window) {
 
 	smi := make([]*fyne.MenuItem, 0, 4)
 	smi = append(smi,
-		fyne.NewMenuItem("as json", func() {
-			a.saveFile(true)
+		fyne.NewMenuItem("as json (local save)", func() {
+			a.saveFile(asJson)
 		}),
 		/*fyne.NewMenuItem("as xml", func() {
-			a.saveFile(false)
+			a.saveFile(asXml)
 		})*/
-		fyne.NewMenuItem("submit for review", func() {
+		fyne.NewMenuItem("submit for review (public release)", func() {
 			a.submitForReview()
 		}),
 	)
-	if a.modBeingEdited != nil {
-		smi = append(smi, fyne.NewMenuItem("modify and back", func() {
+	if a.editCallback != nil {
+		smi = append(smi, fyne.NewMenuItem("modify and back (local save)", func() {
 			mod := a.compileMod()
 			callback := func() {
-				*a.modBeingEdited = *a.compileMod()
+				a.editCallback(a.compileMod())
 				state.ShowPreviousScreen()
 			}
 			if !a.validate(mod, false) {
@@ -211,30 +211,34 @@ func (a *ModAuthorer) Draw(w fyne.Window) {
 		}),
 		widget.NewButton("Test", func() {
 			mod := a.compileMod()
-			if len(a.configsDef.list.Items) == 0 {
-				tis, err := mods.NewToInstallForMod(mod.ModKind.Kind, mod, mod.AlwaysDownload)
-				if err != nil {
-					util.ShowErrorLong(err)
-					return
-				}
-				util.DisplayDownloadsAndFiles(tis)
-			}
-			if err := state.GetScreen(state.ConfigInstaller).(config_installer.ConfigInstaller).Setup(mod, state.GetBaseDir(), func(tis []*mods.ToInstall) error {
-				util.DisplayDownloadsAndFiles(tis)
-				return nil
-			}); err != nil {
+
+			tis, err := mods.NewToInstallForMod(mod.ModKind.Kind, mod, mod.AlwaysDownload)
+			if err != nil {
 				util.ShowErrorLong(err)
 				return
 			}
-			state.ShowScreen(state.ConfigInstaller)
+
+			if len(a.configsDef.list.Items) == 0 {
+				util.DisplayDownloadsAndFiles(tis)
+			} else {
+				if err = state.GetScreen(state.ConfigInstaller).(config_installer.ConfigInstaller).Setup(mod, state.GetBaseDir(), func(tis []*mods.ToInstall) error {
+					util.DisplayDownloadsAndFiles(tis)
+					return nil
+				}); err != nil {
+					util.ShowErrorLong(err)
+					return
+				}
+				state.ShowScreen(state.ConfigInstaller)
+			}
 		}),
 		widget.NewSeparator(),
-		cw.NewButtonWithPopups("Copy",
-			fyne.NewMenuItem("as json", func() {
-				a.pasteToClipboard(true)
-			}), fyne.NewMenuItem("as xml", func() {
-				a.pasteToClipboard(false)
+		cw.NewButtonWithPopups("Manual Edit",
+			fyne.NewMenuItem("copy as json", func() {
+				a.writeToClipboard(asJson)
+			}), fyne.NewMenuItem("paste as json", func() {
+				a.readFromClipboard(asJson)
 			})),
+		widget.NewSeparator(),
 		cw.NewButtonWithPopups("Save", smi...))
 
 	w.SetContent(container.NewBorder(nil, buttons, nil, nil, a.tabs))
@@ -281,7 +285,14 @@ func (a *ModAuthorer) updateEntries(mod *mods.Mod) {
 	a.configsDef.set(mod.Configurations)
 }
 
-func (a *ModAuthorer) pasteToClipboard(asJson bool) {
+type As byte
+
+const (
+	asJson As = iota
+	asXml
+)
+
+func (a *ModAuthorer) writeToClipboard(as As) {
 	var (
 		b   []byte
 		err error
@@ -309,8 +320,31 @@ func (a *ModAuthorer) pasteToClipboard(asJson bool) {
 	}
 }
 
-func (a *ModAuthorer) Marshal(mod *mods.Mod, asJson bool) (b []byte, err error) {
-	if asJson {
+func (a *ModAuthorer) readFromClipboard(as As) {
+	var (
+		b   []byte
+		mod mods.Mod
+		err error
+	)
+	if err = clipboard.Init(); err != nil {
+		util.ShowErrorLong(err)
+		return
+	}
+	b = clipboard.Read(clipboard.FmtText)
+	if as == asJson {
+		err = json.Unmarshal(b, &mod)
+	} else {
+		err = xml.Unmarshal(b, &mod)
+	}
+	if err != nil {
+		util.ShowErrorLong(err)
+		return
+	}
+	a.updateEntries(&mod)
+}
+
+func (a *ModAuthorer) Marshal(mod *mods.Mod, as As) (b []byte, err error) {
+	if as == asJson {
 		b, err = json.MarshalIndent(mod, "", "\t")
 	} else {
 		b, err = xml.MarshalIndent(mod, "", "\t")
@@ -370,7 +404,7 @@ func (a *ModAuthorer) submitForReview() {
 	}
 }
 
-func (a *ModAuthorer) saveFile(asJson bool) {
+func (a *ModAuthorer) saveFile(asJson As) {
 	mod := a.compileMod()
 	if !a.validate(mod, false) {
 		dialog.ShowConfirm("Continue?", "The mod is not valid, continue anyway?", func(ok bool) {
@@ -383,7 +417,7 @@ func (a *ModAuthorer) saveFile(asJson bool) {
 	}
 }
 
-func (a *ModAuthorer) save(mod *mods.Mod, asJson bool) {
+func (a *ModAuthorer) save(mod *mods.Mod, asJson As) {
 	var (
 		b    []byte
 		ext  string
@@ -396,7 +430,7 @@ func (a *ModAuthorer) save(mod *mods.Mod, asJson bool) {
 		return
 	}
 
-	if asJson {
+	if asJson == asJson {
 		ext = ".json"
 	} else {
 		ext = ".xml"

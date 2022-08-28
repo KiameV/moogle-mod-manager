@@ -55,6 +55,10 @@ func (m *TrackedMod) GetMod() *Mod {
 	return m.Mod
 }
 
+func (m *TrackedMod) Save() error {
+	return util.SaveToFile(m.MoogleModFile, m.Mod)
+}
+
 type InstalledDownload struct {
 	Name    string `json:"Name"`
 	Version string `json:"Version"`
