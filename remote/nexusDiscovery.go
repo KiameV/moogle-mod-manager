@@ -70,7 +70,7 @@ func appendNewNexusMods(game config.Game, ms []*mods.Mod) (result []*mods.Mod, e
 func getLastNexusModID(ms []*mods.Mod) (lastID int) {
 	for _, m := range ms {
 		if m.ModKind.Kind == mods.Nexus {
-			id, _ := strconv.ParseInt(m.ModKind.Nexus.ID, 10, 64)
+			id, _ := strconv.ParseInt(m.ID, 10, 64)
 			if int(id) > lastID {
 				lastID = int(id)
 			}

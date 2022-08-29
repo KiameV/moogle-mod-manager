@@ -237,7 +237,7 @@ func decompress(from string, to string) error {
 			return nil
 		}
 	}
-	
+
 	if filepath.Ext(from) == ".rar" {
 		handler := func(ctx context.Context, f archiver.File) (err error) {
 			if !f.IsDir() {

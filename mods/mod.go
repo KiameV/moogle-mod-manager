@@ -7,6 +7,7 @@ import (
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods/managed/cache"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
+	"github.com/kiamev/moogle-mod-manager/util"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -85,8 +86,8 @@ func (m *Mod) ModUniqueID(game config.Game) string {
 	if m.ModKind.Kind == Hosted {
 		return m.ID
 	}
-	if m.ModKind.Kind == Nexus && m.ModKind.Nexus != nil {
-		return fmt.Sprintf("%s-%s", config.String(game), m.ModKind.Nexus.ID)
+	if m.ModKind.Kind == Nexus {
+		return fmt.Sprintf("%s-%s", config.String(game), m.ID)
 	}
 	return ""
 }
@@ -245,31 +246,6 @@ func (m *Mod) Validate() string {
 	}*/
 
 	kind := m.ModKind.Kind
-	if kind == Hosted {
-		h := m.ModKind.Hosted
-		if h == nil {
-			sb.WriteString("Hosted is required\n")
-		} else {
-			//if len(h.ModFileLinks) == 0 {
-			//	sb.WriteString("Hosted 'Mod File' Links is required\n")
-			//}
-			for _, mfl := range h.ModFileLinks {
-				if strings.HasSuffix(mfl, ".json") == false && strings.HasSuffix(mfl, ".xml") == false {
-					sb.WriteString(fmt.Sprintf("Hosted 'Mod File' Link [%s] must be json or xml\n", mfl))
-				}
-			}
-		}
-	} else { // nexus
-		n := m.ModKind.Nexus
-		if n == nil {
-			sb.WriteString("Nexus is required\n")
-		} else {
-			if n.ID == "" {
-				sb.WriteString("Nexus Mod ID is required\n")
-			}
-		}
-	}
-
 	dlableNames := make(map[string]bool)
 	if len(m.Downloadables) == 0 {
 		sb.WriteString("Must have at least one Downloadables\n")
@@ -403,4 +379,8 @@ func (m *Mod) Merge(from *Mod) {
 		m.Configurations = from.Configurations
 	}
 	return
+}
+
+func (m *Mod) DirectoryName() string {
+	return util.CreateFileName(m.ID)
 }

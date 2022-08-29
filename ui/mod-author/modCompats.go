@@ -53,11 +53,6 @@ func (d *modCompatsDef) onEditItem(item interface{}) {
 func (d *modCompatsDef) createItem(item interface{}, done ...func(interface{})) {
 	m := item.(*mods.ModCompat)
 	d.createFormItem("Mod ID", m.ModID())
-	if m.Kind == mods.Hosted {
-		d.createFormSelect("Kind", mods.Kinds, string(mods.Hosted))
-	} else {
-		d.createFormSelect("Kind", mods.Kinds, string(mods.Nexus))
-	}
 	d.createFormItem("Versions", strings.Join(m.Versions, ", "))
 	//order := mods.None
 	//if m.Order != nil {

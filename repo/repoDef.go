@@ -44,7 +44,7 @@ func (d repoDef) repoNexusIDDir(game config.Game, id string) string {
 }
 
 func (d repoDef) repoNexusDir(game config.Game, mod *mods.Mod) string {
-	return d.repoNexusIDDir(game, mod.ModKind.Nexus.ID)
+	return d.repoNexusIDDir(game, mod.ID)
 }
 
 func Initialize() (err error) {

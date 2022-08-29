@@ -42,7 +42,7 @@ func New() state.Screen {
 		releaseNotes:   newRichTextEditor(),
 		categorySelect: widget.NewSelect(mods.Categories, func(string) {}),
 	}
-	a.modKindDef = newModKindDef(a.kind)
+	//a.modKindDef = newModKindDef(a.kind)
 	a.downloadDef = newDownloadsDef(a.kind)
 	a.alwaysDownload = newAlwaysDownloadDef(a.downloadDef)
 	a.configsDef = newConfigurationsDef(a.downloadDef)
@@ -55,8 +55,8 @@ type ModAuthorer struct {
 	kind         *mods.Kind
 	editCallback func(*mods.Mod)
 
-	previewDef     *previewDef
-	modKindDef     *modKindDef
+	previewDef *previewDef
+	//modKindDef     *modKindDef
 	modCompatsDef  *modCompatabilityDef
 	downloadDef    *downloadsDef
 	donationsDef   *donationsDef
@@ -151,6 +151,7 @@ func (a *ModAuthorer) LoadModToEdit() (successfullyLoadedMod bool) {
 
 func (a *ModAuthorer) EditMod(mod *mods.Mod, editCallback func(*mods.Mod)) {
 	a.modID = mod.ID
+	*a.kind = mod.ModKind.Kind
 	a.editCallback = editCallback
 	a.updateEntries(mod)
 }
@@ -257,18 +258,6 @@ func (a *ModAuthorer) Draw(w fyne.Window) {
 
 func (a *ModAuthorer) updateEntries(mod *mods.Mod) {
 	*a.kind = mod.ModKind.Kind
-	if *a.kind == mods.Hosted {
-		if mod.ModKind.Hosted == nil {
-			mod.ModKind.Hosted = &mods.HostedModKind{}
-		}
-	} else if *a.kind == mods.Nexus {
-		if mod.ModKind.Nexus == nil {
-			mod.ModKind.Nexus = &mods.NexusModKind{}
-		}
-	} else {
-		panic("invalid mod kind")
-	}
-
 	a.createBaseDir(state.GetBaseDirBinding())
 	a.createFormItem("Name", mod.Name)
 	a.createFormItem("Author", mod.Author)
@@ -288,7 +277,7 @@ func (a *ModAuthorer) updateEntries(mod *mods.Mod) {
 
 	a.previewDef.set(mod.Preview)
 	a.modCompatsDef.set(mod.ModCompatibility)
-	a.modKindDef.set(&mod.ModKind)
+	//a.modKindDef.set(&mod.ModKind)
 	a.downloadDef.set(mod.Downloadables)
 	a.donationsDef.set(mod.DonationLinks)
 	a.gamesDef.set(mod.Games)
@@ -363,8 +352,8 @@ func (a *ModAuthorer) Marshal(mod *mods.Mod, as As) (b []byte, err error) {
 	return
 }
 
-func (a *ModAuthorer) compileMod() (mod *mods.Mod) {
-	m := &mods.Mod{
+func (a *ModAuthorer) compileMod() (m *mods.Mod) {
+	m = &mods.Mod{
 		Name:         a.getString("Name"),
 		Author:       a.getString("Author"),
 		ReleaseDate:  a.getString("Release Date"),
@@ -374,7 +363,7 @@ func (a *ModAuthorer) compileMod() (mod *mods.Mod) {
 		ReleaseNotes: a.releaseNotes.String(),
 		Link:         a.getString("Link"),
 		Preview:      a.previewDef.compile(),
-		ModKind:      *a.modKindDef.compile(),
+		//ModKind:      *a.modKindDef.compile(),
 		//ConfigSelectionType: mods.SelectType(a.getString("Select Type")),
 		ConfigSelectionType: mods.Auto,
 		ModCompatibility:    a.modCompatsDef.compile(),
@@ -392,9 +381,7 @@ func (a *ModAuthorer) compileMod() (mod *mods.Mod) {
 			m.ID = strings.ToLower(fmt.Sprintf("%s.%s", name, author))
 		}
 	case mods.Nexus:
-		if m.ModKind.Nexus != nil {
-			m.ID = mod.ModKind.Nexus.ID
-		}
+		m.ID = a.modID
 	default:
 		panic("invalid mod kind")
 	}
@@ -537,7 +524,7 @@ func (a *ModAuthorer) createNexusInputs() *container.AppTabs {
 		container.NewTabItem("Description", a.description.Draw()),
 		container.NewTabItem("Compatibility", container.NewVScroll(a.modCompatsDef.draw())),
 		//container.NewTabItem("Release Notes", a.releaseNotes.Draw()),
-		container.NewTabItem("Downloadables", container.NewVScroll(a.downloadDef.draw())),
+		//container.NewTabItem("Downloadables", container.NewVScroll(a.downloadDef.draw())),
 		container.NewTabItem("Donation Links", container.NewVScroll(a.donationsDef.draw())),
 		//container.NewTabItem("Games", container.NewVScroll(a.gamesDef.draw())),
 		container.NewTabItem("Always Install", container.NewVScroll(a.alwaysDownload.draw())),

@@ -109,8 +109,8 @@ func GetModFromNexusForMod(in *mods.Mod) (mod *mods.Mod, err error) {
 		id   uint64
 		game = config.NameToGame(in.Games[0].Name)
 	)
-	if id, err = strconv.ParseUint(in.ModKind.Nexus.ID, 0, 64); err != nil {
-		err = fmt.Errorf("could not parse mod id %s for %s", in.ModKind.Nexus.ID, in.Name)
+	if id, err = strconv.ParseUint(in.ID, 0, 64); err != nil {
+		err = fmt.Errorf("could not parse mod id %s for %s", in.ID, in.Name)
 		return
 	}
 	return GetModFromNexus(fmt.Sprintf(nexusUrl, GameToNexusGame(game), id))
@@ -255,9 +255,6 @@ func toMod(n nexusMod, dls []NexusFile) (mod *mods.Mod, err error) {
 		},
 		ModKind: mods.ModKind{
 			Kind: mods.Nexus,
-			Nexus: &mods.NexusModKind{
-				ID: modID,
-			},
 		},
 		Games: []*mods.Game{{
 			Name:     config.GameToName(game),

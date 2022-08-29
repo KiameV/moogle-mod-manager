@@ -61,20 +61,23 @@ type hostedUpdateChecker struct {
 func (c *hostedUpdateChecker) Process() error {
 	defer c.wg.Done()
 	var mod mods.Mod
-	for _, l := range c.tm.Mod.ModKind.Hosted.ModFileLinks {
-		if b, err := browser.DownloadAsBytes(l); err == nil {
-			if e := json.Unmarshal(b, &mod); e != nil && mod.ModKind.Kind == mods.Hosted && mod.ModKind.Hosted != nil {
-				continue
-			}
+	var url string
+	if mod.Category == mods.Utility {
+		url = "utilities/" + mod.DirectoryName()
+	} else {
+		url = fmt.Sprintf("%s/%s/mod.json", config.String(config.NameToGame(mod.Games[0].Name)), mod.DirectoryName())
+	}
+	if b, err := browser.DownloadAsBytes(url); err == nil {
+		if e := json.Unmarshal(b, &mod); e != nil {
+			return err
 		}
-		if mod.ID == "" {
-			dialog.ShowError(errors.New("Could not download remote version for "+c.tm.Mod.Name), state.Window)
-			return nil
-		}
-		if isVersionNewer(c.tm.Mod.Version, mod.Version) {
-			markForUpdate(c.tm, &mod)
-		}
-		break
+	}
+	if mod.ID == "" {
+		dialog.ShowError(errors.New("Could not download remote version for "+c.tm.Mod.Name), state.Window)
+		return nil
+	}
+	if isVersionNewer(c.tm.Mod.Version, mod.Version) {
+		markForUpdate(c.tm, &mod)
 	}
 	return nil
 }
