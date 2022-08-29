@@ -144,7 +144,7 @@ func (m *entryManager) createFormItem(key string, value string) {
 	e.(*widget.Entry).SetText(value)
 }
 
-func (m *entryManager) createFormSelect(key string, possible []string, value string) {
+func (m *entryManager) createFormSelect(key string, possible []string, value string, onChange ...func(string)) {
 	e := widget.NewSelect(possible, func(string) {})
 	m.entries[key] = e
 	e.SetSelected(value)

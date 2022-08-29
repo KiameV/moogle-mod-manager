@@ -357,6 +357,8 @@ func (m *Mod) Validate() string {
 				if _, ok := dlableNames[ch.DownloadFiles.DownloadName]; !ok {
 					sb.WriteString(fmt.Sprintf("Configuration's [%s] Choice [%s]'s downloadable doesn't exist\n", c.Name, ch.Name))
 				}
+			} else if ch.DownloadFiles != nil && ch.DownloadFiles.DownloadName == "" && (len(ch.DownloadFiles.Files) > 0 || len(ch.DownloadFiles.Dirs) > 0) {
+				sb.WriteString(fmt.Sprintf("Configuration's [%s] Choice [%s]'s downloadable must be specified\n", c.Name, ch.Name))
 			}
 		}
 		if c.Root {

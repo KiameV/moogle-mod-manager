@@ -30,14 +30,15 @@ import (
 func New() state.Screen {
 	var kind = mods.Hosted
 	a := &ModAuthorer{
-		kind:          &kind,
-		entryManager:  newEntryManager(),
-		previewDef:    newPreviewDef(),
-		modCompatsDef: newModCompatibilityDef(),
-		donationsDef:  newDonationsDef(),
-		gamesDef:      newGamesDef(),
-		description:   newRichTextEditor(),
-		releaseNotes:  newRichTextEditor(),
+		kind:           &kind,
+		entryManager:   newEntryManager(),
+		previewDef:     newPreviewDef(),
+		modCompatsDef:  newModCompatibilityDef(),
+		donationsDef:   newDonationsDef(),
+		gamesDef:       newGamesDef(),
+		description:    newRichTextEditor(),
+		releaseNotes:   newRichTextEditor(),
+		categorySelect: widget.NewSelect(mods.Categories, func(string) {}),
 	}
 	a.modKindDef = newModKindDef(a.kind)
 	a.downloadDef = newDownloadsDef(a.kind)
@@ -60,8 +61,9 @@ type ModAuthorer struct {
 	alwaysDownload *alwaysDownloadDef
 	configsDef     *configurationsDef
 
-	description  *richTextEditor
-	releaseNotes *richTextEditor
+	description    *richTextEditor
+	releaseNotes   *richTextEditor
+	categorySelect *widget.Select
 
 	tabs *container.AppTabs
 }
@@ -96,19 +98,21 @@ func (a *ModAuthorer) NewNexusMod() {
 	})
 
 	e := widget.NewEntry()
-	dialog.ShowForm("", "Ok", "Cancel", []*widget.FormItem{widget.NewFormItem("Link", e)},
+	d := dialog.NewForm("", "Ok", "Cancel", []*widget.FormItem{widget.NewFormItem("Link", e)},
 		func(ok bool) {
 			if !ok {
 				state.ShowPreviousScreen()
 				return
 			}
-			m, err := nexus.GetModFromNexus(*state.CurrentGame, e.Text)
+			m, err := nexus.GetModFromNexus(e.Text)
 			if err != nil {
 				util.ShowErrorLong(err)
 				return
 			}
 			a.updateEntries(m)
 		}, state.Window)
+	d.Resize(fyne.NewSize(400, 200))
+	d.Show()
 }
 
 func (a *ModAuthorer) LoadModToEdit() (successfullyLoadedMod bool) {
@@ -263,7 +267,8 @@ func (a *ModAuthorer) updateEntries(mod *mods.Mod) {
 	a.createFormItem("Name", mod.Name)
 	a.createFormItem("Author", mod.Author)
 	a.createFormItem("Release Date", mod.ReleaseDate)
-	a.createFormSelect("Category", mods.Categories, string(mod.Category))
+	a.categorySelect.Selected = string(mod.Category)
+	a.categorySelect.Refresh()
 	a.createFormItem("Version", mod.Version)
 	a.description.SetText(mod.Description)
 	a.releaseNotes.SetText(mod.ReleaseNotes)
@@ -358,7 +363,7 @@ func (a *ModAuthorer) compileMod() (mod *mods.Mod) {
 		Name:         a.getString("Name"),
 		Author:       a.getString("Author"),
 		ReleaseDate:  a.getString("Release Date"),
-		Category:     mods.Category(a.getString("Category")),
+		Category:     mods.Category(a.categorySelect.Selected),
 		Version:      a.getString("Version"),
 		Description:  a.description.String(),
 		ReleaseNotes: a.releaseNotes.String(),
@@ -478,7 +483,7 @@ func (a *ModAuthorer) createHostedInputs() *container.AppTabs {
 		a.getFormItem("ID"),
 		a.getFormItem("Name"),
 		a.getFormItem("Author"),
-		a.getFormItem("Category"),
+		widget.NewFormItem("Category", a.categorySelect),
 		a.getFormItem("Version"),
 		a.getFormItem("Release Date"),
 		a.getFormItem("Link"),
@@ -503,7 +508,7 @@ func (a *ModAuthorer) createNexusInputs() *container.AppTabs {
 	var entries = []*widget.FormItem{
 		a.getBaseDirFormItem("Working Dir"),
 		a.getFormItem("Name"),
-		a.getFormItem("Category"),
+		widget.NewFormItem("Category", a.categorySelect),
 		//a.getFormItem("Select Type"),
 	}
 	entries = append(entries, a.previewDef.getFormItems()...)
@@ -513,7 +518,7 @@ func (a *ModAuthorer) createNexusInputs() *container.AppTabs {
 		container.NewTabItem("Description", a.description.Draw()),
 		container.NewTabItem("Compatibility", container.NewVScroll(a.modCompatsDef.draw())),
 		//container.NewTabItem("Release Notes", a.releaseNotes.Draw()),
-		//container.NewTabItem("Downloadables", container.NewVScroll(a.downloadDef.draw())),
+		container.NewTabItem("Downloadables", container.NewVScroll(a.downloadDef.draw())),
 		container.NewTabItem("Donation Links", container.NewVScroll(a.donationsDef.draw())),
 		//container.NewTabItem("Games", container.NewVScroll(a.gamesDef.draw())),
 		container.NewTabItem("Always Install", container.NewVScroll(a.alwaysDownload.draw())),

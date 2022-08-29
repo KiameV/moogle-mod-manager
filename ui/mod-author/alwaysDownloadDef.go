@@ -72,7 +72,7 @@ func (d *alwaysDownloadDef) createItem(item interface{}, done ...func(interface{
 func (d *alwaysDownloadDef) draw() fyne.CanvasObject {
 	return container.NewVBox(
 		container.NewHBox(
-			widget.NewLabelWithStyle("AlwaysDownload", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
+			widget.NewLabelWithStyle("Always Download", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
 			widget.NewButton("Add", func() {
 				d.createItem(&mods.DownloadFiles{}, func(result interface{}) {
 					d.list.AddItem(result)

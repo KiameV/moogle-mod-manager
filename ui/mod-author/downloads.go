@@ -63,6 +63,8 @@ func (d *downloadsDef) createItem(item interface{}, done ...func(interface{})) {
 	m := item.(*mods.Download)
 	d.createFormItem("Name", m.Name)
 	d.createFormItem("Version", m.Version)
+	d.createFormItem("File Name", "")
+	d.createFormItem("File ID", "")
 	//d.createFormSelect("Install Type", mods.InstallTypes, string(m.InstallType))
 	if *d.kind == mods.Nexus {
 		if m.Nexus != nil {

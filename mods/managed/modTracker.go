@@ -76,7 +76,7 @@ func AddModFromUrl(game config.Game, url string) (tm *mods.TrackedMod, err error
 		url = url[:i]
 	}
 	if nexus.IsNexus(url) {
-		if mod, err = nexus.GetModFromNexus(game, url); err != nil {
+		if mod, err = nexus.GetModFromNexus(url); err != nil {
 			return
 		}
 	} else {

@@ -12,6 +12,11 @@ import (
 )
 
 func DisplayDownloadsAndFiles(toInstall []*mods.ToInstall) {
+	defer func() {
+		if err := recover(); err != nil {
+			ShowErrorLong(fmt.Errorf("%v", err))
+		}
+	}()
 	sb := strings.Builder{}
 	for _, ti := range toInstall {
 		sb.WriteString(fmt.Sprintf("## %s\n\n", ti.Download.Name))
