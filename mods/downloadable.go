@@ -7,7 +7,7 @@ type Download struct {
 	Hosted *HostedDownloadable `json:"Hosted,omitempty" xml:"Hosted,omitempty"`
 	Nexus  *NexusDownloadable  `json:"Nexus,omitempty" xml:"Nexus,omitempty"`
 
-	DownloadedArchiveLocation string `json:"DownloadedLoc,omitempty" xml:"DownloadedLoc,omitempty"`
+	DownloadedArchiveLocation *string `json:"DownloadedLoc,omitempty" xml:"DownloadedLoc,omitempty"`
 	//InstallType   InstallType `json:"InstallType" xml:"InstallType"`
 }
 

@@ -15,6 +15,7 @@ import (
 	"github.com/kiamev/moogle-mod-manager/util"
 	archiver "github.com/mholt/archiver/v4"
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -193,7 +194,7 @@ func enableMod(enabler *mods.ModEnabler, err error) {
 
 	for _, ti := range tis {
 		to := filepath.Join(modPath, ti.Download.Name)
-		if err = decompress(ti.Download.DownloadedArchiveLocation, to); err != nil {
+		if err = decompress(*ti.Download.DownloadedArchiveLocation, to); err != nil {
 			tm.Enabled = false
 			enabler.DoneCallback(err)
 			return
@@ -230,6 +231,13 @@ func enableMod(enabler *mods.ModEnabler, err error) {
 }
 
 func decompress(from string, to string) error {
+	if fi, err := os.Stat(to); err == nil && fi.IsDir() {
+		var fis []os.FileInfo
+		if fis, err = ioutil.ReadDir(to); err == nil && len(fis) > 0 {
+			return nil
+		}
+	}
+	
 	if filepath.Ext(from) == ".rar" {
 		handler := func(ctx context.Context, f archiver.File) (err error) {
 			if !f.IsDir() {
