@@ -15,8 +15,11 @@ func getDir(game config.Game) string {
 	return filepath.Join(config.PWD, "remote", config.String(game), "nexus")
 }
 
-func getNexusMods(game config.Game) (result []*mods.Mod, err error) {
-	dir := getDir(game)
+func GetNexusMods(game *config.Game) (result []*mods.Mod, err error) {
+	if game == nil {
+		return
+	}
+	dir := getDir(*game)
 	_ = os.MkdirAll(dir, 0777)
 	if err = filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
@@ -36,7 +39,7 @@ func getNexusMods(game config.Game) (result []*mods.Mod, err error) {
 	}); err != nil {
 		return
 	}
-	return appendNewNexusMods(game, result)
+	return appendNewNexusMods(*game, result)
 }
 
 func appendNewNexusMods(game config.Game, ms []*mods.Mod) (result []*mods.Mod, err error) {

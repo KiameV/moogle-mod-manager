@@ -1,23 +1,19 @@
 package discover
 
 import (
-	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/config"
+	"github.com/kiamev/moogle-mod-manager/discover"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/mods/managed"
-	"github.com/kiamev/moogle-mod-manager/remote"
-	"github.com/kiamev/moogle-mod-manager/repo"
 	cw "github.com/kiamev/moogle-mod-manager/ui/custom-widgets"
 	mp "github.com/kiamev/moogle-mod-manager/ui/mod-preview"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
 	"github.com/kiamev/moogle-mod-manager/ui/util"
-	"golang.org/x/sync/errgroup"
-	"sort"
 	"strings"
 )
 
@@ -38,13 +34,9 @@ func (ui *discoverUI) OnClose() {}
 
 func (ui *discoverUI) PreDraw(w fyne.Window, args ...interface{}) (err error) {
 	var (
-		d          = dialog.NewInformation("", "Finding Mods...", w)
-		remoteMods []*mods.Mod
-		repoMods   []*mods.Mod
-		found      *mods.Mod
-		repoGetter = repo.NewGetter()
-		eg         errgroup.Group
-		ok         bool
+		d      = dialog.NewInformation("", "Finding Mods...", w)
+		lookup map[string]*mods.Mod
+		ok     bool
 	)
 	defer d.Hide()
 	d.Show()
@@ -54,30 +46,8 @@ func (ui *discoverUI) PreDraw(w fyne.Window, args ...interface{}) (err error) {
 		ui.localMods[tm.GetModID()] = true
 	}
 
-	eg.Go(func() (e error) {
-		remoteMods, e = remote.GetMods(*state.CurrentGame)
+	if lookup, err = discover.GetModsAsLookup(state.CurrentGame); err != nil {
 		return
-	})
-	eg.Go(func() (e error) {
-		repoMods, e = repoGetter.GetMods(*state.CurrentGame)
-		return
-	})
-	if err = eg.Wait(); err != nil {
-		return
-	}
-
-	lookup := make(map[string]*mods.Mod)
-	for _, m := range repoMods {
-		if _, ok = lookup[m.ModUniqueID(*state.CurrentGame)]; !ok {
-			lookup[m.ModUniqueID(*state.CurrentGame)] = m
-		}
-	}
-	for _, m := range remoteMods {
-		if found, ok = lookup[m.ModUniqueID(*state.CurrentGame)]; !ok {
-			lookup[m.ModUniqueID(*state.CurrentGame)] = m
-		} else {
-			found.Merge(m)
-		}
 	}
 
 	ui.mods = make([]*mods.Mod, 0, len(lookup))
@@ -211,18 +181,9 @@ func (ui *discoverUI) search(s string) error {
 }
 
 func (ui *discoverUI) showSorted(ms []*mods.Mod) error {
-	lookup := make(map[string]*mods.Mod)
-	sorted := make([]string, len(ms))
-	for i, m := range ms {
-		key := fmt.Sprintf("%s%s", m.Name, m.ID)
-		lookup[key] = m
-		sorted[i] = key
-	}
-	sort.Strings(sorted)
-
 	_ = ui.data.Set(nil)
-	for _, s := range sorted {
-		if err := ui.data.Append(lookup[s]); err != nil {
+	for _, m := range mods.Sort(ms) {
+		if err := ui.data.Append(m); err != nil {
 			return err
 		}
 	}

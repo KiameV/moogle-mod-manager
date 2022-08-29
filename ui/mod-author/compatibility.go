@@ -11,10 +11,10 @@ type modCompatabilityDef struct {
 	forbids  *modCompatsDef
 }
 
-func newModCompatibilityDef() *modCompatabilityDef {
+func newModCompatibilityDef(gamesDef *gamesDef) *modCompatabilityDef {
 	return &modCompatabilityDef{
-		requires: newModCompatsDef("Requires"),
-		forbids:  newModCompatsDef("Forbids"),
+		requires: newModCompatsDef("Requires", gamesDef),
+		forbids:  newModCompatsDef("Forbids", gamesDef),
 	}
 }
 

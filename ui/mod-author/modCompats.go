@@ -5,9 +5,13 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
+	xw "fyne.io/x/fyne/widget"
+	"github.com/kiamev/moogle-mod-manager/config"
+	"github.com/kiamev/moogle-mod-manager/discover"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	cw "github.com/kiamev/moogle-mod-manager/ui/custom-widgets"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
+	"github.com/kiamev/moogle-mod-manager/ui/util"
 	"strings"
 )
 
@@ -15,12 +19,14 @@ type modCompatsDef struct {
 	*entryManager
 	list *cw.DynamicList
 	name string
+	gd   *gamesDef
 }
 
-func newModCompatsDef(name string) *modCompatsDef {
+func newModCompatsDef(name string, gd *gamesDef) *modCompatsDef {
 	d := &modCompatsDef{
 		entryManager: newEntryManager(),
 		name:         name,
+		gd:           gd,
 	}
 	d.list = cw.NewDynamicList(cw.Callbacks{
 		GetItemKey:    d.getItemKey,
@@ -51,41 +57,68 @@ func (d *modCompatsDef) onEditItem(item interface{}) {
 }
 
 func (d *modCompatsDef) createItem(item interface{}, done ...func(interface{})) {
-	m := item.(*mods.ModCompat)
-	d.createFormItem("Mod ID", m.ModID())
-	d.createFormItem("Versions", strings.Join(m.Versions, ", "))
-	//order := mods.None
-	//if m.Order != nil {
-	//	order = *m.Order
-	//}
-	//d.createFormSelect("Order", mods.ModCompatOrders, string(order))
+	var m = item.(*mods.ModCompat)
+
+	var game *config.Game
+	if d.gd != nil && len(d.gd.list.Items) == 1 {
+		g := config.NameToGame(d.gd.compile()[0].Name)
+		game = &g
+	}
+
+	modLookup, err := discover.GetModsAsLookup(game)
+	if err != nil {
+		util.ShowErrorLong(err)
+	}
+
+	search := xw.NewCompletionEntry(nil)
+	search.SetText(m.ModID())
+	search.OnChanged = func(s string) {
+		if len(s) < 3 {
+			search.HideCompletion()
+		}
+		s = strings.ToLower(s)
+		var results []string
+		for _, mod := range modLookup {
+			if strings.Contains(strings.ToLower(mod.ID), s) || strings.Contains(strings.ToLower(mod.Name), s) {
+				results = append(results, mod.Name)
+			}
+		}
+		search.SetOptions(results)
+		search.ShowCompletion()
+	}
 
 	fd := dialog.NewForm("Edit Mod Compatibility", "Save", "Cancel", []*widget.FormItem{
-		d.getFormItem("Kind"),
-		d.getFormItem("Mod ID"),
-		d.getFormItem("Versions"),
+		widget.NewFormItem("Mod", search),
 	}, func(ok bool) {
 		if ok {
+			var selected *mods.Mod
 			m.Hosted = nil
 			m.Nexus = nil
-			m.Versions = d.getStrings("Versions", ",")
-			if d.getString("kind") == string(mods.Hosted) {
-				m.Kind = mods.Hosted
-				m.Hosted = &mods.ModCompatHosted{
-					ModID: d.getString("Mod ID"),
+			if search.Text != "" {
+				for _, mod := range modLookup {
+					if mod.Name == search.Text {
+						selected = mod
+						break
+					}
 				}
-			} else {
-				m.Kind = mods.Nexus
-				m.Nexus = &mods.ModCompatNexus{
-					ModID: d.getString("Mod ID"),
+				if selected == nil {
+					// TODO
+					return
+				}
+				if selected.ModKind.Kind == mods.Hosted {
+					m.Kind = mods.Hosted
+					m.Hosted = &mods.ModCompatHosted{
+						ModID: selected.ID,
+					}
+				} else if selected.ModKind.Kind == mods.Nexus {
+					m.Kind = mods.Nexus
+					m.Nexus = &mods.ModCompatNexus{
+						ModID: selected.ID,
+					}
+				} else {
+					panic("unknown mod kind")
 				}
 			}
-			//o := d.getString("Order")
-			//if o != "" && o != string(mods.None) {
-			//	m.Order = (*mods.ModCompatOrder)(&o)
-			//} else {
-			//	m.Order = nil
-			//}
 			if len(done) > 0 {
 				done[0](m)
 			}

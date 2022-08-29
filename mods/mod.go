@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 )
 
@@ -383,4 +384,27 @@ func (m *Mod) Merge(from *Mod) {
 
 func (m *Mod) DirectoryName() string {
 	return util.CreateFileName(m.ID)
+}
+
+func Sort(mods []*Mod) (sorted []*Mod) {
+	var (
+		lookup = make(map[string]*Mod)
+		sl     = make([]string, len(mods))
+		m      *Mod
+		i      int
+		key    string
+	)
+	for i, m = range mods {
+		key = fmt.Sprintf("%s%s", m.Name, m.ID)
+		lookup[key] = m
+		sl[i] = key
+	}
+
+	sort.Strings(sl)
+
+	sorted = make([]*Mod, len(mods))
+	for i, key = range sl {
+		sorted[i] = lookup[key]
+	}
+	return
 }

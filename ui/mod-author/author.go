@@ -10,10 +10,10 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/config"
+	"github.com/kiamev/moogle-mod-manager/discover/repo"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/mods/managed/authored"
 	"github.com/kiamev/moogle-mod-manager/mods/nexus"
-	"github.com/kiamev/moogle-mod-manager/repo"
 	config_installer "github.com/kiamev/moogle-mod-manager/ui/config-installer"
 	cw "github.com/kiamev/moogle-mod-manager/ui/custom-widgets"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
@@ -35,7 +35,6 @@ func New() state.Screen {
 		kind:           &kind,
 		entryManager:   newEntryManager(),
 		previewDef:     newPreviewDef(),
-		modCompatsDef:  newModCompatibilityDef(),
 		donationsDef:   newDonationsDef(),
 		gamesDef:       newGamesDef(),
 		description:    newRichTextEditor(),
@@ -43,6 +42,7 @@ func New() state.Screen {
 		categorySelect: widget.NewSelect(mods.Categories, func(string) {}),
 	}
 	//a.modKindDef = newModKindDef(a.kind)
+	a.modCompatsDef = newModCompatibilityDef(a.gamesDef)
 	a.downloadDef = newDownloadsDef(a.kind)
 	a.alwaysDownload = newAlwaysDownloadDef(a.downloadDef)
 	a.configsDef = newConfigurationsDef(a.downloadDef)
@@ -276,6 +276,7 @@ func (a *ModAuthorer) updateEntries(mod *mods.Mod) {
 	}
 
 	a.previewDef.set(mod.Preview)
+
 	a.modCompatsDef.set(mod.ModCompatibility)
 	//a.modKindDef.set(&mod.ModKind)
 	a.downloadDef.set(mod.Downloadables)
@@ -362,7 +363,10 @@ func (a *ModAuthorer) compileMod() (m *mods.Mod) {
 		Description:  a.description.String(),
 		ReleaseNotes: a.releaseNotes.String(),
 		Link:         a.getString("Link"),
-		Preview:      a.previewDef.compile(),
+		ModKind: mods.ModKind{
+			Kind: *a.kind,
+		},
+		Preview: a.previewDef.compile(),
 		//ModKind:      *a.modKindDef.compile(),
 		//ConfigSelectionType: mods.SelectType(a.getString("Select Type")),
 		ConfigSelectionType: mods.Auto,
