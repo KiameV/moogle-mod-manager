@@ -29,7 +29,9 @@ func Initialize() (err error) {
 }
 
 func GetDir(modID string) (dir string, found bool) {
-	dir, found = lookup[modID]
+	if modID != "" {
+		dir, found = lookup[modID]
+	}
 	return
 }
 

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"errors"
+	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
@@ -17,6 +18,7 @@ import (
 	cw "github.com/kiamev/moogle-mod-manager/ui/custom-widgets"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
 	"github.com/kiamev/moogle-mod-manager/ui/util"
+	u "github.com/kiamev/moogle-mod-manager/util"
 	"github.com/ncruces/zenity"
 	"golang.design/x/clipboard"
 	"io/ioutil"
@@ -49,6 +51,7 @@ func New() state.Screen {
 
 type ModAuthorer struct {
 	*entryManager
+	modID        string
 	kind         *mods.Kind
 	editCallback func(*mods.Mod)
 
@@ -79,6 +82,7 @@ func (a *ModAuthorer) OnClose() {
 }
 
 func (a *ModAuthorer) NewHostedMod() {
+	a.modID = ""
 	a.updateEntries(&mods.Mod{
 		ModKind: mods.ModKind{
 			Kind: mods.Hosted,
@@ -89,6 +93,7 @@ func (a *ModAuthorer) NewHostedMod() {
 }
 
 func (a *ModAuthorer) NewNexusMod() {
+	a.modID = ""
 	a.updateEntries(&mods.Mod{
 		ModKind: mods.ModKind{
 			Kind: mods.Nexus,
@@ -139,17 +144,19 @@ func (a *ModAuthorer) LoadModToEdit() (successfullyLoadedMod bool) {
 		err = json.Unmarshal(b, &mod)
 	}
 	*a.kind = mod.ModKind.Kind
+	a.modID = mod.ID
 	a.updateEntries(&mod)
 	return true
 }
 
 func (a *ModAuthorer) EditMod(mod *mods.Mod, editCallback func(*mods.Mod)) {
+	a.modID = mod.ID
 	a.editCallback = editCallback
 	a.updateEntries(mod)
 }
 
 func (a *ModAuthorer) Draw(w fyne.Window) {
-	if dir, found := authored.GetDir(a.getString("ID")); found {
+	if dir, found := authored.GetDir(a.modID); found {
 		state.SetBaseDir(dir)
 	}
 
@@ -263,7 +270,6 @@ func (a *ModAuthorer) updateEntries(mod *mods.Mod) {
 	}
 
 	a.createBaseDir(state.GetBaseDirBinding())
-	a.createFormItem("ID", mod.ID)
 	a.createFormItem("Name", mod.Name)
 	a.createFormItem("Author", mod.Author)
 	a.createFormItem("Release Date", mod.ReleaseDate)
@@ -359,7 +365,6 @@ func (a *ModAuthorer) Marshal(mod *mods.Mod, as As) (b []byte, err error) {
 
 func (a *ModAuthorer) compileMod() (mod *mods.Mod) {
 	m := &mods.Mod{
-		ID:           a.getString("ID"),
 		Name:         a.getString("Name"),
 		Author:       a.getString("Author"),
 		ReleaseDate:  a.getString("Release Date"),
@@ -377,6 +382,21 @@ func (a *ModAuthorer) compileMod() (mod *mods.Mod) {
 		DonationLinks:       a.donationsDef.compile(),
 		Games:               a.gamesDef.compile(),
 		IsManuallyCreated:   true,
+	}
+
+	switch *a.kind {
+	case mods.Hosted:
+		name := u.CreateFileName(m.Name)
+		author := u.CreateFileName(m.Author)
+		if name != "" && author != "" {
+			m.ID = strings.ToLower(fmt.Sprintf("%s.%s", name, author))
+		}
+	case mods.Nexus:
+		if m.ModKind.Nexus != nil {
+			m.ID = mod.ModKind.Nexus.ID
+		}
+	default:
+		panic("invalid mod kind")
 	}
 
 	m.AlwaysDownload = a.alwaysDownload.compile()
@@ -480,7 +500,6 @@ func (a *ModAuthorer) validate(mod *mods.Mod, showMessage bool) bool {
 func (a *ModAuthorer) createHostedInputs() *container.AppTabs {
 	var entries = []*widget.FormItem{
 		a.getBaseDirFormItem("Working Dir"),
-		a.getFormItem("ID"),
 		a.getFormItem("Name"),
 		a.getFormItem("Author"),
 		widget.NewFormItem("Category", a.categorySelect),
@@ -494,7 +513,7 @@ func (a *ModAuthorer) createHostedInputs() *container.AppTabs {
 	return container.NewAppTabs(
 		container.NewTabItem("Mod", container.NewVScroll(widget.NewForm(entries...))),
 		container.NewTabItem("Description", a.description.Draw()),
-		container.NewTabItem("Kind", container.NewVScroll(a.modKindDef.draw())),
+		//container.NewTabItem("Kind", container.NewVScroll(a.modKindDef.draw())),
 		container.NewTabItem("Compatibility", container.NewVScroll(a.modCompatsDef.draw())),
 		container.NewTabItem("Release Notes", a.releaseNotes.Draw()),
 		container.NewTabItem("Downloadables", container.NewVScroll(a.downloadDef.draw())),
