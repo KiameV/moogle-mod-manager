@@ -5,6 +5,7 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/widget"
+	"strings"
 )
 
 type richTextEditor struct {
@@ -32,11 +33,17 @@ func (e *richTextEditor) Draw() fyne.CanvasObject {
 }
 
 func (e *richTextEditor) DataChanged() {
-	e.preview.ParseMarkdown(e.String())
+	text := e.String()
+	text2 := strings.ReplaceAll(text, "\r", "")
+	if text2 != text {
+		e.SetText(text2)
+		return
+	}
+	e.preview.ParseMarkdown(text2)
 }
 
 func (e *richTextEditor) SetText(s string) {
-	e.input.Set(s)
+	e.input.Set(strings.ReplaceAll(s, "\r", ""))
 }
 
 func (e *richTextEditor) String() string {

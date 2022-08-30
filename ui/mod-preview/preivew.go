@@ -8,6 +8,7 @@ import (
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/mods/managed"
 	"net/url"
+	"strings"
 )
 
 type ModPreviewOptions struct {
@@ -29,13 +30,13 @@ func CreatePreview(mod *mods.Mod, options ...ModPreviewOptions) fyne.CanvasObjec
 	//c.Add(createField("Category", mod.Category))
 	c.Add(createField("Release Date", mod.ReleaseDate))
 
-	text := widget.NewRichTextFromMarkdown(mod.Description)
+	text := widget.NewRichTextFromMarkdown(strings.ReplaceAll(mod.Description, "\r", ""))
 	text.Wrapping = fyne.TextWrapWord
 	tabs := container.NewAppTabs(
 		container.NewTabItem("Description", text),
 	)
 	if mod.ReleaseNotes != "" {
-		text = widget.NewRichTextFromMarkdown(mod.ReleaseNotes)
+		text = widget.NewRichTextFromMarkdown(strings.ReplaceAll(mod.ReleaseNotes, "\r", ""))
 		text.Wrapping = fyne.TextWrapWord
 		container.NewTabItem("Release Notes", text)
 	}
