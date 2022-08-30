@@ -63,8 +63,8 @@ func (d *filesDef) createItem(item interface{}, done ...func(interface{})) {
 		d.getFormItem("To FF PR/"),
 	}, func(ok bool) {
 		if ok {
-			f.From = d.getString("From")
-			f.To = d.getString("To FF PR/")
+			f.From = cleanPath(d.getString("From"))
+			f.To = cleanPath(d.getString("To FF PR/"))
 			if len(done) > 0 {
 				done[0](f)
 			}

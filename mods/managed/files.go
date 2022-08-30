@@ -262,6 +262,7 @@ func MoveDirs(game config.Game, dirs []*mods.ModDir, modDir string, toDir string
 				from = strings.ReplaceAll(from, modDir, "")
 
 				to = strings.ReplaceAll(from, modDir, "")
+				to = strings.Replace(to, fromDir, "", 1)
 				to = filepath.Join(d.To, to)
 				to = strings.ReplaceAll(to, "\\", "/")
 				to = strings.TrimLeft(to, "/")

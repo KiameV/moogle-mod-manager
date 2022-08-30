@@ -92,7 +92,9 @@ func (ui *localUI) Draw(w fyne.Window) {
 				}
 				ui.removeModFromList(ui.selectedMod)
 				ui.selectedMod = nil
+				ui.modList.UnselectAll()
 				ui.split.Trailing = container.NewMax()
+				ui.split.Refresh()
 			}
 		}, state.Window).Show()
 	})

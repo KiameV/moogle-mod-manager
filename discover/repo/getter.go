@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+	"errors"
 	"github.com/go-git/go-git/v5"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
@@ -12,7 +13,9 @@ import (
 )
 
 type Getter interface {
+	GetMod(*mods.Mod) (*mods.Mod, error)
 	GetMods(game config.Game) ([]*mods.Mod, error)
+	Pull() error
 	pull(rd repoDef) error
 }
 
@@ -60,6 +63,29 @@ func (r *repo) pull(rd repoDef) (err error) {
 	_, _, err = r.getWorkTree(rd)
 	return
 
+}
+
+func (r *repo) GetMod(toGet *mods.Mod) (mod *mods.Mod, err error) {
+	var dir string
+	for _, rd := range repoDefs {
+		if toGet.Category == mods.Utility {
+			dir = filepath.Join(rd.repoUtilDir(), toGet.DirectoryName())
+		} else if len(toGet.Games) == 0 {
+			dir = filepath.Join(rd.repoGameDir(config.NameToGame(toGet.Games[0].Name)), toGet.DirectoryName())
+		} else if len(toGet.Games) > 1 {
+			return nil, errors.New(toGet.Name + " has multiple games and is not a Utility category")
+		} else {
+			return nil, errors.New(toGet.Name + " has no games")
+		}
+
+		if err = util.LoadFromFile(filepath.Join(dir, "mod.json"), &mod); err == nil {
+			return
+		}
+		if err = util.LoadFromFile(filepath.Join(dir, "mod.xml"), &mod); err == nil {
+			return
+		}
+	}
+	return nil, errors.New("unable to find repo file for " + toGet.Name)
 }
 
 func (r *repo) GetMods(game config.Game) (result []*mods.Mod, err error) {

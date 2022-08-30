@@ -1,16 +1,14 @@
 package managed
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
-	"fyne.io/fyne/v2/dialog"
 	"github.com/carwale/golibraries/workerpool"
-	"github.com/kiamev/moogle-mod-manager/browser"
 	"github.com/kiamev/moogle-mod-manager/config"
+	"github.com/kiamev/moogle-mod-manager/discover/repo"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/mods/nexus"
-	"github.com/kiamev/moogle-mod-manager/ui/state"
+	"github.com/kiamev/moogle-mod-manager/ui/util"
 	"strings"
 	"sync"
 )
@@ -25,6 +23,12 @@ func CheckForUpdates(game config.Game, result func(err error)) {
 		wg  = sync.WaitGroup{}
 		ucs []updateChecker
 	)
+
+	if err := repo.NewGetter().Pull(); err != nil {
+		result(err)
+		return
+	}
+
 	for _, tm := range lookup[game].Mods {
 		if tm.Mod.ModKind.Kind == mods.Hosted {
 			wg.Add(1)
@@ -60,24 +64,19 @@ type hostedUpdateChecker struct {
 
 func (c *hostedUpdateChecker) Process() error {
 	defer c.wg.Done()
-	var mod mods.Mod
-	var url string
-	if mod.Category == mods.Utility {
-		url = "utilities/" + mod.DirectoryName()
-	} else {
-		url = fmt.Sprintf("%s/%s/mod.json", config.String(config.NameToGame(mod.Games[0].Name)), mod.DirectoryName())
-	}
-	if b, err := browser.DownloadAsBytes(url); err == nil {
-		if e := json.Unmarshal(b, &mod); e != nil {
-			return err
-		}
-	}
-	if mod.ID == "" {
-		dialog.ShowError(errors.New("Could not download remote version for "+c.tm.Mod.Name), state.Window)
+
+	remoteMod, err := repo.NewGetter().GetMod(c.tm.Mod)
+	if err != nil {
+		util.ShowErrorLong(err)
 		return nil
 	}
-	if isVersionNewer(c.tm.Mod.Version, mod.Version) {
-		markForUpdate(c.tm, &mod)
+
+	if remoteMod.ID != c.tm.Mod.ID {
+		util.ShowErrorLong(errors.New("Could not download remote version for " + c.tm.Mod.Name))
+		return nil
+	}
+	if isVersionNewer(c.tm.Mod.Version, remoteMod.Version) {
+		markForUpdate(c.tm, remoteMod)
 	}
 	return nil
 }

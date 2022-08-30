@@ -9,6 +9,7 @@ import (
 	"github.com/kiamev/moogle-mod-manager/mods"
 	cw "github.com/kiamev/moogle-mod-manager/ui/custom-widgets"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
+	"strings"
 )
 
 type dirsDef struct {
@@ -65,8 +66,8 @@ func (d *dirsDef) createItem(item interface{}, done ...func(interface{})) {
 		d.getFormItem("Recursive"),
 	}, func(ok bool) {
 		if ok {
-			f.From = d.getString("From")
-			f.To = d.getString("To FF PR/")
+			f.From = cleanPath(d.getString("From"))
+			f.To = cleanPath(d.getString("To FF PR/"))
 			f.Recursive = d.getBool("Recursive")
 			if len(done) > 0 {
 				done[0](f)
@@ -102,4 +103,9 @@ func (d *dirsDef) populate(dirs []*mods.ModDir) {
 	for _, dir := range dirs {
 		d.list.AddItem(dir)
 	}
+}
+
+func cleanPath(s string) string {
+	s = strings.ReplaceAll(s, "\\", "/")
+	return strings.ReplaceAll(s, "//", "/")
 }
