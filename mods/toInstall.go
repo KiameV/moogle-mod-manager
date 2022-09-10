@@ -30,7 +30,15 @@ func NewToInstallForMod(kind Kind, mod *Mod, downloadFiles []*DownloadFiles) (re
 		mLookup[dl.Name] = dl
 	}
 	for _, df := range downloadFiles {
-		dfLookup[df.DownloadName] = df
+		i, ok := dfLookup[df.DownloadName]
+		if !ok {
+			i = &DownloadFiles{
+				DownloadName: df.DownloadName,
+			}
+			dfLookup[df.DownloadName] = i
+		}
+		i.Files = append(i.Files, df.Files...)
+		i.Dirs = append(i.Dirs, df.Dirs...)
 	}
 	for n, df := range dfLookup {
 		dl, _ := mLookup[n]
