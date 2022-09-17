@@ -29,7 +29,7 @@ func newChoicesDef(dlDef *downloadsDef, configDef *configurationsDef) *choicesDe
 		GetItemKey:    d.getItemKey,
 		GetItemFields: d.getItemFields,
 		OnEditItem:    d.onEditItem,
-	})
+	}, true)
 	return d
 }
 

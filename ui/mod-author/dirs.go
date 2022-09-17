@@ -25,7 +25,7 @@ func newDirsDef() *dirsDef {
 		GetItemKey:    d.getItemKey,
 		GetItemFields: d.getItemFields,
 		OnEditItem:    d.onEditItem,
-	})
+	}, false)
 	return d
 }
 

@@ -25,7 +25,7 @@ func newAlwaysDownloadDef(downloads *downloadsDef) *alwaysDownloadDef {
 		GetItemKey:    d.getItemKey,
 		GetItemFields: d.getItemFields,
 		OnEditItem:    d.onEditItem,
-	})
+	}, true)
 	return d
 }
 

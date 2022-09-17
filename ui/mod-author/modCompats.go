@@ -32,7 +32,7 @@ func newModCompatsDef(name string, gd *gamesDef) *modCompatsDef {
 		GetItemKey:    d.getItemKey,
 		GetItemFields: d.getItemFields,
 		OnEditItem:    d.onEditItem,
-	})
+	}, true)
 	return d
 }
 

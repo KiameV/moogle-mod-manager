@@ -3,8 +3,10 @@ package custom_widgets
 import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"github.com/kiamev/moogle-mod-manager/ui/state"
 )
 
 type Callbacks struct {
@@ -14,17 +16,18 @@ type Callbacks struct {
 }
 
 type DynamicList struct {
-	list      *fyne.Container
-	Items     []interface{}
-	callbacks Callbacks
+	list          *fyne.Container
+	Items         []interface{}
+	callbacks     Callbacks
+	confirmDelete bool
 }
 
-func NewDynamicList(callbacks Callbacks) *DynamicList {
-	l := &DynamicList{
-		list:      container.NewVBox(),
-		callbacks: callbacks,
+func NewDynamicList(callbacks Callbacks, confirmDelete bool) *DynamicList {
+	return &DynamicList{
+		list:          container.NewVBox(),
+		callbacks:     callbacks,
+		confirmDelete: confirmDelete,
 	}
-	return l
 }
 
 func (l *DynamicList) AddItem(item interface{}) {
@@ -73,6 +76,18 @@ func newAction(item interface{}, icon fyne.Resource, onActivated func(item inter
 }
 
 func (l *DynamicList) removeItem(item interface{}) {
+	if l.confirmDelete {
+		dialog.NewConfirm("Delete Item?", "Are you sure you want to delete this item?", func(ok bool) {
+			if ok {
+				l.removeFromList(item)
+			}
+		}, state.Window).Show()
+	} else {
+		l.removeFromList(item)
+	}
+}
+
+func (l *DynamicList) removeFromList(item interface{}) {
 	for i, v := range l.Items {
 		if item == v {
 			l.Items = append(l.Items[:i], l.Items[i+1:]...)

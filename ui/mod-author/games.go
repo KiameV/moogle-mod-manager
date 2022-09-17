@@ -25,7 +25,7 @@ func newGamesDef() *gamesDef {
 		GetItemKey:    d.getItemKey,
 		GetItemFields: d.getItemFields,
 		OnEditItem:    d.editItem,
-	})
+	}, false)
 	return d
 }
 
