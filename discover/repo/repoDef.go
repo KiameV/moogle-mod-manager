@@ -39,8 +39,8 @@ func (d repoDef) repoGameDir(game config.Game) string {
 	return filepath.Join(d.repoDir(), config.String(game))
 }
 
-func (d repoDef) repoNexusIDDir(game config.Game, id string) string {
-	return filepath.Join(d.repoGameDir(game), "nexus", id)
+func (d repoDef) repoNexusIDDir(game config.Game, id mods.ModID) string {
+	return filepath.Join(d.repoGameDir(game), "nexus", string(id))
 }
 
 func (d repoDef) repoNexusDir(game config.Game, mod *mods.Mod) string {

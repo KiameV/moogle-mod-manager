@@ -9,6 +9,7 @@ import (
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/discover"
 	"github.com/kiamev/moogle-mod-manager/mods"
+	"github.com/kiamev/moogle-mod-manager/mods/managed"
 	cw "github.com/kiamev/moogle-mod-manager/ui/custom-widgets"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
 	"github.com/kiamev/moogle-mod-manager/ui/util"
@@ -45,7 +46,7 @@ func (d *modCompatsDef) compile() []*mods.ModCompat {
 }
 
 func (d *modCompatsDef) getItemKey(item interface{}) string {
-	return item.(*mods.ModCompat).DisplayName()
+	return managed.GetDisplayName(state.CurrentGame, item.(*mods.ModCompat).ModID())
 }
 
 func (d *modCompatsDef) getItemFields(item interface{}) []string {
@@ -71,7 +72,7 @@ func (d *modCompatsDef) createItem(item interface{}, done ...func(interface{})) 
 	}
 
 	search := xw.NewCompletionEntry(nil)
-	search.SetText(m.ModID())
+	search.SetText(string(m.ModID()))
 	search.OnChanged = func(s string) {
 		if len(s) < 3 {
 			search.HideCompletion()
@@ -79,7 +80,7 @@ func (d *modCompatsDef) createItem(item interface{}, done ...func(interface{})) 
 		s = strings.ToLower(s)
 		var results []string
 		for _, mod := range modLookup {
-			if strings.Contains(strings.ToLower(mod.ID), s) || strings.Contains(strings.ToLower(mod.Name), s) {
+			if strings.Contains(strings.ToLower(string(mod.ID)), s) || strings.Contains(strings.ToLower(mod.Name), s) {
 				results = append(results, mod.Name)
 			}
 		}

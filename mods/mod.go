@@ -12,10 +12,15 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 )
 
-type SelectType string
+type (
+	SelectType string
+	Category   string
+	ModID      string
+)
 
 const (
 	Auto   SelectType = "Auto"
@@ -24,8 +29,6 @@ const (
 )
 
 var SelectTypes = []string{string(Auto), string(Select), string(Radio)}
-
-type Category string
 
 const (
 	BattleScene        Category = "Battle Scene"
@@ -61,7 +64,7 @@ var Categories = []string{
 	string(Utility)}
 
 type Mod struct {
-	ID                  string            `json:"ID" xml:"ID"`
+	ID                  ModID             `json:"ID" xml:"ID"`
 	Name                string            `json:"Name" xml:"Name"`
 	Author              string            `json:"Author" xml:"Author"`
 	AuthorLink          string            `json:"AuthorLink" xml:"AuthorLink"`
@@ -83,14 +86,20 @@ type Mod struct {
 	IsManuallyCreated   bool              `json:"IsManuallyCreated" xml:"IsManuallyCreated"`
 }
 
-func (m *Mod) ModUniqueID(game config.Game) string {
-	if m.ModKind.Kind == Hosted {
-		return m.ID
+func (m *Mod) UniqueModID(game config.Game) string {
+	return fmt.Sprintf("%d.%s", game, string(m.ID))
+}
+
+func (m *Mod) ModIdAsNumber() (uint64, error) {
+	var s string
+	sp := strings.Split(string(m.ID), ".")
+	if len(sp) == 1 {
+		s = sp[0]
+	} else {
+		s = sp[1]
 	}
-	if m.ModKind.Kind == Nexus {
-		return fmt.Sprintf("%s-%s", config.String(game), m.ID)
-	}
-	return ""
+
+	return strconv.ParseUint(s, 10, 64)
 }
 
 func (m *Mod) BranchName() string {
@@ -383,7 +392,7 @@ func (m *Mod) Merge(from *Mod) {
 }
 
 func (m *Mod) DirectoryName() string {
-	return util.CreateFileName(m.ID)
+	return util.CreateFileName(string(m.ID))
 }
 
 func Sort(mods []*Mod) (sorted []*Mod) {

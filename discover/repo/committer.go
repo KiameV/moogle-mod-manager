@@ -66,7 +66,7 @@ func (c *repoClient) Submit() (url string, err error) {
 			err = errors.New("multi-game mods must be hosted")
 			return
 		}
-		file = filepath.Join(rd.repoDir(), "utilities", util.CreateFileName(c.mod.ID))
+		file = filepath.Join(rd.repoDir(), "utilities", util.CreateFileName(string(c.mod.ID)))
 	} else {
 		err = errors.New("no games specified")
 		return

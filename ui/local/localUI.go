@@ -1,6 +1,8 @@
 package local
 
 import (
+	"errors"
+	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
@@ -251,13 +253,17 @@ func (ui *localUI) showWorkingDialog() {
 	}
 }
 
-func (ui *localUI) endEnableDisableCallback(err error) {
+func (ui *localUI) endEnableDisableCallback(result mods.Result, err ...error) {
 	if ui.workingDialog != nil {
 		ui.workingDialog.Hide()
 		ui.workingDialog = nil
 	}
-	if err != nil {
-		util.ShowErrorLong(err)
+	if result == mods.Error && len(err) == 0 {
+		util.ShowErrorLong(errors.New("result is Error but no error messages received"))
+	} else if result != mods.Error && len(err) > 0 {
+		util.ShowErrorLong(fmt.Errorf("result was not Error but received error: %v", err[0]))
+	} else if result == mods.Error && len(err) > 0 {
+		util.ShowErrorLong(err[0])
 	}
 	ui.split.Leading.Refresh()
 }

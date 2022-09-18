@@ -51,7 +51,7 @@ func New() state.Screen {
 
 type ModAuthorer struct {
 	*entryManager
-	modID        string
+	modID        mods.ModID
 	kind         *mods.Kind
 	editCallback func(*mods.Mod)
 
@@ -382,10 +382,10 @@ func (a *ModAuthorer) compileMod() (m *mods.Mod) {
 		name := u.CreateFileName(m.Name)
 		author := u.CreateFileName(m.Author)
 		if name != "" && author != "" {
-			m.ID = strings.ToLower(fmt.Sprintf("%s.%s", name, author))
+			m.ID = mods.ModID(strings.ToLower(fmt.Sprintf("%s.%s", name, author)))
 		}
 	case mods.Nexus:
-		m.ID = a.modID
+		m.ID = mods.ModID("nexus." + a.modID)
 	default:
 		panic("invalid mod kind")
 	}

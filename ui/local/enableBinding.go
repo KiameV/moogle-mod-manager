@@ -1,7 +1,11 @@
 package local
 
 import (
+	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
+	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/mods/managed"
@@ -42,7 +46,7 @@ func (b *enableBind) DataChanged() {
 			if err := b.EnableMod(); err != nil {
 				if err != nil {
 					_ = b.Set(false)
-					b.done(err)
+					b.done(mods.Error, err)
 				}
 			}
 		} else {
@@ -52,7 +56,11 @@ func (b *enableBind) DataChanged() {
 			}
 			err := b.DisableMod()
 			_ = b.Set(false)
-			b.done(err)
+			if err != nil {
+				b.done(mods.Error, err)
+			} else {
+				b.done(mods.Ok)
+			}
 		}
 	}
 }
@@ -85,9 +93,9 @@ func (b *enableBind) enableModWithConfig() (err error) {
 }
 
 func (b *enableBind) enableMod(toInstall []*mods.ToInstall) (err error) {
-	return managed.EnableMod(mods.NewModEnabler(*state.CurrentGame, b.tm, toInstall, b.showWorking, func(err error) {
+	return managed.EnableMod(mods.NewModEnabler(*state.CurrentGame, b.tm, toInstall, b.OnConflict, b.showWorking, func(result mods.Result, err ...error) {
 		_ = b.Set(b.tm.Enabled)
-		b.done(err)
+		b.done(result, err...)
 	}))
 }
 
@@ -95,6 +103,20 @@ func (b *enableBind) DisableMod() error {
 	return managed.DisableMod(*state.CurrentGame, b.tm)
 }
 
-func (b *enableBind) OnConflict() {
-
+func (b *enableBind) OnConflict(conflicts []*mods.FileConflict, confirmationCallback mods.ConflictChoiceCallback) {
+	f := widget.NewForm()
+	for _, c := range conflicts {
+		f.Items = append(f.Items, widget.NewFormItem(
+			filepath.Base(c.File),
+			widget.NewSelect([]string{c.CurrentModName, c.NewModName}, c.OnChange)))
+	}
+	d := dialog.NewCustomConfirm("Conflicts", "ok", "cancel", container.NewVScroll(f), func(ok bool) {
+		r := mods.Ok
+		if !ok {
+			r = mods.Cancel
+		}
+		confirmationCallback(r, conflicts)
+	}, state.Window)
+	d.Resize(fyne.NewSize(400, 400))
+	d.Show()
 }

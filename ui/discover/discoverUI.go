@@ -26,7 +26,7 @@ type discoverUI struct {
 	data        binding.UntypedList
 	split       *container.Split
 	mods        []*mods.Mod
-	localMods   map[string]bool
+	localMods   map[mods.ModID]bool
 	prevSearch  string
 }
 
@@ -41,7 +41,7 @@ func (ui *discoverUI) PreDraw(w fyne.Window, args ...interface{}) (err error) {
 	defer d.Hide()
 	d.Show()
 
-	ui.localMods = make(map[string]bool)
+	ui.localMods = make(map[mods.ModID]bool)
 	for _, tm := range args[0].([]interface{})[0].([]*mods.TrackedMod) {
 		ui.localMods[tm.GetModID()] = true
 	}

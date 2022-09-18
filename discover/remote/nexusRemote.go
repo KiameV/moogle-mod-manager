@@ -8,7 +8,6 @@ import (
 	"github.com/kiamev/moogle-mod-manager/util"
 	"os"
 	"path/filepath"
-	"strconv"
 )
 
 func getDir(game config.Game) string {
@@ -73,7 +72,7 @@ func appendNewNexusMods(game config.Game, ms []*mods.Mod) (result []*mods.Mod, e
 func getLastNexusModID(ms []*mods.Mod) (lastID int) {
 	for _, m := range ms {
 		if m.ModKind.Kind == mods.Nexus {
-			id, _ := strconv.ParseInt(m.ID, 10, 64)
+			id, _ := m.ModIdAsNumber()
 			if int(id) > lastID {
 				lastID = int(id)
 			}

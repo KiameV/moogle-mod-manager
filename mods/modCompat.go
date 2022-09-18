@@ -1,7 +1,5 @@
 package mods
 
-import "fmt"
-
 type ModCompat struct {
 	Kind        Kind             `json:"ModKind" xml:"ModKind"`
 	Versions    []string         `json:"Version,omitempty" xml:"Versions,omitempty"`
@@ -12,11 +10,11 @@ type ModCompat struct {
 }
 
 type ModCompatHosted struct {
-	ModID string `json:"ModID" xml:"ModID"`
+	ModID ModID `json:"ModID" xml:"ModID"`
 }
 
 type ModCompatNexus struct {
-	ModID string `json:"NexusModID" xml:"NexusModID"`
+	ModID ModID `json:"NexusModID" xml:"NexusModID"`
 }
 
 type ModCompatOrder string
@@ -29,20 +27,11 @@ const (
 
 var ModCompatOrders = []string{string(None), string(Before), string(After)}
 
-func (c *ModCompat) ModID() string {
+func (c *ModCompat) ModID() ModID {
 	if c.Kind == Hosted && c.Hosted != nil {
 		return c.Hosted.ModID
 	} else if c.Kind == Nexus && c.Nexus != nil {
 		return c.Nexus.ModID
-	}
-	return ""
-}
-
-func (c *ModCompat) DisplayName() string {
-	if c.Kind == Hosted && c.Hosted != nil {
-		return fmt.Sprintf("Hosted: %s", c.Hosted.ModID)
-	} else if c.Kind == Nexus && c.Nexus != nil {
-		return fmt.Sprintf("Nexus: %s", c.Nexus.ModID)
 	}
 	return ""
 }

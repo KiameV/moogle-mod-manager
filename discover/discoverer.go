@@ -57,13 +57,13 @@ func GetModsAsLookup(game *config.Game) (lookup map[string]*mods.Mod, err error)
 
 	lookup = make(map[string]*mods.Mod)
 	for _, m := range repoMods {
-		if _, ok = lookup[m.ModUniqueID(*state.CurrentGame)]; !ok {
-			lookup[m.ModUniqueID(*state.CurrentGame)] = m
+		if _, ok = lookup[m.UniqueModID(*game)]; !ok {
+			lookup[m.UniqueModID(*game)] = m
 		}
 	}
 	for _, m := range remoteMods {
-		if found, ok = lookup[m.ModUniqueID(*state.CurrentGame)]; !ok {
-			lookup[m.ModUniqueID(*state.CurrentGame)] = m
+		if found, ok = lookup[m.UniqueModID(*game)]; !ok {
+			lookup[m.UniqueModID(*game)] = m
 		} else {
 			found.Merge(m)
 		}

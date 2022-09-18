@@ -23,7 +23,7 @@ var (
 )
 
 type managedModsAndFiles struct {
-	Mods map[string]*modFiles
+	Mods map[mods.ModID]*modFiles
 }
 
 type modFiles struct {
@@ -31,25 +31,42 @@ type modFiles struct {
 	MovedFiles    map[string]*mods.ModFile
 }
 
-func AddModFiles(game config.Game, tm *mods.TrackedMod, files []*mods.DownloadFiles) (err error) {
+func AddModFiles(enabler *mods.ModEnabler, files []*mods.DownloadFiles, done mods.DoneCallback) {
 	var (
+		game    = enabler.Game
 		mmf, ok = managed[game]
-		configs = config.Get()
-		modPath = filepath.Join(configs.GetModsFullPath(game), tm.GetDirSuffix())
 	)
 	if !ok {
 		mmf = &managedModsAndFiles{
-			Mods: make(map[string]*modFiles),
+			Mods: make(map[mods.ModID]*modFiles),
 		}
 		managed[game] = mmf
 	}
 
-	if err = detectCollisions(mmf.Mods, files); err != nil {
-		return
-	}
+	ResolveConflicts(enabler, mmf.Mods, files, func(result mods.Result, err ...error) {
+		if result == mods.Cancel {
+			done(result)
+		} else if result == mods.Error {
+			done(result, err...)
+		} else {
+			if e := addModFiles(enabler, mmf, files); e != nil {
+				done(mods.Error, e)
+			} else {
+				done(mods.Ok)
+			}
+		}
+	})
+}
 
-	var backedUp []*mods.ModFile
-	var moved []*mods.ModFile
+func addModFiles(enabler *mods.ModEnabler, mmf *managedModsAndFiles, files []*mods.DownloadFiles) (err error) {
+	var (
+		game     = enabler.Game
+		tm       = enabler.TrackedMod
+		configs  = config.Get()
+		modPath  = filepath.Join(configs.GetModsFullPath(game), tm.GetDirSuffix())
+		backedUp []*mods.ModFile
+		moved    []*mods.ModFile
+	)
 
 	for _, df := range files {
 		modDir := filepath.Join(modPath, df.DownloadName)
@@ -151,43 +168,6 @@ func RemoveModFiles(game config.Game, tm *mods.TrackedMod) (err error) {
 	}
 
 	delete(mmf.Mods, tm.GetModID())
-	return
-}
-
-func detectCollisions(managedFiles map[string]*modFiles, modFiles []*mods.DownloadFiles) error {
-	/*fileToMod := make(map[string]string)
-	for modID, mf := range managedFiles {
-		for _, f := range mf.MovedFiles {
-			fileToMod[f.To] = modID
-		}
-	}
-	collisions := detectCollisionsFromMap(fileToMod, modFiles)
-	if len(collisions) > 0 {
-		sb := strings.Builder{}
-		for modID, fs := range collisions {
-			sb.WriteString(modID)
-			sb.WriteByte('\n')
-			for _, f := range fs {
-				sb.WriteString(f)
-				sb.WriteByte('\n')
-			}
-		}
-		return fmt.Errorf("cannot enable mod as these files would collide:\n%s", sb.String())
-	}*/
-	return nil
-}
-
-func detectCollisionsFromMap(rootDir string, fileToMod map[string]string, modFiles []*mods.DownloadFiles) (collisions map[string][]string) {
-	/*for _, mf := range modFiles {
-		for _, f := range mf.Files {
-			if modID, found := fileToMod[f.To]; found {
-				collisions[modID] = append(collisions[modID], f.To)
-			}
-		}
-		for _, d := range mf.Dirs {
-			_ = filepath.WalkDir(rootDir)
-		}
-	}*/
 	return
 }
 

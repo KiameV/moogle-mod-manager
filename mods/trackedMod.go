@@ -39,16 +39,16 @@ func (m *TrackedMod) Toggle() bool {
 	return m.Enabled
 }
 
-func (m *TrackedMod) GetModID() string {
+func (m *TrackedMod) GetModID() ModID {
 	return m.Mod.ID
 }
 
 func (m *TrackedMod) GetDirSuffix() string {
 	k := m.Mod.ModKind
 	if k.Kind == Hosted {
-		return filepath.Join(util.CreateFileName(m.GetModID()), util.CreateFileName(m.Mod.Version))
+		return filepath.Join(util.CreateFileName(string(m.GetModID())), util.CreateFileName(m.Mod.Version))
 	}
-	return filepath.Join(util.CreateFileName(m.GetModID()))
+	return filepath.Join(util.CreateFileName(string(m.GetModID())))
 }
 
 func (m *TrackedMod) GetMod() *Mod {

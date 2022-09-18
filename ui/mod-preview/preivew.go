@@ -90,7 +90,7 @@ func createCompatibility(game *config.Game, compatibility *mods.ModCompatibility
 		for _, r := range compatibility.Requires {
 			name = managed.GetDisplayName(game, r.ModID())
 			if name == "" {
-				name = r.DisplayName()
+				name = managed.GetDisplayName(game, r.ModID())
 			}
 			c.Add(widget.NewLabel("  - " + name))
 		}
@@ -102,7 +102,7 @@ func createCompatibility(game *config.Game, compatibility *mods.ModCompatibility
 		for _, r := range compatibility.Forbids {
 			name = managed.GetDisplayName(game, r.ModID())
 			if name == "" {
-				name = r.DisplayName()
+				name = managed.GetDisplayName(game, r.ModID())
 			}
 			c.Add(widget.NewLabel("  - " + name))
 		}

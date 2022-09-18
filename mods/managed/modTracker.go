@@ -152,7 +152,7 @@ func GetMods(game config.Game) []*mods.TrackedMod {
 	return lookup[game].Mods
 }
 
-func TryGetMod(game config.Game, id string) (*mods.TrackedMod, bool) {
+func TryGetMod(game config.Game, id mods.ModID) (*mods.TrackedMod, bool) {
 	var m *mods.TrackedMod
 	if gm := lookup[game]; gm != nil {
 		for _, m = range gm.Mods {
@@ -164,7 +164,7 @@ func TryGetMod(game config.Game, id string) (*mods.TrackedMod, bool) {
 	return nil, false
 }
 
-func GetDisplayName(game *config.Game, modID string) string {
+func GetDisplayName(game *config.Game, modID mods.ModID) string {
 	if game != nil {
 		if mod, found := TryGetMod(*game, modID); found {
 			// success
@@ -187,7 +187,7 @@ func enableMod(enabler *mods.ModEnabler, err error) {
 	)
 	if err != nil {
 		tm.Enabled = false
-		enabler.DoneCallback(err)
+		enabler.DoneCallback(mods.Error, err)
 		return
 	}
 	enabler.ShowWorking()
@@ -196,7 +196,7 @@ func enableMod(enabler *mods.ModEnabler, err error) {
 		to := filepath.Join(modPath, ti.Download.Name)
 		if err = decompress(*ti.Download.DownloadedArchiveLocation, to); err != nil {
 			tm.Enabled = false
-			enabler.DoneCallback(err)
+			enabler.DoneCallback(mods.Error, err)
 			return
 		}
 		if tm.Mod.ModKind.Kind == mods.Nexus {
@@ -210,7 +210,7 @@ func enableMod(enabler *mods.ModEnabler, err error) {
 				dir := filepath.Join(to, string(mods.GameToInstallBaseDir(enabler.Game)))
 				if _, err = os.Stat(dir); err != nil {
 					tm.Enabled = false
-					enabler.DoneCallback(errors.New("unsupported nexus mod"))
+					enabler.DoneCallback(mods.Error, errors.New("unsupported nexus mod"))
 					return
 				}
 			}
@@ -218,16 +218,16 @@ func enableMod(enabler *mods.ModEnabler, err error) {
 	}
 
 	for _, ti := range tis {
-		if err = AddModFiles(game, tm, ti.DownloadFiles); err != nil {
-			tm.Enabled = false
-			enabler.DoneCallback(err)
-			return
-		}
+		AddModFiles(enabler, ti.DownloadFiles, func(result mods.Result, err ...error) {
+			if result == mods.Error {
+				tm.Enabled = false
+			} else {
+				tm.Enabled = true
+				_ = saveToJson()
+			}
+			enabler.DoneCallback(result, err...)
+		})
 	}
-
-	tm.Enabled = true
-	_ = saveToJson()
-	enabler.DoneCallback(nil)
 }
 
 func decompress(from string, to string) error {

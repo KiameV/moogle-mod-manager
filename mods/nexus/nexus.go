@@ -10,7 +10,6 @@ import (
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"io"
 	"net/http"
-	"strconv"
 	"strings"
 )
 
@@ -109,7 +108,7 @@ func GetModFromNexusForMod(in *mods.Mod) (mod *mods.Mod, err error) {
 		id   uint64
 		game = config.NameToGame(in.Games[0].Name)
 	)
-	if id, err = strconv.ParseUint(in.ID, 0, 64); err != nil {
+	if id, err = in.ModIdAsNumber(); err != nil {
 		err = fmt.Errorf("could not parse mod id %s for %s", in.ID, in.Name)
 		return
 	}
@@ -239,7 +238,7 @@ func toMod(n nexusMod, dls []NexusFile) (mod *mods.Mod, err error) {
 	modID := fmt.Sprintf("%d", n.ModID)
 	game := NexusGameToGame(n.Game)
 	mod = &mods.Mod{
-		ID:           modID,
+		ID:           mods.ModID("nexus." + modID),
 		Name:         n.Name,
 		Version:      n.Version,
 		Author:       n.Author,
