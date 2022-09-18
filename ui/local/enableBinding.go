@@ -1,6 +1,7 @@
 package local
 
 import (
+	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
@@ -70,6 +71,10 @@ func (b *enableBind) EnableMod() (err error) {
 		tm  = b.tm
 		tis []*mods.ToInstall
 	)
+	if err = b.CanInstall(); err != nil {
+		return
+	}
+
 	if len(b.tm.Mod.Configurations) > 0 {
 		err = b.enableModWithConfig()
 	} else {
@@ -79,7 +84,7 @@ func (b *enableBind) EnableMod() (err error) {
 			err = b.enableMod(tis)
 		}
 	}
-	return err
+	return
 }
 
 func (b *enableBind) enableModWithConfig() (err error) {
@@ -119,4 +124,34 @@ func (b *enableBind) OnConflict(conflicts []*mods.FileConflict, confirmationCall
 	}, state.Window)
 	d.Resize(fyne.NewSize(400, 400))
 	d.Show()
+}
+
+func (b *enableBind) CanInstall() error {
+	var (
+		c       = b.tm.Mod.ModCompatibility
+		mc      *mods.ModCompat
+		mod     *mods.TrackedMod
+		found   bool
+		enabled bool
+	)
+	if c != nil {
+		if len(c.Forbids) > 0 {
+			for _, mc = range c.Forbids {
+				if mod, found, enabled = managed.IsModEnabled(*state.CurrentGame, mc.ModID()); found && enabled {
+					return fmt.Errorf("%s cannot be enabled because %s is enabled", b.tm.Mod.Name, mod.Mod.Name)
+				}
+			}
+		}
+		if len(c.Requires) > 0 {
+			for _, mc = range c.Requires {
+				mod, found, enabled = managed.IsModEnabled(*state.CurrentGame, mc.ModID())
+				if !found {
+					return fmt.Errorf("%s cannot be enabled because %s is not enabled", b.tm.Mod.Name, mc.ModID())
+				} else if !enabled {
+					return fmt.Errorf("%s cannot be enabled because %s is not enabled", b.tm.Mod.Name, mod.Mod.Name)
+				}
+			}
+		}
+	}
+	return nil
 }

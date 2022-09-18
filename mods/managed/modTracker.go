@@ -152,6 +152,15 @@ func GetMods(game config.Game) []*mods.TrackedMod {
 	return lookup[game].Mods
 }
 
+func IsModEnabled(game config.Game, id mods.ModID) (mod *mods.TrackedMod, found bool, enabled bool) {
+	if mod, found = TryGetMod(game, id); found {
+		enabled = mod.Enabled
+	} else {
+		mod = nil
+	}
+	return
+}
+
 func TryGetMod(game config.Game, id mods.ModID) (*mods.TrackedMod, bool) {
 	var m *mods.TrackedMod
 	if gm := lookup[game]; gm != nil {

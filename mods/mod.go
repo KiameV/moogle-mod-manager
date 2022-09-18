@@ -417,7 +417,7 @@ func Sort(mods []*Mod) (sorted []*Mod) {
 
 func NewModID(k Kind, modID string) ModID {
 	prefix := strings.ToLower(string(k))
-	if strings.HasPrefix(modID, prefix) {
+	if k == Hosted || strings.HasPrefix(modID, prefix) {
 		return ModID(modID)
 	}
 	return ModID(fmt.Sprintf("%s.%s", prefix, modID))
