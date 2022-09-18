@@ -5,8 +5,9 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/config"
+	"github.com/kiamev/moogle-mod-manager/discover"
 	"github.com/kiamev/moogle-mod-manager/mods"
-	"github.com/kiamev/moogle-mod-manager/mods/managed"
+	"github.com/kiamev/moogle-mod-manager/ui/util"
 	"net/url"
 	"strings"
 )
@@ -82,15 +83,16 @@ func createCompatibility(game *config.Game, compatibility *mods.ModCompatibility
 			widget.NewLabelWithStyle("Compatibility", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
 		)
 		name string
+		err  error
 	)
 
 	// Requires
 	if len(compatibility.Requires) > 0 {
 		c.Add(widget.NewLabelWithStyle("  Requires", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}))
 		for _, r := range compatibility.Requires {
-			name = managed.GetDisplayName(game, r.ModID())
-			if name == "" {
-				name = managed.GetDisplayName(game, r.ModID())
+			name, err = discover.GetDisplayName(*game, r.ModID())
+			if err != nil {
+				util.ShowErrorLong(err)
 			}
 			c.Add(widget.NewLabel("  - " + name))
 		}
@@ -100,9 +102,9 @@ func createCompatibility(game *config.Game, compatibility *mods.ModCompatibility
 	if len(compatibility.Forbids) > 0 {
 		c.Add(widget.NewLabelWithStyle("  Forbids", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}))
 		for _, r := range compatibility.Forbids {
-			name = managed.GetDisplayName(game, r.ModID())
-			if name == "" {
-				name = managed.GetDisplayName(game, r.ModID())
+			name, err = discover.GetDisplayName(*game, r.ModID())
+			if err != nil {
+				util.ShowErrorLong(err)
 			}
 			c.Add(widget.NewLabel("  - " + name))
 		}

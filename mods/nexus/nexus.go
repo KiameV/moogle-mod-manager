@@ -238,7 +238,7 @@ func toMod(n nexusMod, dls []NexusFile) (mod *mods.Mod, err error) {
 	modID := fmt.Sprintf("%d", n.ModID)
 	game := NexusGameToGame(n.Game)
 	mod = &mods.Mod{
-		ID:           mods.ModID("nexus." + modID),
+		ID:           mods.NewModID(mods.Nexus, modID),
 		Name:         n.Name,
 		Version:      n.Version,
 		Author:       n.Author,

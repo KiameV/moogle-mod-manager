@@ -1,6 +1,7 @@
 package discover
 
 import (
+	"fmt"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/discover/remote"
 	"github.com/kiamev/moogle-mod-manager/discover/repo"
@@ -74,4 +75,15 @@ func GetModsAsLookup(game *config.Game) (lookup map[string]*mods.Mod, err error)
 		gameModLookup[*game] = lookup
 	}
 	return
+}
+
+func GetDisplayName(game config.Game, modID mods.ModID) (string, error) {
+	lookup, err := GetModsAsLookup(&game)
+	if err != nil {
+		return "", err
+	}
+	if mod, ok := lookup[mods.UniqueModID(game, modID)]; ok {
+		return mod.Name, nil
+	}
+	return "", fmt.Errorf("mod [%v] not found", modID)
 }

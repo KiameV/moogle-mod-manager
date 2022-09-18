@@ -86,20 +86,17 @@ type Mod struct {
 	IsManuallyCreated   bool              `json:"IsManuallyCreated" xml:"IsManuallyCreated"`
 }
 
+func UniqueModID(game config.Game, modID ModID) string {
+	return fmt.Sprintf("%d.%s", game, modID)
+}
+
 func (m *Mod) UniqueModID(game config.Game) string {
-	return fmt.Sprintf("%d.%s", game, string(m.ID))
+	return UniqueModID(game, NewModID(m.ModKind.Kind, string(m.ID)))
 }
 
 func (m *Mod) ModIdAsNumber() (uint64, error) {
-	var s string
 	sp := strings.Split(string(m.ID), ".")
-	if len(sp) == 1 {
-		s = sp[0]
-	} else {
-		s = sp[1]
-	}
-
-	return strconv.ParseUint(s, 10, 64)
+	return strconv.ParseUint(sp[len(sp)-1], 10, 64)
 }
 
 func (m *Mod) BranchName() string {
@@ -416,4 +413,12 @@ func Sort(mods []*Mod) (sorted []*Mod) {
 		sorted[i] = lookup[key]
 	}
 	return
+}
+
+func NewModID(k Kind, modID string) ModID {
+	prefix := strings.ToLower(string(k))
+	if strings.HasPrefix(modID, prefix) {
+		return ModID(modID)
+	}
+	return ModID(fmt.Sprintf("%s.%s", prefix, modID))
 }

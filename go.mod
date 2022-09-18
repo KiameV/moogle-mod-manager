@@ -4,6 +4,7 @@ go 1.17
 
 require (
 	fyne.io/fyne/v2 v2.2.3
+	fyne.io/x/fyne v0.0.0-20220811211558-27fab34c671c
 	github.com/JohannesKaufmann/html-to-markdown v1.3.5
 	github.com/carwale/golibraries v1.5.0
 	github.com/frustra/bbcode v0.0.0-20201127003707-6ef347fbe1c8
@@ -20,7 +21,6 @@ require (
 
 require (
 	fyne.io/systray v1.10.1-0.20220621085403-9a2652634e93 // indirect
-	fyne.io/x/fyne v0.0.0-20220811211558-27fab34c671c // indirect
 	github.com/Microsoft/go-winio v0.4.16 // indirect
 	github.com/ProtonMail/go-crypto v0.0.0-20210428141323-04723f9f07d7 // indirect
 	github.com/PuerkitoBio/goquery v1.5.1 // indirect

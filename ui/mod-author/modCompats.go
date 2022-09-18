@@ -9,7 +9,6 @@ import (
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/discover"
 	"github.com/kiamev/moogle-mod-manager/mods"
-	"github.com/kiamev/moogle-mod-manager/mods/managed"
 	cw "github.com/kiamev/moogle-mod-manager/ui/custom-widgets"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
 	"github.com/kiamev/moogle-mod-manager/ui/util"
@@ -46,7 +45,11 @@ func (d *modCompatsDef) compile() []*mods.ModCompat {
 }
 
 func (d *modCompatsDef) getItemKey(item interface{}) string {
-	return managed.GetDisplayName(state.CurrentGame, item.(*mods.ModCompat).ModID())
+	name, err := discover.GetDisplayName(*state.CurrentGame, item.(*mods.ModCompat).ModID())
+	if err != nil {
+		name = err.Error()
+	}
+	return name
 }
 
 func (d *modCompatsDef) getItemFields(item interface{}) []string {

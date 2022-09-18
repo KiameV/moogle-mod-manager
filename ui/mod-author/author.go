@@ -385,7 +385,7 @@ func (a *ModAuthorer) compileMod() (m *mods.Mod) {
 			m.ID = mods.ModID(strings.ToLower(fmt.Sprintf("%s.%s", name, author)))
 		}
 	case mods.Nexus:
-		m.ID = mods.ModID("nexus." + a.modID)
+		m.ID = mods.NewModID(mods.Nexus, string(a.modID))
 	default:
 		panic("invalid mod kind")
 	}

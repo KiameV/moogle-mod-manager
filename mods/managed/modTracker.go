@@ -164,16 +164,6 @@ func TryGetMod(game config.Game, id mods.ModID) (*mods.TrackedMod, bool) {
 	return nil, false
 }
 
-func GetDisplayName(game *config.Game, modID mods.ModID) string {
-	if game != nil {
-		if mod, found := TryGetMod(*game, modID); found {
-			// success
-			return mod.DisplayName
-		}
-	}
-	return ""
-}
-
 func EnableMod(enabler *mods.ModEnabler) (err error) {
 	return downloads.Download(enabler, enableMod)
 }
