@@ -170,7 +170,6 @@ func (c *Configs) Initialize() (err error) {
 	if c.DirChrCrs == "" {
 		c.DirChrCrs = c.getGameDirFromRegistry(idChronoCross)
 	}
-
 	return nil
 }
 

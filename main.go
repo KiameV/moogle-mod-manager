@@ -123,4 +123,8 @@ func initialize() {
 	}
 
 	resources.Initialize()
+
+	if resources.Icon != nil {
+		state.Window.SetIcon(resources.Icon)
+	}
 }

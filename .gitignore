@@ -6,7 +6,8 @@ bin/*
 *.syso
 .idea
 temp
-moogle-mod-manager.exe
-moogle-mod-manager.zip
+*/moogle-mod-manager.exe
+*/moogle-mod-manager.zip
+*/moogle-mod-manager.upx
 !example/*
 !winres/*

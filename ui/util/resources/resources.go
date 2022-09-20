@@ -26,6 +26,8 @@ var (
 
 	LogoBofIII fyne.CanvasObject
 	LogoBofIV  fyne.CanvasObject
+
+	Icon fyne.Resource
 )
 
 func Initialize() {
@@ -38,12 +40,12 @@ func Initialize() {
 	LogoChronoCross = loadLogo(config.ChronoCross, "chronocross.png")
 	LogoBofIII = loadLogo(config.BofIII, "bof3.png")
 	LogoBofIV = loadLogo(config.BofIV, "bof4.png")
+	Icon, _ = loadImage("icon16.png")
 }
 
 func loadLogo(game config.Game, f string) fyne.CanvasObject {
 	var (
-		file   = filepath.Join(config.PWD, resourcesDir)
-		r, err = cache.GetImage(mmmRepoResources+f, file)
+		r, err = loadImage(f)
 		img    *canvas.Image
 	)
 
@@ -57,6 +59,11 @@ func loadLogo(game config.Game, f string) fyne.CanvasObject {
 	img.Resize(size)
 	img.FillMode = canvas.ImageFillContain
 	return img
+}
+
+func loadImage(f string) (fyne.Resource, error) {
+	dir := filepath.Join(config.PWD, resourcesDir)
+	return cache.GetImage(mmmRepoResources+f, dir)
 }
 
 func createTextLogo(game config.Game) fyne.CanvasObject {
