@@ -145,16 +145,31 @@ func (c *Configs) Initialize() (err error) {
 	}
 	if err = util.LoadFromFile(filepath.Join(PWD, configsFile), c); err != nil {
 		c.FirstTime = true
-		c.DirI = c.getGameDirFromRegistry(idI)
-		c.DirII = c.getGameDirFromRegistry(idII)
-		c.DirIII = c.getGameDirFromRegistry(idIII)
-		c.DirIV = c.getGameDirFromRegistry(idIV)
-		c.DirV = c.getGameDirFromRegistry(idV)
-		c.DirVI = c.getGameDirFromRegistry(idVI)
-		c.DirChrCrs = c.getGameDirFromRegistry(idChronoCross)
 		c.Theme = DarkThemeColor
 	}
 	c.setDefaults()
+
+	if c.DirI == "" {
+		c.DirI = c.getGameDirFromRegistry(idI)
+	}
+	if c.DirII == "" {
+		c.DirII = c.getGameDirFromRegistry(idII)
+	}
+	if c.DirIII == "" {
+		c.DirIII = c.getGameDirFromRegistry(idIII)
+	}
+	if c.DirIV == "" {
+		c.DirIV = c.getGameDirFromRegistry(idIV)
+	}
+	if c.DirV == "" {
+		c.DirV = c.getGameDirFromRegistry(idV)
+	}
+	if c.DirVI == "" {
+		c.DirVI = c.getGameDirFromRegistry(idVI)
+	}
+	if c.DirChrCrs == "" {
+		c.DirChrCrs = c.getGameDirFromRegistry(idChronoCross)
+	}
 
 	return nil
 }
