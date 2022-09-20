@@ -1,4 +1,4 @@
-package managed
+package files
 
 import (
 	"github.com/kiamev/moogle-mod-manager/mods"

@@ -1,62 +1,16 @@
-package managed
+package files
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
 )
-
-const (
-	managedXmlName = "managed.json"
-)
-
-var (
-	managed = make(map[config.Game]*managedModsAndFiles)
-)
-
-type managedModsAndFiles struct {
-	Mods map[mods.ModID]*modFiles
-}
-
-type modFiles struct {
-	BackedUpFiles map[string]*mods.ModFile
-	MovedFiles    map[string]*mods.ModFile
-}
-
-func AddModFiles(enabler *mods.ModEnabler, files []*mods.DownloadFiles, done mods.DoneCallback) {
-	var (
-		game    = enabler.Game
-		mmf, ok = managed[game]
-	)
-	if !ok {
-		mmf = &managedModsAndFiles{
-			Mods: make(map[mods.ModID]*modFiles),
-		}
-		managed[game] = mmf
-	}
-
-	ResolveConflicts(enabler, mmf.Mods, files, func(result mods.Result, err ...error) {
-		if result == mods.Cancel {
-			done(result)
-		} else if result == mods.Error {
-			done(result, err...)
-		} else {
-			if e := addModFiles(enabler, mmf, files); e != nil {
-				done(mods.Error, e)
-			} else {
-				done(mods.Ok)
-			}
-		}
-	})
-}
 
 func addModFiles(enabler *mods.ModEnabler, mmf *managedModsAndFiles, files []*mods.DownloadFiles) (err error) {
 	var (
@@ -115,84 +69,6 @@ func addModFiles(enabler *mods.ModEnabler, mmf *managedModsAndFiles, files []*mo
 
 	return saveManagedJson()
 }
-
-func RemoveModFiles(game config.Game, tm *mods.TrackedMod) (err error) {
-	var (
-		mmf, ok = managed[game]
-		mf      *modFiles
-		sb      = strings.Builder{}
-	)
-	if !ok {
-		return fmt.Errorf("%s is not enabled", tm.Mod.Name)
-	}
-	if mf, ok = mmf.Mods[tm.GetModID()]; !ok {
-		return fmt.Errorf("%s is not enabled", tm.Mod.Name)
-	}
-
-	handled := make([]string, 0, len(mf.MovedFiles))
-	for k, f := range mf.MovedFiles {
-		if _, err = os.Stat(f.To); err == nil {
-			if err = os.Remove(f.To); err != nil {
-				sb.WriteString(fmt.Sprintf("failed to remove [%s]: %v\n", f.To, err))
-				err = nil
-			}
-		}
-		handled = append(handled, k)
-	}
-	for _, h := range handled {
-		delete(mf.MovedFiles, h)
-	}
-
-	handled = make([]string, 0, len(mf.BackedUpFiles))
-	for k, f := range mf.BackedUpFiles {
-		if _, err = os.Stat(f.From); err == nil {
-			if err = os.Remove(f.From); err != nil {
-				sb.WriteString(fmt.Sprintf("failed to remove [%s]: %v\n", f.To, err))
-				err = nil
-			}
-		}
-		if err = MoveFile(cut, f.To, f.From, nil); err != nil {
-			sb.WriteString(fmt.Sprintf("failed to move [%s] to [%s]: %v\n", f.To, f.From, err))
-			err = nil
-		}
-		handled = append(handled, k)
-	}
-	for _, h := range handled {
-		delete(mf.BackedUpFiles, h)
-	}
-
-	_ = saveManagedJson()
-
-	if err != nil {
-		return err
-	}
-
-	delete(mmf.Mods, tm.GetModID())
-	return
-}
-
-func initializeFiles() error {
-	b, err := ioutil.ReadFile(filepath.Join(config.PWD, managedXmlName))
-	if err != nil {
-		return nil
-	}
-	return json.Unmarshal(b, &managed)
-}
-
-func saveManagedJson() error {
-	b, err := json.MarshalIndent(managed, "", "\t")
-	if err != nil {
-		return err
-	}
-	return ioutil.WriteFile(filepath.Join(config.PWD, managedXmlName), b, 0777)
-}
-
-type action bool
-
-const (
-	duplicate action = false
-	cut       action = true
-)
 
 func MoveFiles(files []*mods.ModFile, modDir string, toDir string, backupDir string, backedUp *[]*mods.ModFile, movedFiles *[]*mods.ModFile, returnOnFail bool) (err error) {
 	for _, f := range files {
@@ -338,7 +214,7 @@ func copyFile(src, dst string) error {
 		_ = in.Close()
 		return fmt.Errorf("couldn't open dest file: %s", err)
 	}
-	defer out.Close()
+	defer func() { out.Close() }()
 
 	_, err = io.Copy(out, in)
 	_ = in.Close()
@@ -361,4 +237,50 @@ func copyFile(src, dst string) error {
 	}
 
 	return nil
+}
+
+func removeModFiles(mf *modFiles, mmf *managedModsAndFiles, tm *mods.TrackedMod) (err error) {
+	var (
+		handled = make([]string, 0, len(mf.MovedFiles))
+		sb      = strings.Builder{}
+	)
+	for k, f := range mf.MovedFiles {
+		if _, err = os.Stat(f.To); err == nil {
+			if err = os.Remove(f.To); err != nil {
+				sb.WriteString(fmt.Sprintf("failed to remove [%s]: %v\n", f.To, err))
+				err = nil
+			}
+		}
+		handled = append(handled, k)
+	}
+	for _, h := range handled {
+		delete(mf.MovedFiles, h)
+	}
+
+	handled = make([]string, 0, len(mf.BackedUpFiles))
+	for k, f := range mf.BackedUpFiles {
+		if _, err = os.Stat(f.From); err == nil {
+			if err = os.Remove(f.From); err != nil {
+				sb.WriteString(fmt.Sprintf("failed to remove [%s]: %v\n", f.To, err))
+				err = nil
+			}
+		}
+		if err = MoveFile(cut, f.To, f.From, nil); err != nil {
+			sb.WriteString(fmt.Sprintf("failed to move [%s] to [%s]: %v\n", f.To, f.From, err))
+			err = nil
+		}
+		handled = append(handled, k)
+	}
+	for _, h := range handled {
+		delete(mf.BackedUpFiles, h)
+	}
+
+	_ = saveManagedJson()
+
+	if err != nil {
+		return
+	}
+
+	delete(mmf.Mods, tm.GetModID())
+	return
 }

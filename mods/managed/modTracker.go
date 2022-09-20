@@ -11,7 +11,9 @@ import (
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/downloads"
 	"github.com/kiamev/moogle-mod-manager/mods"
+	"github.com/kiamev/moogle-mod-manager/mods/managed/files"
 	"github.com/kiamev/moogle-mod-manager/mods/nexus"
+	"github.com/kiamev/moogle-mod-manager/ui/state"
 	"github.com/kiamev/moogle-mod-manager/util"
 	archiver "github.com/mholt/archiver/v4"
 	"io"
@@ -54,7 +56,7 @@ func Initialize() (err error) {
 			tm.Mod = mod
 		}
 	}
-	return initializeFiles()
+	return files.InitializeManagedFiles()
 }
 
 func AddModFromFile(game config.Game, file string) (tm *mods.TrackedMod, err error) {
@@ -179,6 +181,9 @@ func TryGetMod(game config.Game, id mods.ModID) (*mods.TrackedMod, bool) {
 }
 
 func EnableMod(enabler *mods.ModEnabler) (err error) {
+	if err = canInstall(enabler); err != nil {
+		return
+	}
 	return downloads.Download(enabler, enableMod)
 }
 
@@ -222,7 +227,7 @@ func enableMod(enabler *mods.ModEnabler, err error) {
 	}
 
 	for _, ti := range tis {
-		AddModFiles(enabler, ti.DownloadFiles, func(result mods.Result, err ...error) {
+		files.AddModFiles(enabler, ti.DownloadFiles, func(result mods.Result, err ...error) {
 			if result == mods.Error {
 				tm.Enabled = false
 			} else {
@@ -290,7 +295,10 @@ func decompress(from string, to string) error {
 }
 
 func DisableMod(game config.Game, tm *mods.TrackedMod) (err error) {
-	if err = RemoveModFiles(game, tm); err != nil {
+	if err = canDisable(game, tm); err != nil {
+		return
+	}
+	if err = files.RemoveModFiles(game, tm); err != nil {
 		return
 	}
 	tm.Enabled = false
@@ -302,7 +310,7 @@ func RemoveMod(game config.Game, tm *mods.TrackedMod) error {
 	for i, m := range gm {
 		if m.Mod.ID == tm.GetModID() {
 			if m.Enabled {
-				if err := RemoveModFiles(game, tm); err != nil {
+				if err := files.RemoveModFiles(game, tm); err != nil {
 					return errors.New("failed to disable mod")
 				}
 			}
@@ -319,4 +327,58 @@ func saveToJson() error {
 
 func saveMoogle(tm *mods.TrackedMod) (err error) {
 	return tm.Save()
+}
+
+func canInstall(enabler *mods.ModEnabler) error {
+	var (
+		tm      = enabler.TrackedMod
+		c       = tm.Mod.ModCompatibility
+		mc      *mods.ModCompat
+		mod     *mods.TrackedMod
+		found   bool
+		enabled bool
+	)
+	if c != nil {
+		if len(c.Forbids) > 0 {
+			for _, mc = range c.Forbids {
+				if mod, found, enabled = IsModEnabled(*state.CurrentGame, mc.ModID()); found && enabled {
+					return fmt.Errorf("[%s] cannot be enabled because [%s] is enabled", tm.DisplayName, mod.DisplayName)
+				}
+			}
+		}
+		if len(c.Requires) > 0 {
+			for _, mc = range c.Requires {
+				mod, found, enabled = IsModEnabled(*state.CurrentGame, mc.ModID())
+				if !found {
+					return fmt.Errorf("[%s] cannot be enabled because [%s] is not enabled", tm.DisplayName, mod.DisplayName)
+				} else if !enabled {
+					return fmt.Errorf("[%s] cannot be enabled because [%s] is not enabled", tm.DisplayName, mod.DisplayName)
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func canDisable(game config.Game, tm *mods.TrackedMod) error {
+	var (
+		c  = tm.Mod.ModCompatibility
+		id = tm.Mod.ID
+		mc *mods.ModCompat
+	)
+	for _, m := range lookup[game].Mods {
+		if m != tm && m.Enabled {
+			c = m.Mod.ModCompatibility
+			if c != nil {
+				if len(c.Requires) > 0 {
+					for _, mc = range c.Requires {
+						if mc.ModID() == id {
+							return fmt.Errorf("[%s] cannot be disabled because [%s] is enabled", tm.DisplayName, m.DisplayName)
+						}
+					}
+				}
+			}
+		}
+	}
+	return nil
 }
