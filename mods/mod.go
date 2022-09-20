@@ -356,9 +356,10 @@ func (m *Mod) Validate() string {
 }
 
 func (m *Mod) Supports(game config.Game) error {
+	name := config.GameToName(game)
 	if len(m.Games) > 0 {
 		for _, g := range m.Games {
-			if m.Games[0].Name == g.Name {
+			if name == g.Name {
 				return nil
 			}
 		}

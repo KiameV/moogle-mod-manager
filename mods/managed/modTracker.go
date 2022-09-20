@@ -30,7 +30,7 @@ type trackedModsForGame struct {
 	Mods []*mods.TrackedMod `json:"mods"`
 }
 
-var lookup = make([]*trackedModsForGame, 6)
+var lookup = make([]*trackedModsForGame, config.GameCount)
 
 func Initialize() (err error) {
 	if err = util.LoadFromFile(filepath.Join(config.PWD, modTrackerName), &lookup); err != nil {
@@ -39,6 +39,11 @@ func Initialize() (err error) {
 			lookup[i] = &trackedModsForGame{Game: config.Game(i)}
 		}
 		return saveToJson()
+	}
+	if len(lookup) != config.GameCount {
+		for i := len(lookup); i < config.GameCount; i++ {
+			lookup = append(lookup, &trackedModsForGame{Game: config.Game(i)})
+		}
 	}
 	for _, tms := range lookup {
 		for _, tm := range tms.Mods {

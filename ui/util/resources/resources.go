@@ -4,14 +4,15 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/widget"
-	"github.com/gen2brain/go-unarr"
-	"github.com/kiamev/moogle-mod-manager/browser"
 	"github.com/kiamev/moogle-mod-manager/config"
-	"os"
+	"github.com/kiamev/moogle-mod-manager/mods/managed/cache"
 	"path/filepath"
 )
 
-const resourcesDir = "resources"
+const (
+	mmmRepoResources = "https://raw.githubusercontent.com/kiamev/moogle-mod-manager/master/resources/"
+	resourcesDir     = "resources"
+)
 
 var (
 	LogoI   fyne.CanvasObject
@@ -20,51 +21,37 @@ var (
 	LogoIV  fyne.CanvasObject
 	LogoV   fyne.CanvasObject
 	LogoVI  fyne.CanvasObject
+
+	LogoChronoCross fyne.CanvasObject
+
+	LogoBofIII fyne.CanvasObject
+	LogoBofIV  fyne.CanvasObject
 )
 
 func Initialize() {
-	resources := filepath.Join(config.PWD, resourcesDir)
-	_ = downloadResources(resources)
-	LogoI = loadLogo(config.I, filepath.Join(resources, "1.png"))
-	LogoII = loadLogo(config.II, filepath.Join(resources, "2.png"))
-	LogoIII = loadLogo(config.III, filepath.Join(resources, "3.png"))
-	LogoIV = loadLogo(config.IV, filepath.Join(resources, "4.png"))
-	LogoV = loadLogo(config.V, filepath.Join(resources, "5.png"))
-	LogoVI = loadLogo(config.VI, filepath.Join(resources, "6.png"))
-}
-
-func downloadResources(resources string) (err error) {
-	var f string
-	if _, err = os.Stat(resources); err != nil {
-		if err = os.Mkdir(resources, 0777); err != nil {
-			return
-		}
-	}
-	if _, err = os.Stat(filepath.Join(resources, "1.png")); err != nil {
-		if f, err = browser.Download("https://github.com/KiameV/moogle-mod-manager/blob/main/resources/logos.zip?raw=true", "./resources"); err != nil {
-			return
-		}
-		defer func() {
-			_ = os.Remove(f)
-		}()
-		return decompress(f, resources)
-	}
-	return nil
+	LogoI = loadLogo(config.I, "1.png")
+	LogoII = loadLogo(config.II, "2.png")
+	LogoIII = loadLogo(config.III, "3.png")
+	LogoIV = loadLogo(config.IV, "4.png")
+	LogoV = loadLogo(config.V, "5.png")
+	LogoVI = loadLogo(config.VI, "6.png")
+	LogoChronoCross = loadLogo(config.ChronoCross, "chronocross.png")
+	LogoBofIII = loadLogo(config.BofIII, "bof3.png")
+	LogoBofIV = loadLogo(config.BofIV, "bof4.png")
 }
 
 func loadLogo(game config.Game, f string) fyne.CanvasObject {
 	var (
-		r   fyne.Resource
-		err error
+		file   = filepath.Join(config.PWD, resourcesDir)
+		r, err = cache.GetImage(mmmRepoResources+f, file)
+		img    *canvas.Image
 	)
-	if _, err = os.Stat(f); err != nil {
+
+	if err != nil {
 		return createTextLogo(game)
 	}
-	if r, err = fyne.LoadResourceFromPath(f); err != nil {
-		return createTextLogo(game)
-	}
-	img := canvas.NewImageFromResource(r)
-	//size := fyne.Size{Width: float32(444), Height: float32(176)}
+
+	img = canvas.NewImageFromResource(r)
 	size := fyne.Size{Width: 444 * .75, Height: 176 * .75}
 	img.SetMinSize(size)
 	img.Resize(size)
@@ -74,19 +61,4 @@ func loadLogo(game config.Game, f string) fyne.CanvasObject {
 
 func createTextLogo(game config.Game) fyne.CanvasObject {
 	return widget.NewLabel(config.GameNameString(game))
-}
-
-func decompress(from string, to string) error {
-	a, err := unarr.NewArchive(from)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = a.Close() }()
-
-	if err = os.MkdirAll(to, 0777); err != nil {
-		return err
-	}
-
-	_, err = a.Extract(to)
-	return err
 }

@@ -22,7 +22,7 @@ func (s *GameSelect) OnClose() {}
 func (s *GameSelect) DrawAsDialog(fyne.Window) {}
 
 func (s *GameSelect) Draw(w fyne.Window) {
-	w.SetContent(container.NewCenter(
+	left := container.NewCenter(
 		container.NewVBox(
 			container.NewMax(resources.LogoI, widget.NewButton("", func() {
 				state.CurrentGame = toGamePtr(config.I)
@@ -53,7 +53,24 @@ func (s *GameSelect) Draw(w fyne.Window) {
 				state.CurrentGame = toGamePtr(config.VI)
 				state.ShowScreen(state.LocalMods)
 			}))),
-	))
+	)
+	right := container.NewCenter(
+		container.NewVBox(
+			container.NewMax(resources.LogoChronoCross, widget.NewButton("", func() {
+				state.CurrentGame = toGamePtr(config.ChronoCross)
+				state.ShowScreen(state.LocalMods)
+			})),
+			// TODO BoF
+			/*container.NewMax(resources.LogoBofIII, widget.NewButton("", func() {
+				state.CurrentGame = toGamePtr(config.BofIII)
+				state.ShowScreen(state.LocalMods)
+			})),
+			container.NewMax(resources.LogoBofIV, widget.NewButton("", func() {
+				state.CurrentGame = toGamePtr(config.BofIV)
+				state.ShowScreen(state.LocalMods)
+			})),*/
+		))
+	w.SetContent(container.NewGridWithColumns(2, left, right))
 }
 
 func toGamePtr(game config.Game) *config.Game {

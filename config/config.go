@@ -28,6 +28,8 @@ const (
 	idIV             = "1173800"
 	idV              = "1173810"
 	idVI             = "1173820"
+	idChronoCross    = "1133760"
+	// TODO BoF
 )
 
 type ThemeColor byte
@@ -47,6 +49,9 @@ type Configs struct {
 	DirIV       string     `json:"dir4"`
 	DirV        string     `json:"dir5"`
 	DirVI       string     `json:"dir6"`
+	DirChrCrs   string     `json:"chrCrs"`
+	DirBofIII   string     `json:"bof3"`
+	DirBofIV    string     `json:"bof4"`
 	ModsDir     string     `json:"modDir"`
 	ImgCacheDir string     `json:"imgCacheDir"`
 	DownloadDir string     `json:"downloadDir"`
@@ -100,6 +105,12 @@ func (c *Configs) GetGameDir(game Game) (s string) {
 		s = c.DirV
 	case VI:
 		s = c.DirVI
+	case ChronoCross:
+		s = c.DirChrCrs
+	case BofIII:
+		s = c.DirBofIII
+	case BofIV:
+		s = c.DirBofIV
 	}
 	return
 }
@@ -118,6 +129,12 @@ func (c *Configs) GetGameDirSuffix(game Game) (s string) {
 		s = "V"
 	case VI:
 		s = "VI"
+	case ChronoCross:
+		s = "chronocross"
+	case BofIII:
+		s = "bofIII"
+	case BofIV:
+		s = "bofIV"
 	}
 	return
 }
@@ -134,6 +151,7 @@ func (c *Configs) Initialize() (err error) {
 		c.DirIV = c.getGameDirFromRegistry(idIV)
 		c.DirV = c.getGameDirFromRegistry(idV)
 		c.DirVI = c.getGameDirFromRegistry(idVI)
+		c.DirChrCrs = c.getGameDirFromRegistry(idChronoCross)
 		c.Theme = DarkThemeColor
 	}
 	c.setDefaults()

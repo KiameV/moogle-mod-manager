@@ -12,7 +12,7 @@ import (
 
 var (
 	utilLookup    = make(map[string]*mods.Mod)
-	gameModLookup = [6]map[string]*mods.Mod{}
+	gameModLookup = [config.GameCount]map[string]*mods.Mod{}
 )
 
 func GetMods(game *config.Game) (found []*mods.Mod, lookup map[string]*mods.Mod, err error) {
@@ -44,10 +44,12 @@ func GetModsAsLookup(game *config.Game) (lookup map[string]*mods.Mod, err error)
 		eg         errgroup.Group
 		ok         bool
 	)
-	eg.Go(func() (e error) {
-		remoteMods, e = remote.GetNexusMods(game)
-		return
-	})
+	if *game <= config.VI {
+		eg.Go(func() (e error) {
+			remoteMods, e = remote.GetNexusMods(game)
+			return
+		})
+	}
 	eg.Go(func() (e error) {
 		repoMods, e = repo.NewGetter().GetMods(*state.CurrentGame)
 		return

@@ -12,16 +12,28 @@ import (
 	"os"
 )
 
+var defaultGames = []string{
+	"None",
+	"I", "II", "III", "IV", "V", "VI",
+	"Chrono Cross",
+	// TODO BoF
+	//"BoF III", "BoF IV",
+}
+
 func Show(w fyne.Window) {
 	configs := *config.Get()
 	items := []*widget.FormItem{
-		createSelectRow("Default Game", &configs.DefaultGame, "None", "I", "II", "III", "IV", "V", "VI"),
+		createSelectRow("Default Game", &configs.DefaultGame, defaultGames...),
 		createDirRow("FF I Dir", &configs.DirI),
 		createDirRow("FF II Dir", &configs.DirII),
 		createDirRow("FF III Dir", &configs.DirIII),
 		createDirRow("FF IV Dir", &configs.DirIV),
 		createDirRow("FF V Dir", &configs.DirV),
 		createDirRow("FF VI Dir", &configs.DirVI),
+		createDirRow("Chrono Cross Dir", &configs.DirChrCrs),
+		// TODO BOF
+		//createDirRow("BoF III Dir", &configs.DirBofIII),
+		//createDirRow("BoF IV Dir", &configs.DirBofIV),
 		//createDirRow("Mods Dir", &configs.ModsDir),
 		createDirRow("Download Dir", &configs.DownloadDir),
 		createDirRow("Backup Dir", &configs.BackupDir),

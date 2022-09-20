@@ -150,6 +150,13 @@ func SetCurrentGameFromString(s string) bool {
 		g = config.V
 	case "VI":
 		g = config.VI
+	case "Chrono Cross":
+		g = config.ChronoCross
+	// TODO BoF
+	//case "BoF III":
+	//	g = config.BofIII
+	//case "BoF IV":
+	//	g = config.BofIV
 	default:
 		return false
 	}

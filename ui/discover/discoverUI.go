@@ -69,7 +69,19 @@ func (ui *discoverUI) Draw(w fyne.Window) {
 
 func (ui *discoverUI) draw(w fyne.Window, isPopup bool) {
 	if len(ui.mods) == 0 {
-		// TODO
+		w.SetContent(container.NewBorder(
+			container.NewVBox(
+				widget.NewLabelWithStyle(config.GameNameString(*state.CurrentGame), fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
+				widget.NewSeparator(),
+			), nil, nil, nil, container.NewBorder(
+				container.NewAdaptiveGrid(8, container.NewHBox(widget.NewButton("Back", func() {
+					if isPopup {
+						state.ClosePopupWindow()
+					} else {
+						state.ShowPreviousScreen()
+					}
+				}))), nil, nil, nil,
+				container.NewCenter(widget.NewLabel("No mods found")))))
 		return
 	}
 	ui.data = binding.NewUntypedList()
@@ -153,7 +165,6 @@ func (ui *discoverUI) draw(w fyne.Window, isPopup bool) {
 				} else {
 					state.ShowPreviousScreen()
 				}
-
 			})), widget.NewLabelWithStyle("Search", fyne.TextAlignTrailing, fyne.TextStyle{}), searchTb), nil, nil, nil,
 			ui.split)))
 }

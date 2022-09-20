@@ -55,14 +55,7 @@ func (d *gamesDef) editItem(item interface{}) {
 
 func (d *gamesDef) createItem(item interface{}, done ...func(interface{})) {
 	m := item.(*mods.Game)
-	d.createFormSelect("Games", []string{
-		config.GameNameString(config.I),
-		config.GameNameString(config.II),
-		config.GameNameString(config.III),
-		config.GameNameString(config.IV),
-		config.GameNameString(config.V),
-		config.GameNameString(config.VI),
-	}, config.String(config.NameToGame(m.Name)))
+	d.createFormSelect("Games", config.GameNames, config.String(config.NameToGame(m.Name)))
 	var v string
 	versions := m.Versions
 	if versions != nil {

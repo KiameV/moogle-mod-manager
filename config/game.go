@@ -1,14 +1,19 @@
 package config
 
+const GameCount = 9
+
 type GameName string
 
 const (
-	FfPrI   GameName = "FF PR I"
-	FfPrII  GameName = "FF PR II"
-	FfPrIII GameName = "FF PR III"
-	FfPrIV  GameName = "FF PR IV"
-	FfPrV   GameName = "FF PR V"
-	FfPrVI  GameName = "FF PR VI"
+	FfPrI           GameName = "FF PR I"
+	FfPrII          GameName = "FF PR II"
+	FfPrIII         GameName = "FF PR III"
+	FfPrIV          GameName = "FF PR IV"
+	FfPrV           GameName = "FF PR V"
+	FfPrVI          GameName = "FF PR VI"
+	ChronoCrossName          = "Chrono Cross"
+	BofIIIName      GameName = "BoF III"
+	BofIVName       GameName = "BoF IV"
 )
 
 type Game int
@@ -20,28 +25,55 @@ const (
 	IV
 	V
 	VI
+	ChronoCross
+	BofIII
+	BofIV
 )
 
-func String(game Game) (name string) {
+var GameNames = []string{
+	GameNameString(I),
+	GameNameString(II),
+	GameNameString(III),
+	GameNameString(IV),
+	GameNameString(V),
+	GameNameString(VI),
+	GameNameString(ChronoCross),
+	// TODO BOF
+	//GameNameString(BofIII),
+	//GameNameString(BofIV),
+}
+
+func String(game Game) string {
 	switch game {
 	case I:
-		name = "I"
+		return "I"
 	case II:
-		name = "II"
+		return "II"
 	case III:
-		name = "III"
+		return "III"
 	case IV:
-		name = "IV"
+		return "IV"
 	case V:
-		name = "V"
+		return "V"
 	case VI:
-		name = "VI"
+		return "VI"
+	case ChronoCross:
+		return "Chrono Cross"
+	case BofIII:
+		return "BoF III"
+	case BofIV:
+		return "BoF IV"
 	}
-	return
+	panic("invalid game " + string(game))
 }
 
 func GameNameString(game Game) string {
-	return "Final Fantasy " + String(game)
+	if game <= VI {
+		return "Final Fantasy " + String(game)
+	} else if game == ChronoCross {
+		return "Chrono Cross"
+	}
+	return "Breath of Fire " + String(game)
 }
 
 func FromString(s string) (game Game) {
@@ -58,8 +90,14 @@ func FromString(s string) (game Game) {
 		return V
 	case "Final Fantasy VI":
 		return VI
+	case "Chrono Cross":
+		return ChronoCross
+	case "Breath of Fire III":
+		return BofIII
+	case "Breath of Fire IV":
+		return BofIV
 	}
-	return VI
+	panic("invalid game name " + s)
 }
 
 func NameToGame(n GameName) Game {
@@ -74,8 +112,16 @@ func NameToGame(n GameName) Game {
 		return IV
 	case FfPrV:
 		return V
+	case FfPrVI:
+		return VI
+	case ChronoCrossName:
+		return ChronoCross
+	case BofIIIName:
+		return BofIII
+	case BofIVName:
+		return BofIV
 	}
-	return VI
+	return I
 }
 
 func GameToName(game Game) GameName {
@@ -90,6 +136,14 @@ func GameToName(game Game) GameName {
 		return FfPrIV
 	case V:
 		return FfPrV
+	case VI:
+		return FfPrVI
+	case ChronoCross:
+		return ChronoCrossName
+	case BofIII:
+		return BofIIIName
+	case BofIV:
+		return BofIVName
 	}
-	return FfPrVI
+	panic("invalid game " + string(game))
 }
