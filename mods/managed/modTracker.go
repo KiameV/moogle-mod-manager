@@ -228,7 +228,7 @@ func enableMod(enabler *mods.ModEnabler, err error) {
 
 	for _, ti := range tis {
 		files.AddModFiles(enabler, ti.DownloadFiles, func(result mods.Result, err ...error) {
-			if result == mods.Error {
+			if result == mods.Error || result == mods.Cancel {
 				tm.Enabled = false
 			} else {
 				tm.Enabled = true
