@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"golang.org/x/sys/windows/registry"
 )
@@ -137,6 +138,14 @@ func (c *Configs) GetGameDirSuffix(game Game) (s string) {
 		s = "bofIV"
 	}
 	return
+}
+
+func (c *Configs) RemoveGameDir(game Game, to string) string {
+	dir := c.GetGameDir(game)
+	dir = strings.ReplaceAll(dir, "\\", "/")
+	to = strings.ReplaceAll(to, "\\", "/")
+	to = strings.TrimPrefix(to, dir)
+	return strings.TrimPrefix(to, "/")
 }
 
 func (c *Configs) Initialize() (err error) {

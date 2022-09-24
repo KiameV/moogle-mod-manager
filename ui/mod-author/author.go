@@ -394,13 +394,44 @@ func (a *ModAuthorer) compileMod() (m *mods.Mod) {
 	if len(m.AlwaysDownload) == 0 {
 		m.AlwaysDownload = nil
 	}
+	for _, ad := range m.AlwaysDownload {
+		for _, f := range ad.Files {
+			f.From = trimNewLine(f.From)
+			f.To = trimNewLine(f.To)
+		}
+		for _, d := range ad.Dirs {
+			d.From = trimNewLine(d.From)
+			d.To = trimNewLine(d.To)
+		}
+	}
 
 	m.Configurations = a.configsDef.compile()
 	if len(m.Configurations) == 0 {
 		m.Configurations = nil
 	}
+	for _, conf := range m.Configurations {
+		for _, c := range conf.Choices {
+			if c.DownloadFiles != nil {
+				for _, f := range c.DownloadFiles.Files {
+					f.From = trimNewLine(f.From)
+					f.To = trimNewLine(f.To)
+				}
+				for _, d := range c.DownloadFiles.Dirs {
+					d.From = trimNewLine(d.From)
+					d.To = trimNewLine(d.To)
+				}
+			}
+		}
+	}
+
 	authored.SetDir(m.ID, state.GetBaseDir())
 	return m
+}
+
+func trimNewLine(s string) string {
+	s = strings.ReplaceAll(s, "\r", "")
+	s = strings.ReplaceAll(s, "\n", "")
+	return strings.TrimSpace(s)
 }
 
 func (a *ModAuthorer) submitForReview() {

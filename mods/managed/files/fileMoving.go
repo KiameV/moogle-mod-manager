@@ -12,7 +12,7 @@ import (
 	"strings"
 )
 
-func addModFiles(enabler *mods.ModEnabler, mmf *managedModsAndFiles, files []*mods.DownloadFiles) (err error) {
+func addModFiles(enabler *mods.ModEnabler, mmf *managedModsAndFiles, files []*mods.DownloadFiles, skip map[string]bool) (err error) {
 	var (
 		game     = enabler.Game
 		tm       = enabler.TrackedMod
@@ -24,11 +24,11 @@ func addModFiles(enabler *mods.ModEnabler, mmf *managedModsAndFiles, files []*mo
 
 	for _, df := range files {
 		modDir := filepath.Join(modPath, df.DownloadName)
-		if err = MoveFiles(df.Files, modDir, config.Get().GetGameDir(game), configs.GetBackupFullPath(game), &backedUp, &moved, false); err != nil {
+		if err = MoveFiles(enabler.Game, df.Files, modDir, config.Get().GetGameDir(game), configs.GetBackupFullPath(game), &backedUp, &moved, skip, false); err != nil {
 			break
 		}
 		if err == nil {
-			if err = MoveDirs(game, df.Dirs, modDir, config.Get().GetGameDir(game), configs.GetBackupFullPath(game), &backedUp, &moved, false); err != nil {
+			if err = MoveDirs(game, df.Dirs, modDir, config.Get().GetGameDir(game), configs.GetBackupFullPath(game), &backedUp, &moved, skip, false); err != nil {
 				break
 			}
 		}
@@ -70,9 +70,16 @@ func addModFiles(enabler *mods.ModEnabler, mmf *managedModsAndFiles, files []*mo
 	return saveManagedJson()
 }
 
-func MoveFiles(files []*mods.ModFile, modDir string, toDir string, backupDir string, backedUp *[]*mods.ModFile, movedFiles *[]*mods.ModFile, returnOnFail bool) (err error) {
+func MoveFiles(game config.Game, files []*mods.ModFile, modDir string, toDir string, backupDir string, backedUp *[]*mods.ModFile, movedFiles *[]*mods.ModFile, skip map[string]bool, returnOnFail bool) (err error) {
+	c := config.Get()
 	for _, f := range files {
 		to := path.Join(toDir, f.To)
+		if IsDir(to) {
+			to = filepath.Join(to, filepath.Base(f.From))
+		}
+		if skip[c.RemoveGameDir(game, to)] {
+			continue
+		}
 		if _, err = os.Stat(to); err == nil {
 			if err = MoveFile(cut, to, path.Join(backupDir, f.To), backedUp); err != nil {
 				if returnOnFail {
@@ -89,7 +96,7 @@ func MoveFiles(files []*mods.ModFile, modDir string, toDir string, backupDir str
 	return
 }
 
-func MoveDirs(game config.Game, dirs []*mods.ModDir, modDir string, toDir string, backupDir string, replacedFiles *[]*mods.ModFile, movedFiles *[]*mods.ModFile, returnOnFail bool) (err error) {
+func MoveDirs(game config.Game, dirs []*mods.ModDir, modDir string, toDir string, backupDir string, replacedFiles *[]*mods.ModFile, movedFiles *[]*mods.ModFile, skip map[string]bool, returnOnFail bool) (err error) {
 	var (
 		mf   []*mods.ModFile
 		from string
@@ -138,10 +145,13 @@ func MoveDirs(game config.Game, dirs []*mods.ModDir, modDir string, toDir string
 			return
 		}
 	}
-	return MoveFiles(mf, modDir, toDir, backupDir, replacedFiles, movedFiles, returnOnFail)
+	return MoveFiles(game, mf, modDir, toDir, backupDir, replacedFiles, movedFiles, skip, returnOnFail)
 }
 
 func MoveFile(action action, from, to string, files *[]*mods.ModFile) (err error) {
+	if IsDir(to) {
+		to = filepath.Join(to, filepath.Base(from))
+	}
 	if err = os.MkdirAll(filepath.Dir(to), 0777); err != nil {
 		return
 	}
@@ -161,6 +171,10 @@ func MoveFile(action action, from, to string, files *[]*mods.ModFile) (err error
 		})
 	}
 	return
+}
+
+func IsDir(path string) bool {
+	return filepath.Ext(path) == ""
 }
 
 func cutFile(src, dst string) error {

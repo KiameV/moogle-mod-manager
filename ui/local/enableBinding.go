@@ -107,9 +107,15 @@ func (b *enableBind) DisableMod() error {
 func (b *enableBind) OnConflict(conflicts []*mods.FileConflict, confirmationCallback mods.ConflictChoiceCallback) {
 	f := widget.NewForm()
 	for _, c := range conflicts {
+		var name string
+		if m, ok := managed.TryGetMod(*state.CurrentGame, c.CurrentModID); !ok {
+			name = string(c.CurrentModID)
+		} else {
+			name = m.DisplayName
+		}
 		f.Items = append(f.Items, widget.NewFormItem(
 			filepath.Base(c.File),
-			widget.NewSelect([]string{c.CurrentModName, c.NewModName}, c.OnChange)))
+			widget.NewSelect([]string{name, b.tm.Mod.Name}, c.OnChange)))
 	}
 	d := dialog.NewCustomConfirm("Conflicts", "ok", "cancel", container.NewVScroll(f), func(ok bool) {
 		r := mods.Ok

@@ -20,14 +20,14 @@ type (
 )
 
 type FileConflict struct {
-	File           string
-	CurrentModName string
-	NewModName     string
-	Choice         string
+	File         string
+	CurrentModID ModID
+	NewModID     ModID
+	ChoiceName   string
 }
 
 func (c *FileConflict) OnChange(selected string) {
-	c.Choice = selected
+	c.ChoiceName = selected
 }
 
 type ModEnabler struct {
