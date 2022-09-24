@@ -151,7 +151,7 @@ type ModCompatibility struct {
 }
 
 func (c *ModCompatibility) HasItems() bool {
-	return len(c.Requires) > 0 || len(c.Forbids) > 0
+	return c != nil && (len(c.Requires) > 0 || len(c.Forbids) > 0)
 }
 
 type InstallType string
@@ -385,6 +385,11 @@ func (m *Mod) Merge(from *Mod) {
 		m.DonationLinks = from.DonationLinks
 		m.AlwaysDownload = from.AlwaysDownload
 		m.Configurations = from.Configurations
+	}
+	if m.ModCompatibility.HasItems() && !from.ModCompatibility.HasItems() {
+		from.ModCompatibility = m.ModCompatibility
+	} else if from.ModCompatibility.HasItems() && !m.ModCompatibility.HasItems() {
+		m.ModCompatibility = from.ModCompatibility
 	}
 	return
 }
