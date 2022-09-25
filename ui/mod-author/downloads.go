@@ -9,6 +9,7 @@ import (
 	"github.com/kiamev/moogle-mod-manager/mods"
 	cw "github.com/kiamev/moogle-mod-manager/ui/custom-widgets"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
+	"path/filepath"
 	"strings"
 )
 
@@ -99,7 +100,6 @@ func (d *downloadsDef) createItem(item interface{}, done ...func(interface{})) {
 
 	fd := dialog.NewForm("Edit Downloadable", "Save", "Cancel", items, func(ok bool) {
 		if ok {
-			m.Name = d.getString("Name")
 			m.Version = d.getString("Version")
 			if *d.kind == mods.Nexus {
 				if m.Nexus == nil {
@@ -107,11 +107,18 @@ func (d *downloadsDef) createItem(item interface{}, done ...func(interface{})) {
 				}
 				m.Nexus.FileName = d.getString("File Name")
 				m.Nexus.FileID = d.getInt("File ID")
+				m.Name = filepath.Base(m.Nexus.FileName)
 			} else if *d.kind == mods.Hosted {
 				if m.Hosted == nil {
 					m.Hosted = &mods.HostedDownloadable{}
 				}
 				m.Hosted.Sources = d.getStrings("Sources", "\n")
+				if len(m.Hosted.Sources) > 0 {
+					m.Name = filepath.Base(m.Hosted.Sources[0])
+				}
+			}
+			if m.Name != "" {
+				m.Name = strings.TrimSuffix(m.Name, filepath.Ext(m.Name))
 			}
 			//m.InstallType = mods.InstallType(d.getString("Install Type"))
 			if len(done) > 0 {
@@ -120,7 +127,7 @@ func (d *downloadsDef) createItem(item interface{}, done ...func(interface{})) {
 			d.list.Refresh()
 		}
 	}, state.Window)
-	fd.Resize(fyne.NewSize(400, 400))
+	fd.Resize(fyne.NewSize(600, 400))
 	fd.Show()
 }
 

@@ -25,6 +25,7 @@ const (
 	IV
 	V
 	VI
+	Utility
 	ChronoCross
 	BofIII
 	BofIV

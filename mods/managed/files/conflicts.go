@@ -1,6 +1,7 @@
 package files
 
 import (
+	"fmt"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"io/fs"
@@ -19,16 +20,21 @@ func ResolveConflicts(enabler *mods.ModEnabler, managedFiles map[mods.ModID]*mod
 			fileToMod[c.RemoveGameDir(enabler.Game, f.To)] = modID
 		}
 	}
-	toInstall, err := compileFilesToMove(modFiles)
+	toInstall, err := compileFilesToMove(enabler.Game, enabler.TrackedMod, modFiles)
 	if err != nil {
 		done(mods.Error, nil, err)
+		return
 	}
 
 	detectCollisions(enabler, toInstall, fileToMod, done)
 	return
 }
 
-func compileFilesToMove(modFiles []*mods.DownloadFiles) (toInstall []string, err error) {
+func compileFilesToMove(game config.Game, mod *mods.TrackedMod, modFiles []*mods.DownloadFiles) (toInstall []string, err error) {
+	var (
+		dir string
+		f   string
+	)
 	for _, mf := range modFiles {
 		for _, f := range mf.Files {
 			to := f.To
@@ -38,24 +44,43 @@ func compileFilesToMove(modFiles []*mods.DownloadFiles) (toInstall []string, err
 			toInstall = append(toInstall, strings.ReplaceAll(to, "\\", "/"))
 		}
 		for _, d := range mf.Dirs {
+			if dir, err = config.Get().GetDir(game, config.ModsDirKind); err != nil {
+				return
+			}
+			dir = filepath.Join(dir, mod.GetDirSuffix(), mf.DownloadName, d.From)
 			if d.Recursive {
-				_ = filepath.WalkDir(d.From, func(path string, d fs.DirEntry, err error) error {
-					if d.IsDir() {
+				if err = filepath.WalkDir(dir, func(path string, de fs.DirEntry, err error) error {
+					if err != nil {
+						return err
+					}
+					if de == nil {
+						return fmt.Errorf("[%s] does not exist", path)
+					}
+					if de.IsDir() {
 						return nil
 					}
-					toInstall = append(toInstall, strings.ReplaceAll(path, "\\", "/"))
+					f = strings.ReplaceAll(path, "\\", "/")
+					i := strings.Index(f, d.To)
+					if i == -1 {
+						return fmt.Errorf("failed to find `To` dir in `From` file. To: [%s] From: [%s]", d.To, f)
+					}
+					toInstall = append(toInstall, f[i:])
 					return nil
-				})
+				}); err != nil {
+					return
+				}
 			} else {
 				var de []fs.DirEntry
-				if de, err = os.ReadDir(d.From); err != nil {
+				if de, err = os.ReadDir(dir); err != nil {
 					return
 				}
 				for _, e := range de {
 					if e.IsDir() {
 						continue
 					}
-					toInstall = append(toInstall, strings.ReplaceAll(e.Name(), "\\", "/"))
+					f = filepath.Join(d.To, e.Name())
+					f = strings.ReplaceAll(f, "\\", "/")
+					toInstall = append(toInstall, f)
 				}
 			}
 		}

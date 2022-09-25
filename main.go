@@ -19,9 +19,16 @@ import (
 	"github.com/kiamev/moogle-mod-manager/ui/state"
 	"github.com/kiamev/moogle-mod-manager/ui/util"
 	"github.com/kiamev/moogle-mod-manager/ui/util/resources"
+	"io/ioutil"
 )
 
 func main() {
+	defer func() {
+		if err := recover(); err != nil {
+			_ = ioutil.WriteFile("log.txt", []byte(err.(string)), 0644)
+		}
+	}()
+
 	state.App = app.New()
 	state.Window = state.App.NewWindow("Moogle Mod Manager " + browser.Version)
 	initialize()

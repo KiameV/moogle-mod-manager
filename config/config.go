@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"fyne.io/fyne/v2"
 	"github.com/kiamev/moogle-mod-manager/util"
 	"os"
@@ -31,6 +32,14 @@ const (
 	idVI             = "1173820"
 	idChronoCross    = "1133760"
 	// TODO BoF
+)
+
+type DirKind byte
+
+const (
+	ModsDirKind DirKind = iota
+	DownloadDirKind
+	BackupDirKind
 )
 
 type ThemeColor byte
@@ -92,6 +101,33 @@ func (c *Configs) GetBackupFullPath(game Game) string {
 	return filepath.Join(c.BackupDir, c.GetGameDirSuffix(game))
 }
 
+func (c *Configs) AddDir(game Game, dirKind DirKind, from string) (string, error) {
+	dir, err := c.GetDir(game, dirKind)
+	if err != nil {
+		return "", err
+	}
+	dir = strings.ReplaceAll(dir, "\\", "/")
+	from = strings.ReplaceAll(from, "\\", "/")
+	if strings.HasPrefix(from, dir) {
+		return from, nil
+	}
+	return filepath.Join(dir, from), nil
+}
+
+func (c *Configs) GetDir(game Game, dirKind DirKind) (dir string, err error) {
+	switch dirKind {
+	case ModsDirKind:
+		dir = c.GetModsFullPath(game)
+	case DownloadDirKind:
+		dir = c.GetDownloadFullPathForGame(game)
+	case BackupDirKind:
+		dir = c.GetBackupFullPath(game)
+	default:
+		err = errors.New("unknown dir kind")
+	}
+	return
+}
+
 func (c *Configs) GetGameDir(game Game) (s string) {
 	switch game {
 	case I:
@@ -136,6 +172,8 @@ func (c *Configs) GetGameDirSuffix(game Game) (s string) {
 		s = "bofIII"
 	case BofIV:
 		s = "bofIV"
+	case Utility:
+		s = "utility"
 	}
 	return
 }

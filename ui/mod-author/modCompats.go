@@ -1,6 +1,7 @@
 package mod_author
 
 import (
+	"errors"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
@@ -69,9 +70,15 @@ func (d *modCompatsDef) createItem(item interface{}, done ...func(interface{})) 
 		game = &g
 	}
 
+	if game == nil {
+		util.ShowErrorLong(errors.New("please specify a supported Games first (from the Games tab)"))
+		return
+	}
+
 	modLookup, err := discover.GetModsAsLookup(game)
 	if err != nil {
 		util.ShowErrorLong(err)
+		return
 	}
 
 	search := xw.NewCompletionEntry(nil)

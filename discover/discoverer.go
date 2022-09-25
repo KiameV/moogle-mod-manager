@@ -1,6 +1,7 @@
 package discover
 
 import (
+	"errors"
 	"fmt"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/discover/remote"
@@ -44,6 +45,9 @@ func GetModsAsLookup(game *config.Game) (lookup map[string]*mods.Mod, err error)
 		eg         errgroup.Group
 		ok         bool
 	)
+	if game == nil {
+		return nil, errors.New("game is nil")
+	}
 	if *game <= config.VI {
 		eg.Go(func() (e error) {
 			remoteMods, e = remote.GetNexusMods(game)
