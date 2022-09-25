@@ -101,7 +101,7 @@ func (ui *localUI) Draw(w fyne.Window) {
 		}, state.Window).Show()
 	})
 
-	ui.checkAll = widget.NewButton("Check All", func() {
+	ui.checkAll = widget.NewButton("Check For Updates", func() {
 		ui.checkAll.Disable()
 		defer func() {
 			ui.split.Refresh()

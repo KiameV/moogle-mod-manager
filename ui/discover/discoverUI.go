@@ -5,6 +5,7 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/discover"
@@ -159,26 +160,27 @@ func (ui *discoverUI) draw(w fyne.Window, isPopup bool) {
 			widget.NewLabelWithStyle(config.GameNameString(*state.CurrentGame), fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
 			widget.NewSeparator(),
 		), nil, nil, nil, container.NewBorder(
-			container.NewAdaptiveGrid(8,
-				container.NewHBox(
-					widget.NewButton("Back", func() {
-						if isPopup {
-							state.ClosePopupWindow()
-						} else {
-							state.ShowPreviousScreen()
-						}
-					}),
-					NewFilterButton(ui.filterCallback, w),
-				), widget.NewLabelWithStyle("Search", fyne.TextAlignTrailing, fyne.TextStyle{}), searchTb), nil, nil, nil,
+			container.NewHBox(
+				widget.NewButton("Back", func() {
+					if isPopup {
+						state.ClosePopupWindow()
+					} else {
+						state.ShowPreviousScreen()
+					}
+				}),
+				//NewFilterButton(ui.filterCallback, w),
+				container.New(layout.NewGridLayout(6),
+					widget.NewLabelWithStyle("Search", fyne.TextAlignTrailing, fyne.TextStyle{}), searchTb,
+					widget.NewLabelWithStyle("Category", fyne.TextAlignTrailing, fyne.TextStyle{}), newCategoryFilter(ui.filterCallback),
+					widget.NewLabelWithStyle("Include", fyne.TextAlignTrailing, fyne.TextStyle{}), newIncludeFilter(ui.filterCallback))),
+			nil, nil, nil,
 			ui.split)))
 }
 
-func (ui *discoverUI) filterCallback(ok bool) {
-	if ok {
-		m := ui.applyFilters(ui.mods)
-		m = ui.applySearch(ui.prevSearch, m)
-		_ = ui.showSorted(m)
-	}
+func (ui *discoverUI) filterCallback() {
+	m := ui.applyFilters(ui.mods)
+	m = ui.applySearch(ui.prevSearch, m)
+	_ = ui.showSorted(m)
 }
 
 func (ui *discoverUI) search(s string) error {

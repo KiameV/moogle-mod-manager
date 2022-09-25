@@ -370,23 +370,22 @@ func (m *Mod) Supports(game config.Game) error {
 func (m *Mod) Merge(from *Mod) {
 	if m.IsManuallyCreated {
 		m.Author = from.Author
-		m.AuthorLink = from.AuthorLink
-		m.Version = from.Version
-		m.ReleaseDate = from.ReleaseDate
+		if m.AuthorLink == "" {
+			m.AuthorLink = from.AuthorLink
+		}
+		from.ReleaseNotes = m.ReleaseNotes
+		from.ModCompatibility = m.ModCompatibility
+		from.Games = m.Games
+		from.Link = m.Link
+	} else if from.IsManuallyCreated {
+		from.Author = m.Author
+		if from.AuthorLink == "" {
+			from.AuthorLink = m.AuthorLink
+		}
 		m.ReleaseNotes = from.ReleaseNotes
-		m.Downloadables = from.Downloadables
+		m.ModCompatibility = from.ModCompatibility
 		m.Games = from.Games
 		m.Link = from.Link
-		from.IsManuallyCreated = true
-	} else if from.IsManuallyCreated {
-		m.Name = from.Name
-		m.Category = from.Category
-		m.Description = from.Description
-		m.ModCompatibility = from.ModCompatibility
-		m.DonationLinks = from.DonationLinks
-		m.AlwaysDownload = from.AlwaysDownload
-		m.Configurations = from.Configurations
-		m.IsManuallyCreated = true
 	}
 	return
 }
