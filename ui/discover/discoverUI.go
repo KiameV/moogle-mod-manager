@@ -159,36 +159,73 @@ func (ui *discoverUI) draw(w fyne.Window, isPopup bool) {
 			widget.NewLabelWithStyle(config.GameNameString(*state.CurrentGame), fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
 			widget.NewSeparator(),
 		), nil, nil, nil, container.NewBorder(
-			container.NewAdaptiveGrid(8, container.NewHBox(widget.NewButton("Back", func() {
-				if isPopup {
-					state.ClosePopupWindow()
-				} else {
-					state.ShowPreviousScreen()
-				}
-			})), widget.NewLabelWithStyle("Search", fyne.TextAlignTrailing, fyne.TextStyle{}), searchTb), nil, nil, nil,
+			container.NewAdaptiveGrid(8,
+				container.NewHBox(
+					widget.NewButton("Back", func() {
+						if isPopup {
+							state.ClosePopupWindow()
+						} else {
+							state.ShowPreviousScreen()
+						}
+					}),
+					NewFilterButton(ui.filterCallback, w),
+				), widget.NewLabelWithStyle("Search", fyne.TextAlignTrailing, fyne.TextStyle{}), searchTb), nil, nil, nil,
 			ui.split)))
 }
 
+func (ui *discoverUI) filterCallback(ok bool) {
+	if ok {
+		m := ui.applyFilters(ui.mods)
+		m = ui.applySearch(ui.prevSearch, m)
+		_ = ui.showSorted(m)
+	}
+}
+
 func (ui *discoverUI) search(s string) error {
-	if s == ui.prevSearch || (len(s) < 3 && ui.prevSearch == "") {
+	m := ui.applyFilters(ui.mods)
+	if s != ui.prevSearch {
+		m = ui.applySearch(s, m)
+	}
+	return ui.showSorted(m)
+}
+
+func (ui *discoverUI) applyFilters(orig []*mods.Mod) (result []*mods.Mod) {
+	result = make([]*mods.Mod, 0, len(orig))
+	for _, m := range orig {
+		if filters.category != nil && m.Category != *filters.category {
+			continue
+		}
+		if filters.supportedKind == supported && !m.IsManuallyCreated {
+			continue
+		}
+		if filters.supportedKind == unsupported && m.IsManuallyCreated {
+			continue
+		}
+		result = append(result, m)
+	}
+	return result
+}
+
+func (ui *discoverUI) applySearch(s string, orig []*mods.Mod) (result []*mods.Mod) {
+	if len(s) < 3 && ui.prevSearch == "" {
 		s = ""
 		if ui.data.Length() == len(ui.mods) {
-			return nil
+			return orig
 		}
 	}
+
 	s = strings.ToLower(s)
 	ui.prevSearch = s
 
-	var ms []*mods.Mod
-	for _, m := range ui.mods {
+	for _, m := range orig {
 		if strings.Contains(strings.ToLower(m.Name), s) ||
 			strings.Contains(strings.ToLower(string(m.Category)), s) ||
 			strings.Contains(strings.ToLower(m.Description), s) ||
 			strings.Contains(strings.ToLower(m.Author), s) {
-			ms = append(ms, m)
+			result = append(result, m)
 		}
 	}
-	return ui.showSorted(ms)
+	return result
 }
 
 func (ui *discoverUI) showSorted(ms []*mods.Mod) error {

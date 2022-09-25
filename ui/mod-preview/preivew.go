@@ -28,7 +28,9 @@ func CreatePreview(mod *mods.Mod, options ...ModPreviewOptions) fyne.CanvasObjec
 	c.Add(createLink("Link", mod.Link))
 	c.Add(createField("Author", mod.Author))
 	c.Add(createField("Version", mod.Version))
-	//c.Add(createField("Category", mod.Category))
+	if mod.Category != "" {
+		c.Add(createField("Category", string(mod.Category)))
+	}
 	c.Add(createField("Release Date", mod.ReleaseDate))
 
 	text := widget.NewRichTextFromMarkdown(strings.ReplaceAll(mod.Description, "\r", ""))

@@ -377,6 +377,7 @@ func (m *Mod) Merge(from *Mod) {
 		m.Downloadables = from.Downloadables
 		m.Games = from.Games
 		m.Link = from.Link
+		from.IsManuallyCreated = true
 	} else if from.IsManuallyCreated {
 		m.Name = from.Name
 		m.Category = from.Category
@@ -385,11 +386,7 @@ func (m *Mod) Merge(from *Mod) {
 		m.DonationLinks = from.DonationLinks
 		m.AlwaysDownload = from.AlwaysDownload
 		m.Configurations = from.Configurations
-	}
-	if m.ModCompatibility.HasItems() && !from.ModCompatibility.HasItems() {
-		from.ModCompatibility = m.ModCompatibility
-	} else if from.ModCompatibility.HasItems() && !m.ModCompatibility.HasItems() {
-		m.ModCompatibility = from.ModCompatibility
+		m.IsManuallyCreated = true
 	}
 	return
 }
