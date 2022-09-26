@@ -159,6 +159,15 @@ func GetMods(game config.Game) []*mods.TrackedMod {
 	return lookup[game].Mods
 }
 
+func GetEnabledMods(game config.Game) (result []*mods.TrackedMod) {
+	for _, tm := range lookup[game].Mods {
+		if tm.Enabled {
+			result = append(result, tm)
+		}
+	}
+	return
+}
+
 func IsModEnabled(game config.Game, id mods.ModID) (mod *mods.TrackedMod, found bool, enabled bool) {
 	if mod, found = TryGetMod(game, id); found {
 		enabled = mod.Enabled
@@ -232,6 +241,12 @@ func enableMod(enabler *mods.ModEnabler, err error) {
 				tm.Enabled = false
 			} else {
 				tm.Enabled = true
+				// Find any mods that are now disabled because all the files have been replaced by other mods
+				for _, mod := range GetEnabledMods(enabler.Game) {
+					if !files.HasManagedFiles(enabler.Game, mod.GetModID()) {
+						mod.Enabled = false
+					}
+				}
 				_ = saveToJson()
 			}
 			enabler.DoneCallback(result, err...)

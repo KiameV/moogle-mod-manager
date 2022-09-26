@@ -18,7 +18,7 @@ func AddModFiles(enabler *mods.ModEnabler, files []*mods.DownloadFiles, done mod
 		managed[game] = mmf
 	}
 
-	ResolveConflicts(enabler, mmf.Mods, files, func(result mods.Result, skip map[string]bool, err ...error) {
+	ResolveConflicts(enabler, mmf.Mods, files, func(result mods.Result, cr conflictResult, err ...error) {
 		if result == mods.Cancel {
 			done(result)
 		} else if result == mods.Error {
@@ -30,7 +30,7 @@ func AddModFiles(enabler *mods.ModEnabler, files []*mods.DownloadFiles, done mod
 			case config.BofIII, config.BofIV:
 				// TODO BoF
 			default:
-				if e := addModFiles(enabler, mmf, files, skip); e != nil {
+				if e := addModFiles(enabler, mmf, files, cr); e != nil {
 					done(mods.Error, e)
 				} else {
 					done(mods.Ok)

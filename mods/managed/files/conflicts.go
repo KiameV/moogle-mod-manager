@@ -10,7 +10,13 @@ import (
 	"strings"
 )
 
-type DoneCallback func(result mods.Result, skip map[string]bool, err ...error)
+type (
+	conflictResult struct {
+		skip    map[string]bool
+		replace map[string]bool
+	}
+	DoneCallback func(result mods.Result, skip conflictResult, err ...error)
+)
 
 func ResolveConflicts(enabler *mods.ModEnabler, managedFiles map[mods.ModID]*modFiles, modFiles []*mods.DownloadFiles, done DoneCallback) {
 	c := config.Get()
@@ -22,7 +28,7 @@ func ResolveConflicts(enabler *mods.ModEnabler, managedFiles map[mods.ModID]*mod
 	}
 	toInstall, err := compileFilesToMove(enabler.Game, enabler.TrackedMod, modFiles)
 	if err != nil {
-		done(mods.Error, nil, err)
+		done(mods.Error, conflictResult{}, err)
 		return
 	}
 
@@ -94,7 +100,10 @@ func detectCollisions(enabler *mods.ModEnabler, toInstall []string, installedFil
 		collisions []*mods.FileConflict
 		id         mods.ModID
 		found      bool
-		skip       = make(map[string]bool)
+		cr         = conflictResult{
+			skip:    make(map[string]bool),
+			replace: make(map[string]bool),
+		}
 	)
 	for _, ti := range toInstall {
 		if id, found = installedFiles[ti]; found {
@@ -108,21 +117,23 @@ func detectCollisions(enabler *mods.ModEnabler, toInstall []string, installedFil
 	if len(collisions) > 0 {
 		enabler.OnConflict(collisions, func(result mods.Result, choices []*mods.FileConflict, err ...error) {
 			if result == mods.Error {
-				done(result, nil, err...)
+				done(result, cr, err...)
 				return
 			}
 			if result == mods.Cancel {
-				done(result, nil)
+				done(result, cr)
 				return
 			}
 			for _, c := range choices {
 				if c.ChoiceName != enabler.TrackedMod.DisplayName {
-					skip[c.File] = true
+					cr.skip[c.File] = true
+				} else {
+					cr.replace[c.File] = true
 				}
 			}
-			done(mods.Ok, skip)
+			done(mods.Ok, cr)
 		})
 	} else {
-		done(mods.Ok, nil)
+		done(mods.Ok, cr)
 	}
 }

@@ -40,6 +40,7 @@ const (
 	ModsDirKind DirKind = iota
 	DownloadDirKind
 	BackupDirKind
+	GameDirKind
 )
 
 type ThemeColor byte
@@ -122,10 +123,23 @@ func (c *Configs) GetDir(game Game, dirKind DirKind) (dir string, err error) {
 		dir = c.GetDownloadFullPathForGame(game)
 	case BackupDirKind:
 		dir = c.GetBackupFullPath(game)
+	case GameDirKind:
+		dir = c.GetGameDir(game)
 	default:
 		err = errors.New("unknown dir kind")
 	}
 	return
+}
+
+func (c *Configs) RemoveDir(game Game, dirKind DirKind, from string) (string, error) {
+	dir, err := c.GetDir(game, dirKind)
+	if err != nil {
+		return "", err
+	}
+	dir = strings.ReplaceAll(dir, "\\", "/")
+	from = strings.ReplaceAll(from, "\\", "/")
+	from = strings.TrimPrefix(from, dir)
+	return strings.TrimPrefix(from, "/"), nil
 }
 
 func (c *Configs) GetGameDir(game Game) (s string) {

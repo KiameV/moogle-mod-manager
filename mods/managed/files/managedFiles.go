@@ -31,6 +31,20 @@ func InitializeManagedFiles() error {
 	return json.Unmarshal(b, &managed)
 }
 
+func HasManagedFiles(game config.Game, modID mods.ModID) bool {
+	var (
+		ok bool
+		mf *modFiles
+	)
+	if _, ok = managed[game]; !ok {
+		return false
+	}
+	if mf, ok = managed[game].Mods[modID]; !ok {
+		return false
+	}
+	return len(mf.MovedFiles) > 0
+}
+
 type managedModsAndFiles struct {
 	Mods map[mods.ModID]*modFiles
 }
