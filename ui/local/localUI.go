@@ -53,7 +53,7 @@ func (ui *localUI) Draw(w fyne.Window) {
 	ui.modList = widget.NewListWithData(
 		ui.data,
 		func() fyne.CanvasObject {
-			return container.NewBorder(nil, nil, nil, widget.NewCheck("", func(b bool) {}), widget.NewLabel(""))
+			return container.NewBorder(nil, nil, widget.NewLabel(""), widget.NewCheck("", func(b bool) {}), NewUpdateButton(ui.updateMod))
 		},
 		func(item binding.DataItem, co fyne.CanvasObject) {
 			var tm *mods.TrackedMod
@@ -63,8 +63,9 @@ func (ui *localUI) Draw(w fyne.Window) {
 						tm.DisplayName = tm.Mod.Name
 					}
 					c := co.(*fyne.Container)
-					c.Objects[0].(*widget.Label).Bind(binding.BindString(&tm.DisplayName))
-					c.Objects[1].(*widget.Check).Bind(newEnableBind(tm, ui.startEnableDisableCallback, ui.showWorkingDialog, ui.endEnableDisableCallback))
+					c.Objects[0].(*UpdateButton).SetTrackedMod(tm)
+					c.Objects[1].(*widget.Label).Bind(binding.BindString(&tm.DisplayName))
+					c.Objects[2].(*widget.Check).Bind(newEnableBind(tm, ui.startEnableDisableCallback, ui.showWorkingDialog, ui.endEnableDisableCallback))
 				}
 			}
 		})
@@ -264,6 +265,13 @@ func (ui *localUI) endEnableDisableCallback(result mods.Result, err ...error) {
 		util.ShowErrorLong(fmt.Errorf("result was not Error but received error: %v", err[0]))
 	} else if result == mods.Error && len(err) > 0 {
 		util.ShowErrorLong(err[0])
+	}
+	ui.split.Leading.Refresh()
+}
+
+func (ui *localUI) updateMod(tm *mods.TrackedMod) {
+	if err := managed.UpdateMod(*state.CurrentGame, tm); err != nil {
+		util.ShowErrorLong(err)
 	}
 	ui.split.Leading.Refresh()
 }

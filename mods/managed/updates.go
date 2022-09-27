@@ -13,8 +13,6 @@ import (
 	"sync"
 )
 
-const updateAvailableFlag = " *"
-
 func CheckForUpdates(game config.Game, result func(err error)) {
 	var (
 		dispatcher = workerpool.NewDispatcher(
@@ -126,6 +124,5 @@ func isVersionNewer(new string, old string) bool {
 }
 
 func markForUpdate(tm *mods.TrackedMod, mod *mods.Mod) {
-	tm.UpdatedMod = mod
-	tm.DisplayName = mod.Name + updateAvailableFlag
+	tm.UpdatedMod = mods.NewModForVersion(tm.Mod, mod)
 }

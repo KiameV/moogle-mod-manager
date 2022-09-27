@@ -142,8 +142,10 @@ func UpdateMod(game config.Game, tm *mods.TrackedMod) (err error) {
 		return
 	}
 
-	if err = DisableMod(game, tm); err != nil {
-		return
+	if tm.IsEnabled() {
+		if err = DisableMod(game, tm); err != nil {
+			return
+		}
 	}
 
 	tm.Mod = tm.UpdatedMod

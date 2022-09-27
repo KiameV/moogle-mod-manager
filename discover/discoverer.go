@@ -72,7 +72,7 @@ func GetModsAsLookup(game *config.Game) (lookup map[string]*mods.Mod, err error)
 		if found, ok = lookup[m.UniqueModID(*game)]; !ok {
 			lookup[m.UniqueModID(*game)] = m
 		} else {
-			found.Merge(m)
+			found.Merge(*m)
 		}
 	}
 	if game == nil {

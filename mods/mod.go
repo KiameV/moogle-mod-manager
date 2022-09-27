@@ -367,27 +367,32 @@ func (m *Mod) Supports(game config.Game) error {
 	return fmt.Errorf("%s does not support %s", m.Name, config.GameNameString(game))
 }
 
-func (m *Mod) Merge(from *Mod) {
+func (m *Mod) Merge(from Mod) {
 	if m.IsManuallyCreated {
 		m.Author = from.Author
 		if m.AuthorLink == "" {
 			m.AuthorLink = from.AuthorLink
 		}
-		from.ReleaseNotes = m.ReleaseNotes
 		from.ModCompatibility = m.ModCompatibility
 		from.Games = m.Games
 		from.Link = m.Link
 	} else if from.IsManuallyCreated {
-		from.Author = m.Author
-		if from.AuthorLink == "" {
-			from.AuthorLink = m.AuthorLink
-		}
+		m.Description = from.Description
 		m.ReleaseNotes = from.ReleaseNotes
-		m.ModCompatibility = from.ModCompatibility
-		m.Games = from.Games
-		m.Link = from.Link
 	}
 	return
+}
+
+func NewModForVersion(manual *Mod, remote *Mod) *Mod {
+	var m Mod
+	if manual != nil && manual.IsManuallyCreated {
+		m = *manual
+		m.Version = remote.Version
+		m.Downloadables = remote.Downloadables
+	} else {
+		m = *remote
+	}
+	return &m
 }
 
 func (m *Mod) DirectoryName() string {
