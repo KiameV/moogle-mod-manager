@@ -8,4 +8,3 @@ func NewArchiveMover() ArchiveMover {
 }
 
 type archiveMover struct{}
-

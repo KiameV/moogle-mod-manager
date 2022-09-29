@@ -185,14 +185,16 @@ func (f *DownloadFiles) IsEmpty() bool {
 }
 
 type ModFile struct {
-	From string `json:"From" xml:"From"`
-	To   string `json:"To" xml:"To"`
+	From    string  `json:"From" xml:"From"`
+	To      string  `json:"To" xml:"To"`
+	Archive *string `json:"Archive,omitempty" xml:"Archive,omitempty"`
 }
 
 type ModDir struct {
-	From      string `json:"From" xml:"From"`
-	To        string `json:"To" xml:"To"`
-	Recursive bool   `json:"Recursive" xml:"Recursive"`
+	From      string  `json:"From" xml:"From"`
+	To        string  `json:"To" xml:"To"`
+	Recursive bool    `json:"Recursive" xml:"Recursive"`
+	Archive   *string `json:"Archive,omitempty" xml:"Archive,omitempty"`
 }
 
 type Configuration struct {

@@ -84,7 +84,15 @@ func removeBackupFile(enabler *mods.ModEnabler, mf *modFiles, mmf *managedModsAn
 		for id, mod := range mmf.Mods {
 			if id != enabler.TrackedMod.GetModID() {
 				var toDelete []string
-				for k, _ = range mod.BackedUpFiles {
+				for k = range mod.BackedUpFiles {
+					if dir, err = c.RemoveDir(game, config.GameDirKind, k); err != nil {
+						continue
+					}
+					if _, ok = toRemove[dir]; ok {
+						toDelete = append(toDelete, k)
+					}
+				}
+				for k = range mod.MovedFiles {
 					if dir, err = c.RemoveDir(game, config.GameDirKind, k); err != nil {
 						continue
 					}
@@ -218,78 +226,69 @@ func IsDir(path string) bool {
 }
 
 func cutFile(src, dst string) error {
-	in, err := os.Open(src)
-	if err != nil {
+	var (
+		in, out *os.File
+		fi      os.FileInfo
+		err     error
+	)
+	if in, err = os.Open(src); err != nil {
 		return fmt.Errorf("couldn't open source file: %s", err)
 	}
-
-	out, err := os.Create(dst)
-	if err != nil {
+	if out, err = os.Create(dst); err != nil {
 		_ = in.Close()
 		return fmt.Errorf("couldn't open dest file: %s", err)
 	}
-	defer out.Close()
+	defer func() { _ = out.Close() }()
 
 	_, err = io.Copy(out, in)
 	_ = in.Close()
 	if err != nil {
 		return fmt.Errorf("writing to output file failed: %s", err)
 	}
-
-	err = out.Sync()
-	if err != nil {
+	if err = out.Sync(); err != nil {
 		return fmt.Errorf("sync error: %s", err)
 	}
-
-	si, err := os.Stat(src)
-	if err != nil {
+	if fi, err = os.Stat(src); err != nil {
 		return fmt.Errorf("stat error: %s", err)
 	}
-	err = os.Chmod(dst, si.Mode())
-	if err != nil {
+	if err = os.Chmod(dst, fi.Mode()); err != nil {
 		return fmt.Errorf("chmod error: %s", err)
 	}
-
-	err = os.Remove(src)
-	if err != nil {
+	if err = os.Remove(src); err != nil {
 		return fmt.Errorf("failed removing original file: %s", err)
 	}
 	return nil
 }
 
 func copyFile(src, dst string) error {
-	in, err := os.Open(src)
-	if err != nil {
+	var (
+		in, out *os.File
+		fi      os.FileInfo
+		err     error
+	)
+	if in, err = os.Open(src); err != nil {
 		return fmt.Errorf("couldn't open source file: %s", err)
 	}
-
-	out, err := os.Create(dst)
-	if err != nil {
+	if out, err = os.Create(dst); err != nil {
 		_ = in.Close()
 		return fmt.Errorf("couldn't open dest file: %s", err)
 	}
-	defer func() { out.Close() }()
+	defer func() { _ = out.Close() }()
 
 	_, err = io.Copy(out, in)
 	_ = in.Close()
 	if err != nil {
 		return fmt.Errorf("writing to output file failed: %s", err)
 	}
-
-	err = out.Sync()
-	if err != nil {
+	if err = out.Sync(); err != nil {
 		return fmt.Errorf("sync error: %s", err)
 	}
-
-	si, err := os.Stat(src)
-	if err != nil {
+	if fi, err = os.Stat(src); err != nil {
 		return fmt.Errorf("stat error: %s", err)
 	}
-	err = os.Chmod(dst, si.Mode())
-	if err != nil {
+	if err = os.Chmod(dst, fi.Mode()); err != nil {
 		return fmt.Errorf("chmod error: %s", err)
 	}
-
 	return nil
 }
 
