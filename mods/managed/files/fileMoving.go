@@ -312,15 +312,17 @@ func removeModFiles(mf *modFiles, mmf *managedModsAndFiles, tm *mods.TrackedMod)
 
 	handled = make([]string, 0, len(mf.BackedUpFiles))
 	for k, f := range mf.BackedUpFiles {
-		if _, err = os.Stat(f.From); err == nil {
-			if err = os.Remove(f.From); err != nil {
-				sb.WriteString(fmt.Sprintf("failed to remove [%s]: %v\n", f.To, err))
+		if f != nil {
+			if _, err = os.Stat(f.From); err == nil {
+				if err = os.Remove(f.From); err != nil {
+					sb.WriteString(fmt.Sprintf("failed to remove [%s]: %v\n", f.To, err))
+					err = nil
+				}
+			}
+			if err = MoveFile(cut, f.To, f.From, nil); err != nil {
+				sb.WriteString(fmt.Sprintf("failed to move [%s] to [%s]: %v\n", f.To, f.From, err))
 				err = nil
 			}
-		}
-		if err = MoveFile(cut, f.To, f.From, nil); err != nil {
-			sb.WriteString(fmt.Sprintf("failed to move [%s] to [%s]: %v\n", f.To, f.From, err))
-			err = nil
 		}
 		handled = append(handled, k)
 	}
