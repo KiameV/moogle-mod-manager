@@ -367,7 +367,7 @@ func canInstall(enabler *mods.ModEnabler) error {
 			for _, mc = range c.Requires {
 				mod, found, enabled = IsModEnabled(*state.CurrentGame, mc.ModID())
 				if !found {
-					return fmt.Errorf("[%s] cannot be enabled because [%s] is not enabled", tm.DisplayName, mod.DisplayName)
+					return fmt.Errorf("[%s] cannot be enabled because [%s] is not enabled", tm.DisplayName, mc.ModID())
 				} else if !enabled {
 					return fmt.Errorf("[%s] cannot be enabled because [%s] is not enabled", tm.DisplayName, mod.DisplayName)
 				}
