@@ -1,9 +1,10 @@
-package files
+package conflict
 
 import (
 	"fmt"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
+	"github.com/kiamev/moogle-mod-manager/mods/managed/files/managed"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -11,14 +12,14 @@ import (
 )
 
 type (
-	conflictResult struct {
-		skip    map[string]bool
-		replace map[string]bool
+	Result struct {
+		Skip    map[string]bool
+		Replace map[string]bool
 	}
-	DoneCallback func(result mods.Result, skip conflictResult, err ...error)
+	DoneCallback func(result mods.Result, skip Result, err ...error)
 )
 
-func ResolveConflicts(enabler *mods.ModEnabler, managedFiles map[mods.ModID]*modFiles, modFiles []*mods.DownloadFiles, done DoneCallback) {
+func ResolveConflicts(enabler *mods.ModEnabler, managedFiles map[mods.ModID]*managed.ModFiles, modFiles []*mods.DownloadFiles, done DoneCallback) {
 	c := config.Get()
 	fileToMod := make(map[string]mods.ModID)
 	for modID, mf := range managedFiles {
@@ -28,7 +29,7 @@ func ResolveConflicts(enabler *mods.ModEnabler, managedFiles map[mods.ModID]*mod
 	}
 	toInstall, err := compileFilesToMove(enabler.Game, enabler.TrackedMod, modFiles)
 	if err != nil {
-		done(mods.Error, conflictResult{}, err)
+		done(mods.Error, Result{}, err)
 		return
 	}
 
@@ -100,9 +101,9 @@ func detectCollisions(enabler *mods.ModEnabler, toInstall []string, installedFil
 		collisions []*mods.FileConflict
 		id         mods.ModID
 		found      bool
-		cr         = conflictResult{
-			skip:    make(map[string]bool),
-			replace: make(map[string]bool),
+		cr         = Result{
+			Skip:    make(map[string]bool),
+			Replace: make(map[string]bool),
 		}
 	)
 	for _, ti := range toInstall {
@@ -126,9 +127,9 @@ func detectCollisions(enabler *mods.ModEnabler, toInstall []string, installedFil
 			}
 			for _, c := range choices {
 				if c.ChoiceName != enabler.TrackedMod.DisplayName {
-					cr.skip[c.File] = true
+					cr.Skip[c.File] = true
 				} else {
-					cr.replace[c.File] = true
+					cr.Replace[c.File] = true
 				}
 			}
 			done(mods.Ok, cr)

@@ -12,6 +12,7 @@ import (
 	"github.com/kiamev/moogle-mod-manager/downloads"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/mods/managed/files"
+	"github.com/kiamev/moogle-mod-manager/mods/managed/files/managed"
 	"github.com/kiamev/moogle-mod-manager/mods/nexus"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
 	"github.com/kiamev/moogle-mod-manager/util"
@@ -56,7 +57,7 @@ func Initialize() (err error) {
 			tm.Mod = mod
 		}
 	}
-	return files.InitializeManagedFiles()
+	return managed.InitializeManagedFiles()
 }
 
 func AddModFromFile(game config.Game, file string) (tm *mods.TrackedMod, err error) {
@@ -245,7 +246,7 @@ func enableMod(enabler *mods.ModEnabler, err error) {
 				tm.Enabled = true
 				// Find any mods that are now disabled because all the files have been replaced by other mods
 				for _, mod := range GetEnabledMods(enabler.Game) {
-					if !files.HasManagedFiles(enabler.Game, mod.GetModID()) {
+					if !managed.HasManagedFiles(enabler.Game, mod.GetModID()) {
 						mod.Enabled = false
 					}
 				}

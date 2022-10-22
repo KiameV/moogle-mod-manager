@@ -259,6 +259,7 @@ func (a *ModAuthorer) Draw(w fyne.Window) {
 func (a *ModAuthorer) updateEntries(mod *mods.Mod) {
 	*a.kind = mod.ModKind.Kind
 	a.createBaseDir(state.GetBaseDirBinding())
+	a.modID = mod.ID
 	a.createFormItem("Name", mod.Name)
 	a.createFormItem("Author", mod.Author)
 	a.createFormItem("Release Date", mod.ReleaseDate)

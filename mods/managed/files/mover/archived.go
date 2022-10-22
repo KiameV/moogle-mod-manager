@@ -1,4 +1,4 @@
-package files
+package mover
 
 type ArchiveMover interface {
 }

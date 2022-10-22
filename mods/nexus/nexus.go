@@ -137,7 +137,7 @@ func GetModFromNexus(url string) (mod *mods.Mod, err error) {
 			}
 		}
 	}
-	if nexusID == "" && modID == "" {
+	if nexusID == "" || modID == "" {
 		err = fmt.Errorf("could not get Game and Mod ID from %s", url)
 		return
 	}
@@ -309,7 +309,7 @@ func toMod(n nexusMod, dls []NexusFile) (mod *mods.Mod, err error) {
 			})
 		}
 	}
-	if len(choices) > 0 {
+	if len(choices) > 1 {
 		mod.Configurations = []*mods.Configuration{
 			{
 				Name:        "Choose preference",
@@ -319,6 +319,8 @@ func toMod(n nexusMod, dls []NexusFile) (mod *mods.Mod, err error) {
 				Choices:     choices,
 			},
 		}
+	} else {
+		mod.AlwaysDownload = append(mod.AlwaysDownload, choices[0].DownloadFiles)
 	}
 	return
 }
