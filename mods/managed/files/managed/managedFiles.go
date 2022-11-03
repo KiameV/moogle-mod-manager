@@ -55,6 +55,7 @@ func GetModsWithManagedFiles(game config.Game) (mmf *ManagedModsAndFiles) {
 		mmf = &ManagedModsAndFiles{
 			Mods: make(map[mods.ModID]*ModFiles),
 		}
+		managed[game] = mmf
 	}
 	return
 }
