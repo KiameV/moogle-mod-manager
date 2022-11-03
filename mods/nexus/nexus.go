@@ -99,7 +99,7 @@ func GameToID(game config.Game) NexusGameID {
 	}
 }
 
-func GetModFromNexusForMod(in *mods.Mod) (mod *mods.Mod, err error) {
+func GetModFromNexusForMod(in *mods.Mod) (found bool, mod *mods.Mod, err error) {
 	if len(in.Games) == 0 {
 		err = errors.New("no games found for mod " + in.Name)
 		return
@@ -115,11 +115,11 @@ func GetModFromNexusForMod(in *mods.Mod) (mod *mods.Mod, err error) {
 	return GetModFromNexus(fmt.Sprintf(nexusUrl, GameToNexusGame(game), id))
 }
 
-func GetModFromNexusByID(game config.Game, id int) (*mods.Mod, error) {
+func GetModFromNexusByID(game config.Game, id int) (found bool, mod *mods.Mod, err error) {
 	return GetModFromNexus(fmt.Sprintf(nexusUrl, GameToNexusGame(game), id))
 }
 
-func GetModFromNexus(url string) (mod *mods.Mod, err error) {
+func GetModFromNexus(url string) (found bool, mod *mods.Mod, err error) {
 	var (
 		sp      = strings.Split(url, "/")
 		nexusID string
@@ -163,6 +163,7 @@ func GetNewestMods(game config.Game, lastID int) (result []*mods.Mod, err error)
 		nexusID = GameToNexusGame(game)
 		nDls    fileParent
 		mod     *mods.Mod
+		found   bool
 	)
 	if b, err = sendRequest(fmt.Sprintf(nexusApiNewestModsUrl, GameToNexusGame(game))); err != nil {
 		return
@@ -178,8 +179,10 @@ func GetNewestMods(game config.Game, lastID int) (result []*mods.Mod, err error)
 			if nDls, err = getDownloads(nexusID, fmt.Sprintf("%d", nMod.ModID)); err != nil {
 				return
 			}
-			if mod, err = toMod(nMod, nDls.Files); err != nil {
+			if found, mod, err = toMod(nMod, nDls.Files); err != nil {
 				return
+			} else if found {
+				continue
 			}
 			result = append(result, mod)
 		}
@@ -234,7 +237,7 @@ func sendRequest(url string) (response []byte, err error) {
 	return
 }
 
-func toMod(n nexusMod, dls []NexusFile) (mod *mods.Mod, err error) {
+func toMod(n nexusMod, dls []NexusFile) (include bool, mod *mods.Mod, err error) {
 	modID := fmt.Sprintf("%d", n.ModID)
 	game := NexusGameToGame(n.Game)
 	mod = &mods.Mod{
@@ -309,6 +312,8 @@ func toMod(n nexusMod, dls []NexusFile) (mod *mods.Mod, err error) {
 			})
 		}
 	}
+
+	include = true
 	if len(choices) > 1 {
 		mod.Configurations = []*mods.Configuration{
 			{
@@ -319,8 +324,10 @@ func toMod(n nexusMod, dls []NexusFile) (mod *mods.Mod, err error) {
 				Choices:     choices,
 			},
 		}
-	} else {
+	} else if len(choices) == 1 {
 		mod.AlwaysDownload = append(mod.AlwaysDownload, choices[0].DownloadFiles)
+	} else {
+		include = false
 	}
 	return
 }

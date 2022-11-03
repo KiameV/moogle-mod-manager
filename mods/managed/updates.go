@@ -91,7 +91,7 @@ type nexusUpdateChecker struct {
 
 func (c *nexusUpdateChecker) Process() error {
 	defer c.wg.Done()
-	mod, err := nexus.GetModFromNexusForMod(c.tm.Mod)
+	_, mod, err := nexus.GetModFromNexusForMod(c.tm.Mod)
 	if err != nil {
 		c.err = err
 		return nil

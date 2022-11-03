@@ -59,10 +59,18 @@ func (r *repo) Pull() (err error) {
 	return
 }
 
-func (r *repo) pull(rd repoDef) (err error) {
-	_, _, err = r.getWorkTree(rd)
-	return
-
+func (r *repo) pull(rd repoDef) error {
+	_, w, err := r.getWorkTree(rd)
+	if err == nil {
+		err = w.Pull(&git.PullOptions{
+			RemoteName: "origin",
+			Force:      true,
+		})
+		if err == git.NoErrAlreadyUpToDate {
+			err = nil
+		}
+	}
+	return err
 }
 
 func (r *repo) GetMod(toGet *mods.Mod) (mod *mods.Mod, err error) {

@@ -109,7 +109,7 @@ func (a *ModAuthorer) NewNexusMod() {
 				state.ShowPreviousScreen()
 				return
 			}
-			m, err := nexus.GetModFromNexus(e.Text)
+			_, m, err := nexus.GetModFromNexus(e.Text)
 			if err != nil {
 				util.ShowErrorLong(err)
 				return

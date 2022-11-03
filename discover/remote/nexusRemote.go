@@ -47,6 +47,7 @@ func appendNewNexusMods(game config.Game, ms []*mods.Mod) (result []*mods.Mod, e
 		nm     []*mods.Mod
 		mod    *mods.Mod
 		file   string
+		found  bool
 	)
 	if nm, err = nexus.GetNewestMods(game, lastID); err != nil {
 		return
@@ -58,7 +59,7 @@ func appendNewNexusMods(game config.Game, ms []*mods.Mod) (result []*mods.Mod, e
 		// First time getting mods, get them all
 		file = filepath.Join(getDir(game), fmt.Sprintf("%d", id), "mod.json")
 		if _, err = os.Stat(file); err != nil {
-			if mod, err = nexus.GetModFromNexusByID(game, id); err == nil {
+			if found, mod, err = nexus.GetModFromNexusByID(game, id); found && err == nil {
 				if err = util.SaveToFile(file, mod); err != nil {
 					return
 				}
