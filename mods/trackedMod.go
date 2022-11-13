@@ -1,6 +1,7 @@
 package mods
 
 import (
+	"fmt"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/util"
 	"path/filepath"
@@ -44,11 +45,15 @@ func (m *TrackedMod) GetModID() ModID {
 }
 
 func (m *TrackedMod) GetDirSuffix() string {
-	k := m.Mod.ModKind
-	if k.Kind == Hosted {
+	switch m.Mod.ModKind.Kind {
+	case Hosted:
 		return filepath.Join(util.CreateFileName(string(m.GetModID())), util.CreateFileName(m.Mod.Version))
+	case Nexus:
+		return filepath.Join("nexus", util.CreateFileName(string(m.GetModID())))
+	case CurseForge:
+		return filepath.Join("cf", util.CreateFileName(string(m.GetModID())))
 	}
-	return filepath.Join(util.CreateFileName(string(m.GetModID())))
+	panic(fmt.Sprintf("unknown kind %v", m.Mod.ModKind.Kind))
 }
 
 func (m *TrackedMod) GetMod() *Mod {

@@ -50,7 +50,7 @@ func GetModsAsLookup(game *config.Game) (lookup map[string]*mods.Mod, err error)
 	}
 	if *game <= config.VI {
 		eg.Go(func() (e error) {
-			remoteMods, e = remote.GetNexusMods(game)
+			remoteMods, e = remote.GetMods(game)
 			return
 		})
 	}

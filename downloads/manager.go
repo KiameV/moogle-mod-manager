@@ -10,14 +10,21 @@ import (
 )
 
 func Download(enabler *mods.ModEnabler, done confirm.DownloadCompleteCallback) error {
-	if enabler.TrackedMod.Mod.ModKind.Kind == mods.Hosted {
-		confirm.Hosted(enabler, done, hosted)
-	} else {
-		if err := confirm.Nexus(enabler, done, nexus); err != nil {
-			return err
-		}
+	var (
+		kind      = enabler.Kind()
+		confirmer = confirm.NewConfirmer(kind)
+		callback  confirm.DownloadCallback
+	)
+	switch kind {
+	case mods.CurseForge, mods.Nexus:
+		callback = remote
+	case mods.Hosted:
+		callback = hosted
+	default:
+		return fmt.Errorf("unknown kind %v", kind)
 	}
-	return nil
+
+	return confirmer.ConfirmDownload(enabler, done, downloader)
 }
 
 func hosted(enabler *mods.ModEnabler, done confirm.DownloadCompleteCallback, err error) {
@@ -53,7 +60,7 @@ func hosted(enabler *mods.ModEnabler, done confirm.DownloadCompleteCallback, err
 	done(enabler, nil)
 }
 
-func nexus(enabler *mods.ModEnabler, done confirm.DownloadCompleteCallback, err error) {
+func remote(enabler *mods.ModEnabler, done confirm.DownloadCompleteCallback, err error) {
 	var (
 		dir  []os.DirEntry
 		path string

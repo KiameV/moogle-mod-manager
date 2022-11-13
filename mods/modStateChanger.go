@@ -39,6 +39,10 @@ type ModEnabler struct {
 	DoneCallback DoneCallback
 }
 
+func (e *ModEnabler) Kind() Kind {
+	return e.TrackedMod.Mod.ModKind.Kind
+}
+
 func NewModEnabler(game config.Game, tm *TrackedMod, toInstall []*ToInstall, onConflict OnConflict, showWorking func(), doneCallback DoneCallback) *ModEnabler {
 	return &ModEnabler{
 		Game:         game,

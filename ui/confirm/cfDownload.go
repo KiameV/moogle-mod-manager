@@ -1,36 +1,29 @@
 package confirm
 
 import (
-	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/mods"
-	"github.com/kiamev/moogle-mod-manager/mods/remote/nexus"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
 	"net/url"
 	"os"
 	"path/filepath"
 )
 
-type toDownload struct {
-	uri string
-	dir string
-}
+type cfConfirmer struct{}
 
-type nexusConfirmer struct{}
-
-func (_ *nexusConfirmer) ConfirmDownload(enabler *mods.ModEnabler, competeCallback DownloadCompleteCallback, done DownloadCallback) (err error) {
+func (_ *cfConfirmer) ConfirmDownload(enabler *mods.ModEnabler, competeCallback DownloadCompleteCallback, done DownloadCallback) (err error) {
 	var (
 		u    *url.URL
 		c    = container.NewVBox(widget.NewLabelWithStyle("Download the following file from Nexus", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}))
 		toDl []toDownload
 	)
 	for _, ti := range enabler.ToInstall {
-		if ti.Download != nil {
+		if ti.Download != nil && ti.Download.CurseForge != nil {
 			dl := toDownload{
-				uri: fmt.Sprintf(nexus.NexusFileDownload, ti.Download.Nexus.FileID, nexus.GameToID(enabler.Game)),
+				uri: ti.Download.CurseForge.Url,
 			}
 			if dl.dir, err = ti.GetDownloadLocation(enabler.Game, enabler.TrackedMod); err != nil {
 				return

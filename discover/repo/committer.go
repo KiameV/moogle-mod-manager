@@ -56,10 +56,15 @@ func (c *repoClient) Submit() (url string, err error) {
 	}
 
 	if len(c.mod.Games) == 1 {
-		if c.mod.ModKind.Kind == mods.Hosted {
+		switch c.mod.ModKind.Kind {
+		case mods.Hosted:
 			file = filepath.Join(rd.repoGameDir(config.NameToGame(c.mod.Games[0].Name)), c.mod.DirectoryName())
-		} else if c.mod.ModKind.Kind == mods.Nexus {
+		case mods.Nexus:
 			file = rd.repoNexusIDDir(config.NameToGame(c.mod.Games[0].Name), c.mod.ID)
+		case mods.CurseForge:
+			file = rd.repoCfIDDir(config.NameToGame(c.mod.Games[0].Name), c.mod.ID)
+		default:
+			err = fmt.Errorf("unknown mod kind: %v", c.mod.ModKind.Kind)
 		}
 	} else if len(c.mod.Games) > 1 {
 		if c.mod.ModKind.Kind != mods.Hosted {

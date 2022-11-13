@@ -7,7 +7,7 @@ import (
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/discover/repo"
 	"github.com/kiamev/moogle-mod-manager/mods"
-	"github.com/kiamev/moogle-mod-manager/mods/nexus"
+	"github.com/kiamev/moogle-mod-manager/mods/remote"
 	"github.com/kiamev/moogle-mod-manager/ui/util"
 	"strings"
 	"sync"
@@ -20,6 +20,8 @@ func CheckForUpdates(game config.Game, result func(err error)) {
 			workerpool.SetMaxWorkers(4))
 		wg  = sync.WaitGroup{}
 		ucs []updateChecker
+		nc  = remote.NewNexusClient()
+		cfc = remote.NewCurseForgeClient()
 	)
 
 	if err := repo.NewGetter().Pull(); err != nil {
@@ -28,16 +30,25 @@ func CheckForUpdates(game config.Game, result func(err error)) {
 	}
 
 	for _, tm := range lookup[game].Mods {
-		if tm.Mod.ModKind.Kind == mods.Hosted {
+		switch tm.Mod.ModKind.Kind {
+		case mods.Hosted:
 			wg.Add(1)
 			h := &hostedUpdateChecker{tm: tm, wg: &wg}
 			ucs = append(ucs, h)
 			dispatcher.JobQueue <- h
-		} else if tm.Mod.ModKind.Kind == mods.Nexus {
+		case mods.Nexus:
 			wg.Add(1)
-			n := &nexusUpdateChecker{tm: tm, wg: &wg}
+			n := &nexusUpdateChecker{tm: tm, wg: &wg, client: nc}
 			ucs = append(ucs, n)
 			dispatcher.JobQueue <- n
+		case mods.CurseForge:
+			wg.Add(1)
+			n := &nexusUpdateChecker{tm: tm, wg: &wg, client: cfc}
+			ucs = append(ucs, n)
+			dispatcher.JobQueue <- n
+		default:
+			result(fmt.Errorf("unknown mod kind %s", tm.Mod.ModKind.Kind))
+			return
 		}
 	}
 	wg.Wait()
@@ -84,14 +95,15 @@ func (c *hostedUpdateChecker) getError() error {
 }
 
 type nexusUpdateChecker struct {
-	tm  *mods.TrackedMod
-	wg  *sync.WaitGroup
-	err error
+	tm     *mods.TrackedMod
+	wg     *sync.WaitGroup
+	client remote.Client
+	err    error
 }
 
 func (c *nexusUpdateChecker) Process() error {
 	defer c.wg.Done()
-	_, mod, err := nexus.GetModFromNexusForMod(c.tm.Mod)
+	_, mod, err := c.client.GetFromMod(c.tm.Mod)
 	if err != nil {
 		c.err = err
 		return nil

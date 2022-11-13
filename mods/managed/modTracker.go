@@ -13,7 +13,9 @@ import (
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/mods/managed/files"
 	"github.com/kiamev/moogle-mod-manager/mods/managed/files/managed"
-	"github.com/kiamev/moogle-mod-manager/mods/nexus"
+	"github.com/kiamev/moogle-mod-manager/mods/remote"
+	"github.com/kiamev/moogle-mod-manager/mods/remote/curseforge"
+	"github.com/kiamev/moogle-mod-manager/mods/remote/nexus"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
 	"github.com/kiamev/moogle-mod-manager/util"
 	archiver "github.com/mholt/archiver/v4"
@@ -85,7 +87,11 @@ func AddModFromUrl(game config.Game, url string) (tm *mods.TrackedMod, err error
 		url = url[:i]
 	}
 	if nexus.IsNexus(url) {
-		if _, mod, err = nexus.GetModFromNexus(url); err != nil {
+		if _, mod, err = remote.NewNexusClient().GetFromUrl(url); err != nil {
+			return
+		}
+	} else if curseforge.IsCurseforge(url) {
+		if _, mod, err = remote.NewCurseForgeClient().GetFromUrl(url); err != nil {
 			return
 		}
 	} else {
@@ -214,13 +220,16 @@ func enableMod(enabler *mods.ModEnabler, err error) {
 	enabler.ShowWorking()
 
 	for _, ti := range tis {
-		to := filepath.Join(modPath, ti.Download.Name)
+		var (
+			to   = filepath.Join(modPath, ti.Download.Name)
+			kind = tm.Mod.ModKind.Kind
+		)
 		if err = decompress(*ti.Download.DownloadedArchiveLocation, to); err != nil {
 			tm.Enabled = false
 			enabler.DoneCallback(mods.Error, err)
 			return
 		}
-		if tm.Mod.ModKind.Kind == mods.Nexus {
+		if kind == mods.Nexus || kind == mods.CurseForge {
 			var fi os.FileInfo
 			sa := filepath.Join(to, "StreamingAssets")
 			if fi, err = os.Stat(sa); err == nil && fi.IsDir() {

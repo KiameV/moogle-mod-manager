@@ -48,10 +48,13 @@ func NewToInstallForMod(kind Kind, mod *Mod, downloadFiles []*DownloadFiles) (re
 }
 
 func (ti *ToInstall) GetDownloadLocation(game config.Game, tm *TrackedMod) (string, error) {
-	if ti.kind == Hosted {
+	switch ti.kind {
+	case Hosted:
 		return ti.getHostedDownloadLocation(game, tm)
+	case CurseForge, Nexus:
+		return ti.getRemoteDownloadLocation(game, tm)
 	}
-	return ti.getNexusDownloadLocation(game, tm)
+	panic(fmt.Sprintf("unknown kind %v", ti.kind))
 }
 
 func (ti *ToInstall) getHostedDownloadLocation(game config.Game, tm *TrackedMod) (string, error) {
@@ -73,7 +76,7 @@ func (ti *ToInstall) getHostedDownloadLocation(game config.Game, tm *TrackedMod)
 	return ti.downloadDir, nil
 }
 
-func (ti *ToInstall) getNexusDownloadLocation(game config.Game, tm *TrackedMod) (string, error) {
+func (ti *ToInstall) getRemoteDownloadLocation(game config.Game, tm *TrackedMod) (string, error) {
 	if ti.downloadDir == "" {
 		ti.downloadDir = filepath.Join(config.Get().GetDownloadFullPathForGame(game), tm.GetDirSuffix(), util.CreateFileName(ti.Download.Version))
 		if err := createPath(ti.downloadDir); err != nil {

@@ -5,6 +5,7 @@ type ModCompat struct {
 	Versions    []string         `json:"Version,omitempty" xml:"Versions,omitempty"`
 	Hosted      *ModCompatHosted `json:"Hosted,omitempty" xml:"Hosted,omitempty"`
 	Nexus       *ModCompatNexus  `json:"Nexus,omitempty" xml:"Nexus,omitempty"`
+	CurseForge  *ModCompatCF     `json:"CurseForge,omitempty" xml:"CurseForge,omitempty"`
 	Order       *ModCompatOrder  `json:"Order,omitempty" xml:"Order,omitempty"`
 	displayName string           `json:"-" xml:"-"`
 }
@@ -15,6 +16,10 @@ type ModCompatHosted struct {
 
 type ModCompatNexus struct {
 	ModID ModID `json:"NexusModID" xml:"NexusModID"`
+}
+
+type ModCompatCF struct {
+	ModID ModID `json:"CfModID" xml:"CfModID"`
 }
 
 type ModCompatOrder string
@@ -28,8 +33,16 @@ const (
 var ModCompatOrders = []string{string(None), string(Before), string(After)}
 
 func (c *ModCompat) ModID() ModID {
-	if c.Kind == Hosted && c.Hosted != nil {
+	switch c.Kind {
+	case Hosted:
 		return c.Hosted.ModID
+	case Nexus:
+		return c.Nexus.ModID
+	case CurseForge:
+		return c.CurseForge.ModID
+	}
+	if c.Kind == Hosted && c.Hosted != nil {
+
 	} else if c.Kind == Nexus && c.Nexus != nil {
 		return c.Nexus.ModID
 	}

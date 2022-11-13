@@ -13,14 +13,11 @@ import (
 	"strings"
 )
 
-type DownloadCompleteCallback func(enabler *mods.ModEnabler, err error)
+type hostedConfirmer struct{}
 
-type downloadCallback func(enabler *mods.ModEnabler, completeCallback DownloadCompleteCallback, err error)
-
-func Hosted(enabler *mods.ModEnabler, completeCallback DownloadCompleteCallback, done downloadCallback) {
+func (_ *hostedConfirmer) ConfirmDownload(enabler *mods.ModEnabler, completeCallback DownloadCompleteCallback, done DownloadCallback) (err error) {
 	var (
-		sb  = strings.Builder{}
-		err error
+		sb = strings.Builder{}
 	)
 	for i, ti := range enabler.ToInstall {
 		if alreadyDownloaded(enabler, ti) {
@@ -48,6 +45,7 @@ func Hosted(enabler *mods.ModEnabler, completeCallback DownloadCompleteCallback,
 	}, state.Window)
 	d.Resize(fyne.NewSize(500, 400))
 	d.Show()
+	return
 }
 
 func alreadyDownloaded(enabler *mods.ModEnabler, ti *mods.ToInstall) bool {

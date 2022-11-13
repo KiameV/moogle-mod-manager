@@ -35,6 +35,8 @@ const (
 	EnemySprite        Category = "Enemy Sprite"
 	GameOverhauls      Category = "Game Overhauls"
 	Gameplay           Category = "Gameplay"
+	General            Category = "General"
+	Fonts              Category = "Fonts"
 	PlayerNpcSprites   Category = "Player/NPC Sprite"
 	ScriptText         Category = "Script/Text"
 	Soundtrack         Category = "Soundtrack"

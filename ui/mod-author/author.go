@@ -13,7 +13,7 @@ import (
 	"github.com/kiamev/moogle-mod-manager/discover/repo"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/mods/managed/authored"
-	"github.com/kiamev/moogle-mod-manager/mods/nexus"
+	"github.com/kiamev/moogle-mod-manager/mods/remote"
 	config_installer "github.com/kiamev/moogle-mod-manager/ui/config-installer"
 	cw "github.com/kiamev/moogle-mod-manager/ui/custom-widgets"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
@@ -109,7 +109,35 @@ func (a *ModAuthorer) NewNexusMod() {
 				state.ShowPreviousScreen()
 				return
 			}
-			_, m, err := nexus.GetModFromNexus(e.Text)
+			_, m, err := remote.NewNexusClient().GetFromUrl(e.Text)
+			if err != nil {
+				util.ShowErrorLong(err)
+				return
+			}
+			a.updateEntries(m)
+		}, state.Window)
+	d.Resize(fyne.NewSize(400, 200))
+	d.Show()
+}
+
+func (a *ModAuthorer) NewCurseForgeMod() {
+	a.modID = ""
+	a.updateEntries(&mods.Mod{
+		ModKind: mods.ModKind{
+			Kind: mods.CurseForge,
+		},
+		ReleaseDate:         time.Now().Format("Jan 02 2006"),
+		ConfigSelectionType: mods.Auto,
+	})
+
+	e := widget.NewEntry()
+	d := dialog.NewForm("", "Ok", "Cancel", []*widget.FormItem{widget.NewFormItem("Link", e)},
+		func(ok bool) {
+			if !ok {
+				state.ShowPreviousScreen()
+				return
+			}
+			_, m, err := remote.NewCurseForgeClient().GetFromUrl(e.Text)
 			if err != nil {
 				util.ShowErrorLong(err)
 				return
@@ -164,8 +192,8 @@ func (a *ModAuthorer) Draw(w fyne.Window) {
 	switch *a.kind {
 	case mods.Hosted:
 		a.tabs = a.createHostedInputs()
-	case mods.Nexus:
-		a.tabs = a.createNexusInputs()
+	case mods.CurseForge, mods.Nexus:
+		a.tabs = a.createRemoteInputs()
 	default:
 		panic("invalid mod kind")
 	}
@@ -387,6 +415,8 @@ func (a *ModAuthorer) compileMod() (m *mods.Mod) {
 		}
 	case mods.Nexus:
 		m.ID = mods.NewModID(mods.Nexus, string(a.modID))
+	case mods.CurseForge:
+		m.ID = mods.NewModID(mods.CurseForge, string(a.modID))
 	default:
 		panic("invalid mod kind")
 	}
@@ -546,7 +576,7 @@ func (a *ModAuthorer) createHostedInputs() *container.AppTabs {
 		container.NewTabItem("Configurations", container.NewVScroll(a.configsDef.draw())))
 }
 
-func (a *ModAuthorer) createNexusInputs() *container.AppTabs {
+func (a *ModAuthorer) createRemoteInputs() *container.AppTabs {
 	var entries = []*widget.FormItem{
 		a.getBaseDirFormItem("Working Dir"),
 		a.getFormItem("Name"),

@@ -43,6 +43,8 @@ const (
 	NexusFileDownload = "https://www.nexusmods.com/Core/Libs/Common/Widgets/DownloadPopUp?id=%d&game_id=%v"
 )
 
+type NexusClient struct{}
+
 func IsNexus(url string) bool {
 	return strings.Index(url, "nexusmods.com") >= 0
 }
@@ -99,7 +101,7 @@ func GameToID(game config.Game) NexusGameID {
 	}
 }
 
-func GetModFromNexusForMod(in *mods.Mod) (found bool, mod *mods.Mod, err error) {
+func (c *NexusClient) GetFromMod(in *mods.Mod) (found bool, mod *mods.Mod, err error) {
 	if len(in.Games) == 0 {
 		err = errors.New("no games found for mod " + in.Name)
 		return
@@ -112,14 +114,14 @@ func GetModFromNexusForMod(in *mods.Mod) (found bool, mod *mods.Mod, err error) 
 		err = fmt.Errorf("could not parse mod id %s for %s", in.ID, in.Name)
 		return
 	}
-	return GetModFromNexus(fmt.Sprintf(nexusUrl, GameToNexusGame(game), id))
+	return c.GetFromUrl(fmt.Sprintf(nexusUrl, GameToNexusGame(game), id))
 }
 
-func GetModFromNexusByID(game config.Game, id int) (found bool, mod *mods.Mod, err error) {
-	return GetModFromNexus(fmt.Sprintf(nexusUrl, GameToNexusGame(game), id))
+func (c *NexusClient) GetFromID(game config.Game, id int) (found bool, mod *mods.Mod, err error) {
+	return c.GetFromUrl(fmt.Sprintf(nexusUrl, GameToNexusGame(game), id))
 }
 
-func GetModFromNexus(url string) (found bool, mod *mods.Mod, err error) {
+func (c *NexusClient) GetFromUrl(url string) (found bool, mod *mods.Mod, err error) {
 	var (
 		sp      = strings.Split(url, "/")
 		nexusID string
@@ -157,7 +159,7 @@ func GetModFromNexus(url string) (found bool, mod *mods.Mod, err error) {
 	return toMod(nMod, nDls.Files)
 }
 
-func GetNewestMods(game config.Game, lastID int) (result []*mods.Mod, err error) {
+func (c *NexusClient) GetNewestMods(game config.Game, lastID int) (result []*mods.Mod, err error) {
 	var (
 		b       []byte
 		nexusID = GameToNexusGame(game)
@@ -284,7 +286,7 @@ func toMod(n nexusMod, dls []NexusFile) (include bool, mod *mods.Mod, err error)
 		mod.Downloadables[i] = &mods.Download{
 			Name:    d.Name,
 			Version: d.Version,
-			Nexus: &mods.NexusDownloadable{
+			Nexus: &mods.RemoteDownloadable{
 				FileID:   d.FileID,
 				FileName: d.FileName,
 			},
@@ -299,25 +301,20 @@ func toMod(n nexusMod, dls []NexusFile) (include bool, mod *mods.Mod, err error)
 				},
 			},
 		}
-		if d.IsPrimary {
-			mod.AlwaysDownload = append(mod.AlwaysDownload, dlf)
-		}
-		if !d.IsPrimary {
-			choices = append(choices, &mods.Choice{
-				Name:                  d.Name,
-				Description:           d.Description,
-				Preview:               nil,
-				DownloadFiles:         dlf,
-				NextConfigurationName: nil,
-			})
-		}
+		choices = append(choices, &mods.Choice{
+			Name:                  d.Name,
+			Description:           d.Description,
+			Preview:               nil,
+			DownloadFiles:         dlf,
+			NextConfigurationName: nil,
+		})
 	}
 
 	include = true
 	if len(choices) > 1 {
 		mod.Configurations = []*mods.Configuration{
 			{
-				Name:        "Choose preference",
+				Name:        "Choose",
 				Description: "",
 				Preview:     nil,
 				Root:        true,

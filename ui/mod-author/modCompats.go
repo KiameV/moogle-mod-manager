@@ -2,6 +2,7 @@ package mod_author
 
 import (
 	"errors"
+	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
@@ -116,18 +117,24 @@ func (d *modCompatsDef) createItem(item interface{}, done ...func(interface{})) 
 					// TODO
 					return
 				}
-				if selected.ModKind.Kind == mods.Hosted {
+				switch selected.ModKind.Kind {
+				case mods.Hosted:
 					m.Kind = mods.Hosted
 					m.Hosted = &mods.ModCompatHosted{
 						ModID: selected.ID,
 					}
-				} else if selected.ModKind.Kind == mods.Nexus {
+				case mods.Nexus:
 					m.Kind = mods.Nexus
 					m.Nexus = &mods.ModCompatNexus{
 						ModID: selected.ID,
 					}
-				} else {
-					panic("unknown mod kind")
+				case mods.CurseForge:
+					m.Kind = mods.CurseForge
+					m.CurseForge = &mods.ModCompatCF{
+						ModID: selected.ID,
+					}
+				default:
+					panic(fmt.Sprint("unknown mod kind: ", selected.ModKind.Kind))
 				}
 			}
 			if len(done) > 0 {

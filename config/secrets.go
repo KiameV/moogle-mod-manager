@@ -11,6 +11,7 @@ var secret = &Secret{}
 
 type Secret struct {
 	NexusApiKey string `json:"nexusApiKey"`
+	CfApiKey    string `json:"cfApiKey"`
 }
 
 func GetSecrets() *Secret {

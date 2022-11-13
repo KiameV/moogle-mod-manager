@@ -61,54 +61,82 @@ func (d *downloadsDef) onEditItem(item interface{}) {
 }
 
 func (d *downloadsDef) createItem(item interface{}, done ...func(interface{})) {
-	m := item.(*mods.Download)
+	var (
+		items = []*widget.FormItem{
+			d.getFormItem("Name"),
+			d.getFormItem("Version"),
+		}
+		m        = item.(*mods.Download)
+		k        = *d.kind
+		fileName string
+		fileID   string
+		url      string
+	)
 	d.createFormItem("Name", m.Name)
 	d.createFormItem("Version", m.Version)
 	d.createFormItem("File Name", "")
 	d.createFormItem("File ID", "")
+	d.createFormItem("Url", "")
 	//d.createFormSelect("Install Type", mods.InstallTypes, string(m.InstallType))
-	if *d.kind == mods.Nexus {
+	switch k {
+	case mods.Nexus:
 		if m.Nexus != nil {
-			var fileName, fileID string
 			if m.Nexus != nil {
 				fileName = m.Nexus.FileName
 				fileID = fmt.Sprintf("%d", m.Nexus.FileID)
 			}
-			d.createFormItem("File Name", fileName)
-			d.createFormItem("File ID", fileID)
 		}
-	}
-	if *d.kind == mods.Hosted {
+	case mods.CurseForge:
+		if m.CurseForge != nil {
+			fileName = m.CurseForge.FileName
+			fileID = fmt.Sprintf("%d", m.CurseForge.FileID)
+			url = m.CurseForge.Url
+		}
+	case mods.Hosted:
 		var sources []string
 		if m.Hosted != nil {
 			sources = m.Hosted.Sources
 		}
 		d.createFormMultiLine("Sources", strings.Join(sources, "\n"))
+	default:
+		dialog.ShowError(fmt.Errorf("unknown mod kind: %s", *d.kind), state.Window)
+		for _, dn := range done {
+			dn(nil)
+		}
 	}
 
-	items := []*widget.FormItem{
-		d.getFormItem("Name"),
-		d.getFormItem("Version"),
-	}
-	if *d.kind == mods.Nexus {
+	if k == mods.Nexus || k == mods.CurseForge {
+		d.createFormItem("File Name", fileName)
+		d.createFormItem("File ID", fileID)
 		items = append(items, d.getFormItem("File Name"))
 		items = append(items, d.getFormItem("File ID"))
-	}
-	if *d.kind == mods.Hosted {
+		if k == mods.CurseForge {
+			d.createFormItem("Url", url)
+			items = append(items, d.getFormItem("Url"))
+		}
+	} else if k == mods.Hosted {
 		items = append(items, d.getFormItem("Sources"))
 	}
 
 	fd := dialog.NewForm("Edit Downloadable", "Save", "Cancel", items, func(ok bool) {
 		if ok {
 			m.Version = d.getString("Version")
-			if *d.kind == mods.Nexus {
+			if k == mods.Nexus {
 				if m.Nexus == nil {
-					m.Nexus = &mods.NexusDownloadable{}
+					m.Nexus = &mods.RemoteDownloadable{}
 				}
 				m.Nexus.FileName = d.getString("File Name")
 				m.Nexus.FileID = d.getInt("File ID")
 				m.Name = filepath.Base(m.Nexus.FileName)
-			} else if *d.kind == mods.Hosted {
+			} else if k == mods.CurseForge {
+				if m.CurseForge == nil {
+					m.CurseForge = &mods.CurseForgeDownloadable{}
+				}
+				m.CurseForge.FileName = d.getString("File Name")
+				m.CurseForge.FileID = d.getInt("File ID")
+				m.CurseForge.Url = d.getString("Url")
+				m.Name = filepath.Base(m.Nexus.FileName)
+			} else if k == mods.Hosted {
 				if m.Hosted == nil {
 					m.Hosted = &mods.HostedDownloadable{}
 				}
@@ -121,8 +149,8 @@ func (d *downloadsDef) createItem(item interface{}, done ...func(interface{})) {
 				m.Name = strings.TrimSuffix(m.Name, filepath.Ext(m.Name))
 			}
 			//m.InstallType = mods.InstallType(d.getString("Install Type"))
-			if len(done) > 0 {
-				done[0](m)
+			for _, dn := range done {
+				dn(m)
 			}
 			d.list.Refresh()
 		}
