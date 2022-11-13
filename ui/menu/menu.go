@@ -94,6 +94,10 @@ Contributors:
 				state.GetScreen(state.ModAuthor).(*a.ModAuthorer).NewNexusMod()
 				state.ShowScreen(state.ModAuthor)
 			}),
+			fyne.NewMenuItem("New From Curseforge", func() {
+				state.GetScreen(state.ModAuthor).(*a.ModAuthorer).NewCurseForgeMod()
+				state.ShowScreen(state.ModAuthor)
+			}),
 			fyne.NewMenuItem("Edit Mod", func() {
 				if state.GetScreen(state.ModAuthor).(*a.ModAuthorer).LoadModToEdit() {
 					state.ShowScreen(state.ModAuthor)
