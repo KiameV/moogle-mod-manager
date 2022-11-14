@@ -10,22 +10,32 @@ import (
 	"net/url"
 )
 
-const nexusVortexApiAccessUrl = "https://www.nexusmods.com/users/myaccount?tab=api+access"
+const (
+	nexusVortexApiAccessUrl = "https://www.nexusmods.com/users/myaccount?tab=api+access"
+	cfApiKeyAccessUrl       = "https://console.curseforge.com/#/api-keys"
+)
 
 func Show(w fyne.Window) {
 	var (
-		pwe  = widget.NewPasswordEntry()
-		u, _ = url.Parse(nexusVortexApiAccessUrl)
-		sct  = config.GetSecrets()
+		nwe    = widget.NewPasswordEntry()
+		cfwe   = widget.NewPasswordEntry()
+		nu, _  = url.Parse(nexusVortexApiAccessUrl)
+		cfu, _ = url.Parse(cfApiKeyAccessUrl)
+		sct    = config.GetSecrets()
 	)
-	pwe.Bind(binding.BindString(&sct.NexusApiKey))
+	nwe.Bind(binding.BindString(&sct.NexusApiKey))
+	cfwe.Bind(binding.BindString(&sct.CfApiKey))
 	d := dialog.NewCustomConfirm("Secrets", "Save", "Cancel", container.NewVBox(
-		widget.NewForm(widget.NewFormItem("Nexus Vortex Api Key", pwe)),
+		widget.NewForm(widget.NewFormItem("Nexus Vortex Api Key", nwe)),
 		widget.NewLabel("To get a key, follow this link and select [REQUEST AN API KEY] for Vortex. Copy what's generated."),
-		widget.NewHyperlink(nexusVortexApiAccessUrl, u)),
+		widget.NewHyperlink(nexusVortexApiAccessUrl, nu),
+		widget.NewForm(widget.NewFormItem("CurseForge Api Key", cfwe)),
+		widget.NewLabel("To get a key, follow this link to generate one."),
+		widget.NewHyperlink(cfApiKeyAccessUrl, cfu)),
 		func(ok bool) {
 			if ok {
-				sct.NexusApiKey = pwe.Text
+				sct.NexusApiKey = nwe.Text
+				sct.CfApiKey = cfwe.Text
 				_ = sct.Save()
 			}
 		}, w)

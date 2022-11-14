@@ -84,20 +84,24 @@ Contributors:
 	menus = append(menus, file)
 
 	author := fyne.NewMenu("Author")
+	newMenu := fyne.NewMenuItem("New", nil)
+	newMenu.ChildMenu = fyne.NewMenu("",
+		fyne.NewMenuItem("Hosted Mod", func() {
+			state.GetScreen(state.ModAuthor).(*a.ModAuthorer).NewHostedMod()
+			state.ShowScreen(state.ModAuthor)
+		}),
+		fyne.NewMenuItem("From Nexus", func() {
+			state.GetScreen(state.ModAuthor).(*a.ModAuthorer).NewNexusMod()
+			state.ShowScreen(state.ModAuthor)
+		}),
+		fyne.NewMenuItem("From Curseforge", func() {
+			state.GetScreen(state.ModAuthor).(*a.ModAuthorer).NewCurseForgeMod()
+			state.ShowScreen(state.ModAuthor)
+		}),
+	)
 	if state.GetCurrentGUI() != state.ModAuthor {
 		author.Items = append(author.Items,
-			fyne.NewMenuItem("New Hosted Mod", func() {
-				state.GetScreen(state.ModAuthor).(*a.ModAuthorer).NewHostedMod()
-				state.ShowScreen(state.ModAuthor)
-			}),
-			fyne.NewMenuItem("New From Nexus", func() {
-				state.GetScreen(state.ModAuthor).(*a.ModAuthorer).NewNexusMod()
-				state.ShowScreen(state.ModAuthor)
-			}),
-			fyne.NewMenuItem("New From Curseforge", func() {
-				state.GetScreen(state.ModAuthor).(*a.ModAuthorer).NewCurseForgeMod()
-				state.ShowScreen(state.ModAuthor)
-			}),
+			newMenu,
 			fyne.NewMenuItem("Edit Mod", func() {
 				if state.GetScreen(state.ModAuthor).(*a.ModAuthorer).LoadModToEdit() {
 					state.ShowScreen(state.ModAuthor)

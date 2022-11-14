@@ -24,7 +24,7 @@ func Download(enabler *mods.ModEnabler, done confirm.DownloadCompleteCallback) e
 		return fmt.Errorf("unknown kind %v", kind)
 	}
 
-	return confirmer.ConfirmDownload(enabler, done, downloader)
+	return confirmer.ConfirmDownload(enabler, done, callback)
 }
 
 func hosted(enabler *mods.ModEnabler, done confirm.DownloadCompleteCallback, err error) {

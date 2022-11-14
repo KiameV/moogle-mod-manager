@@ -60,6 +60,40 @@ func GameToCfGame(game config.Game) CfGame {
 	}
 }
 
+func CfGameIDToGame(id CfGameID) config.Game {
+	switch id {
+	case IdFFI:
+		return config.I
+	case IdFFII:
+		return config.II
+	case IdFFIII:
+		return config.III
+	case IdFFIV:
+		return config.IV
+	case IdFFV:
+		return config.V
+	default:
+		return config.VI
+	}
+}
+
+func CfGameToGameID(game CfGame) CfGameID {
+	switch game {
+	case FFI:
+		return IdFFI
+	case FFII:
+		return IdFFII
+	case FFIII:
+		return IdFFIII
+	case FFIV:
+		return IdFFIV
+	case FFV:
+		return IdFFV
+	default:
+		return IdFFVI
+	}
+}
+
 func CfGameToGame(game CfGame) config.Game {
 	switch game {
 	case FFI:
@@ -105,40 +139,54 @@ func (c *CurseForgeClient) GetFromMod(in *mods.Mod) (found bool, mod *mods.Mod, 
 		err = fmt.Errorf("could not parse mod id %s for %s", in.ID, in.Name)
 		return
 	}
-	return c.GetFromUrl(fmt.Sprintf(getModDataByModID, id))
+	return c.get(fmt.Sprintf(getModDataByModID, id))
 }
 
 func (c *CurseForgeClient) GetFromID(_ config.Game, id int) (found bool, mod *mods.Mod, err error) {
-	return c.GetFromUrl(fmt.Sprintf(getModDataByModID, id))
+	return c.get(fmt.Sprintf(getModDataByModID, id))
 }
 
 func (c *CurseForgeClient) GetFromUrl(url string) (found bool, mod *mods.Mod, err error) {
+	// www.curseforge.com/final-fantasy-vi/mods/gau-rage-descriptions-extended-magna-roader-fix/files/4073052
+	url = strings.Replace(url, "https://", "", 1)
+	url = strings.Replace(url, "http://", "", 1)
+	sp := strings.Split(url, "/")
+	if len(sp) < 4 {
+		err = errors.New("invalid url")
+		return
+	}
+	game := sp[1]
+	slug := sp[3]
+	return c.get(fmt.Sprintf(GetModsByGameIDAndName, CfGameToGameID(CfGame(game)), slug))
+}
+
+func (c *CurseForgeClient) get(url string) (found bool, mod *mods.Mod, err error) {
 	var (
-		b    []byte
-		m    cfMod
-		desc string
-		dls  fileParent
+		b      []byte
+		result cfMods
+		desc   string
+		dls    fileParent
 	)
 	if b, err = sendRequest(url); err != nil {
 		return
 	}
-	if err = json.Unmarshal(b, &m); err != nil {
+	if err = json.Unmarshal(b, &result); err != nil {
 		return
 	}
-	if m.Name == "" {
+	if len(result.Data) == 0 {
 		err = errors.New("no mod found for at " + url)
 		return
 	}
 
-	if dls, err = getDownloads(m); err != nil {
+	if dls, err = getDownloads(result.Data[0]); err != nil {
 		return
 	}
 
-	if desc, err = getDescription(m); err != nil {
+	if desc, err = getDescription(result.Data[0]); err != nil {
 		return
 	}
 
-	return toMod(m, desc, dls.Files)
+	return toMod(result.Data[0], desc, dls.Files)
 }
 
 func (c *CurseForgeClient) GetNewestMods(game config.Game, lastID int) (result []*mods.Mod, err error) {
@@ -225,7 +273,7 @@ func sendRequest(url string) (response []byte, err error) {
 		resp   *http.Response
 	)
 	if apiKey == "" {
-		err = errors.New("no Nexus Api Key set. Please to to File->Secrets")
+		err = errors.New("no CurseForge Api Key set. Please to to File->Secrets")
 		return
 	}
 	if req, err = http.NewRequest(http.MethodGet, url, nil); err != nil {
@@ -255,7 +303,7 @@ func sendRequest(url string) (response []byte, err error) {
 
 func toMod(m cfMod, desc string, dls []CfFile) (include bool, mod *mods.Mod, err error) {
 	modID := fmt.Sprintf("%d", m.ModID)
-	game := CfGameToGame(m.Game)
+	game := CfGameIDToGame(m.Game)
 	mod = &mods.Mod{
 		ID:           mods.NewModID(mods.CurseForge, modID),
 		Name:         m.Name,
