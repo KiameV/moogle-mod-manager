@@ -131,8 +131,9 @@ func (ui *discoverUI) draw(w fyne.Window, isPopup bool) {
 						break
 					}
 				}
-				sl := make([]interface{}, len(ui.mods))
-				for i, m := range ui.mods {
+				filtered := ui.applyFilters(ui.mods)
+				sl := make([]interface{}, len(filtered))
+				for i, m := range filtered {
 					sl[i] = m
 				}
 				if err := ui.data.Set(sl); err != nil {
