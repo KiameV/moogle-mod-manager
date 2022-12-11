@@ -211,7 +211,7 @@ func sendRequest(url string) (response []byte, err error) {
 		resp   *http.Response
 	)
 	if apiKey == "" {
-		err = errors.New("no Nexus Api Key set. Please to to File->Secrets")
+		err = errors.New("no Nexus Api Key set. Please go to File->Secrets")
 		return
 	}
 	if req, err = http.NewRequest(http.MethodGet, url, nil); err != nil {
