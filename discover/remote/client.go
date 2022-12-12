@@ -3,6 +3,7 @@ package remote
 import (
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/discover/remote/curseforge"
+	"github.com/kiamev/moogle-mod-manager/discover/remote/nexus"
 	"github.com/kiamev/moogle-mod-manager/discover/remote/util"
 	"github.com/kiamev/moogle-mod-manager/mods"
 )
@@ -21,5 +22,5 @@ func NewCurseForgeClient() Client {
 }
 
 func NewNexusClient() Client {
-	return curseforge.NewClient(util.NewModCompiler(mods.Nexus))
+	return nexus.NewClient(util.NewModCompiler(mods.Nexus))
 }
