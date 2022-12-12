@@ -1,31 +1,49 @@
 package remote
 
 import (
+	"fmt"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"golang.org/x/sync/errgroup"
 	"sync"
 )
 
-func GetMods(game *config.Game) (result []*mods.Mod, err error) {
+func GetFromUrl(kind mods.Kind, url string) (bool, *mods.Mod, error) {
+	var c Client
+	switch kind {
+	case mods.CurseForge:
+		c = NewCurseForgeClient()
+	case mods.Nexus:
+		c = NewNexusClient()
+	default:
+		return false, nil, fmt.Errorf("invalid kind to GetFromUrl %v", kind)
+	}
+	return c.GetFromUrl(url)
+}
+
+func GetMods(game config.Game) (result []*mods.Mod, err error) {
 	var (
 		eg = errgroup.Group{}
 		m  = sync.Mutex{}
 	)
 
-	for _, c := range []discoverClient{
-		newNexusClient(),
-		newCurseForgeClient(),
-	} {
+	for _, c := range GetClients() {
 		getMods(game, c, &eg, &m, &result)
 	}
 	err = eg.Wait()
 	return
 }
 
-func getMods(game *config.Game, c discoverClient, eg *errgroup.Group, m *sync.Mutex, result *[]*mods.Mod) {
+func GetClients() []Client {
+	return []Client{
+		NewNexusClient(),
+		NewCurseForgeClient(),
+	}
+}
+
+func getMods(game config.Game, c Client, eg *errgroup.Group, m *sync.Mutex, result *[]*mods.Mod) {
 	eg.Go(func() error {
-		r, e := c.GetMods(game)
+		r, e := c.GetMods(&game)
 		if e != nil {
 			return e
 		}

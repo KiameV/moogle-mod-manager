@@ -45,6 +45,8 @@ func (c *ModCompat) ModID() ModID {
 
 	} else if c.Kind == Nexus && c.Nexus != nil {
 		return c.Nexus.ModID
+	} else if c.Kind == CurseForge && c.CurseForge != nil {
+		return c.CurseForge.ModID
 	}
 	return ""
 }

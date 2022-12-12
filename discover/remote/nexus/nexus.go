@@ -7,9 +7,13 @@ import (
 	converter "github.com/JohannesKaufmann/html-to-markdown"
 	"github.com/frustra/bbcode"
 	"github.com/kiamev/moogle-mod-manager/config"
+	u "github.com/kiamev/moogle-mod-manager/discover/remote/util"
 	"github.com/kiamev/moogle-mod-manager/mods"
+	"github.com/kiamev/moogle-mod-manager/util"
 	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -43,7 +47,15 @@ const (
 	NexusFileDownload = "https://www.nexusmods.com/Core/Libs/Common/Widgets/DownloadPopUp?id=%d&game_id=%v"
 )
 
-type NexusClient struct{}
+type client struct {
+	compiler u.ModCompiler
+}
+
+func NewClient(compiler u.ModCompiler) *client {
+	c := &client{compiler: compiler}
+	compiler.SetFinder(c)
+	return c
+}
 
 func IsNexus(url string) bool {
 	return strings.Index(url, "nexusmods.com") >= 0
@@ -101,7 +113,7 @@ func GameToID(game config.Game) NexusGameID {
 	}
 }
 
-func (c *NexusClient) GetFromMod(in *mods.Mod) (found bool, mod *mods.Mod, err error) {
+func (c *client) GetFromMod(in *mods.Mod) (found bool, mod *mods.Mod, err error) {
 	if len(in.Games) == 0 {
 		err = errors.New("no games found for mod " + in.Name)
 		return
@@ -117,11 +129,11 @@ func (c *NexusClient) GetFromMod(in *mods.Mod) (found bool, mod *mods.Mod, err e
 	return c.GetFromUrl(fmt.Sprintf(nexusUrl, GameToNexusGame(game), id))
 }
 
-func (c *NexusClient) GetFromID(game config.Game, id int) (found bool, mod *mods.Mod, err error) {
+func (c *client) GetFromID(game config.Game, id int) (found bool, mod *mods.Mod, err error) {
 	return c.GetFromUrl(fmt.Sprintf(nexusUrl, GameToNexusGame(game), id))
 }
 
-func (c *NexusClient) GetFromUrl(url string) (found bool, mod *mods.Mod, err error) {
+func (c *client) GetFromUrl(url string) (found bool, mod *mods.Mod, err error) {
 	var (
 		sp      = strings.Split(url, "/")
 		nexusID string
@@ -159,7 +171,7 @@ func (c *NexusClient) GetFromUrl(url string) (found bool, mod *mods.Mod, err err
 	return toMod(nMod, nDls.Files)
 }
 
-func (c *NexusClient) GetNewestMods(game config.Game, lastID int) (result []*mods.Mod, err error) {
+func (c *client) GetNewestMods(game config.Game, lastID int) (result []*mods.Mod, err error) {
 	var (
 		b       []byte
 		nexusID = GameToNexusGame(game)
@@ -340,6 +352,37 @@ func removeFont(s string) string {
 	}
 	s = strings.ReplaceAll(s, "[/font]", "")
 	return s
+}
+
+func (c *client) Folder(game config.Game) string {
+	return filepath.Join(config.PWD, "remote", config.String(game), "nexus")
+}
+
+func (c *client) GetMods(game *config.Game) (result []*mods.Mod, err error) {
+	if game == nil {
+		return nil, errors.New("GetMods called with a nil game")
+	}
+	dir := c.Folder(*game)
+	_ = os.MkdirAll(dir, 0777)
+	if err = filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			return nil
+		}
+		if d.Name() == "mod.json" || d.Name() == "mod.xml" {
+			m := &mods.Mod{}
+			if err = util.LoadFromFile(path, m); err != nil {
+				return err
+			}
+			result = append(result, m)
+		}
+		return nil
+	}); err != nil {
+		return
+	}
+	return c.compiler.AppendNewMods(c.Folder(*game), *game, result)
 }
 
 /*

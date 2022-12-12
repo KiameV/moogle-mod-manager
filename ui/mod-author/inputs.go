@@ -77,7 +77,10 @@ func (m *entryManager) getStrings(key string, split string) []string {
 
 func (m *entryManager) getFormItem(name string) *widget.FormItem {
 	key := name
-	e, _ := m.entries[key]
+	e, found := m.entries[key]
+	if !found {
+		panic(fmt.Sprintf("entry %s not found", key))
+	}
 	return widget.NewFormItem(name, e)
 }
 
@@ -133,6 +136,15 @@ func (m *entryManager) createFileDialog(key string, value string, baseDir bindin
 	case *cw.OpenFileDialog:
 		_ = t.Value.Set(value)
 	}
+}
+
+func (m *entryManager) newFormItem(key string, value ...string) *widget.FormItem {
+	var v string
+	if len(value) > 0 {
+		v = value[0]
+	}
+	m.createFormItem(key, v)
+	return m.getFormItem(key)
 }
 
 func (m *entryManager) createFormItem(key string, value string) {

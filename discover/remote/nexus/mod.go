@@ -1,6 +1,8 @@
 package nexus
 
-import "time"
+import (
+	"time"
+)
 
 type nexusMod struct {
 	ModID           int       `json:"mod_id"`

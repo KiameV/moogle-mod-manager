@@ -9,13 +9,13 @@ import (
 	unarr "github.com/gen2brain/go-unarr"
 	"github.com/kiamev/moogle-mod-manager/browser"
 	"github.com/kiamev/moogle-mod-manager/config"
+	"github.com/kiamev/moogle-mod-manager/discover/remote"
+	"github.com/kiamev/moogle-mod-manager/discover/remote/curseforge"
+	"github.com/kiamev/moogle-mod-manager/discover/remote/nexus"
 	"github.com/kiamev/moogle-mod-manager/downloads"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/mods/managed/files"
 	"github.com/kiamev/moogle-mod-manager/mods/managed/files/managed"
-	"github.com/kiamev/moogle-mod-manager/mods/remote"
-	"github.com/kiamev/moogle-mod-manager/mods/remote/curseforge"
-	"github.com/kiamev/moogle-mod-manager/mods/remote/nexus"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
 	"github.com/kiamev/moogle-mod-manager/util"
 	archiver "github.com/mholt/archiver/v4"
@@ -87,11 +87,11 @@ func AddModFromUrl(game config.Game, url string) (tm *mods.TrackedMod, err error
 		url = url[:i]
 	}
 	if nexus.IsNexus(url) {
-		if _, mod, err = remote.NewNexusClient().GetFromUrl(url); err != nil {
+		if _, mod, err = remote.GetFromUrl(mods.Nexus, url); err != nil {
 			return
 		}
 	} else if curseforge.IsCurseforge(url) {
-		if _, mod, err = remote.NewCurseForgeClient().GetFromUrl(url); err != nil {
+		if _, mod, err = remote.GetFromUrl(mods.CurseForge, url); err != nil {
 			return
 		}
 	} else {

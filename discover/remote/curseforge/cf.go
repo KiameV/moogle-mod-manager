@@ -6,9 +6,13 @@ import (
 	"fmt"
 	converter "github.com/JohannesKaufmann/html-to-markdown"
 	"github.com/kiamev/moogle-mod-manager/config"
+	u "github.com/kiamev/moogle-mod-manager/discover/remote/util"
 	"github.com/kiamev/moogle-mod-manager/mods"
+	"github.com/kiamev/moogle-mod-manager/util"
 	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -37,7 +41,15 @@ const (
 	getModDescByModID      = "https://api.curseforge.com/v1/mods/%d/description"
 )
 
-type CurseForgeClient struct{}
+type client struct {
+	compiler u.ModCompiler
+}
+
+func NewClient(compiler u.ModCompiler) *client {
+	c := &client{compiler: compiler}
+	compiler.SetFinder(c)
+	return c
+}
 
 func IsCurseforge(url string) bool {
 	return strings.Index(url, "curseforge.com") >= 0
@@ -129,7 +141,7 @@ func GameToID(game config.Game) CfGameID {
 	}
 }
 
-func (c *CurseForgeClient) GetFromMod(in *mods.Mod) (found bool, mod *mods.Mod, err error) {
+func (c *client) GetFromMod(in *mods.Mod) (found bool, mod *mods.Mod, err error) {
 	if len(in.Games) == 0 {
 		err = errors.New("no games found for mod " + in.Name)
 		return
@@ -142,11 +154,11 @@ func (c *CurseForgeClient) GetFromMod(in *mods.Mod) (found bool, mod *mods.Mod, 
 	return c.get(fmt.Sprintf(getModDataByModID, id))
 }
 
-func (c *CurseForgeClient) GetFromID(_ config.Game, id int) (found bool, mod *mods.Mod, err error) {
+func (c *client) GetFromID(_ config.Game, id int) (found bool, mod *mods.Mod, err error) {
 	return c.get(fmt.Sprintf(getModDataByModID, id))
 }
 
-func (c *CurseForgeClient) GetFromUrl(url string) (found bool, mod *mods.Mod, err error) {
+func (c *client) GetFromUrl(url string) (found bool, mod *mods.Mod, err error) {
 	// www.curseforge.com/final-fantasy-vi/mods/gau-rage-descriptions-extended-magna-roader-fix/files/4073052
 	url = strings.Replace(url, "https://", "", 1)
 	url = strings.Replace(url, "http://", "", 1)
@@ -160,7 +172,7 @@ func (c *CurseForgeClient) GetFromUrl(url string) (found bool, mod *mods.Mod, er
 	return c.get(fmt.Sprintf(GetModsByGameIDAndName, CfGameToGameID(CfGame(game)), slug))
 }
 
-func (c *CurseForgeClient) get(url string) (found bool, mod *mods.Mod, err error) {
+func (c *client) get(url string) (found bool, mod *mods.Mod, err error) {
 	var (
 		b      []byte
 		result cfMods
@@ -189,24 +201,26 @@ func (c *CurseForgeClient) get(url string) (found bool, mod *mods.Mod, err error
 	return toMod(result.Data[0], desc, dls.Files)
 }
 
-func (c *CurseForgeClient) GetNewestMods(game config.Game, lastID int) (result []*mods.Mod, err error) {
+func (c *client) GetNewestMods(game config.Game, lastID int) (result []*mods.Mod, err error) {
 	var (
-		b     []byte
-		dls   fileParent
-		mod   *mods.Mod
-		desc  string
-		found bool
+		b       []byte
+		dls     fileParent
+		mod     *mods.Mod
+		desc    string
+		include bool
 	)
 	if b, err = sendRequest(fmt.Sprintf(getModsByGameID, GameToID(game))); err != nil {
 		return
 	}
-	var nMods []cfMod
-	if err = json.Unmarshal(b, &nMods); err != nil {
+	var data struct {
+		Mods []cfMod `json:"data"`
+	}
+	if err = json.Unmarshal(b, &data); err != nil {
 		return
 	}
 
-	result = make([]*mods.Mod, 0, len(nMods))
-	for _, m := range nMods {
+	result = make([]*mods.Mod, 0, len(data.Mods))
+	for _, m := range data.Mods {
 		if m.ModID > lastID {
 			if dls, err = getDownloads(m); err != nil {
 				return
@@ -214,9 +228,9 @@ func (c *CurseForgeClient) GetNewestMods(game config.Game, lastID int) (result [
 			if desc, err = getDescription(m); err != nil {
 				return
 			}
-			if found, mod, err = toMod(m, desc, dls.Files); err != nil {
+			if include, mod, err = toMod(m, desc, dls.Files); err != nil {
 				return
-			} else if found {
+			} else if !include {
 				continue
 			}
 			result = append(result, mod)
@@ -400,4 +414,35 @@ func removeFont(s string) string {
 	}
 	s = strings.ReplaceAll(s, "[/font]", "")
 	return s
+}
+
+func (c *client) Folder(game config.Game) string {
+	return filepath.Join(config.PWD, "remote", config.String(game), "cf")
+}
+
+func (c *client) GetMods(game *config.Game) (result []*mods.Mod, err error) {
+	if game == nil {
+		return nil, errors.New("GetMods called with a nil game")
+	}
+	dir := c.Folder(*game)
+	_ = os.MkdirAll(dir, 0777)
+	if err = filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			return nil
+		}
+		if d.Name() == "mod.json" || d.Name() == "mod.xml" {
+			m := &mods.Mod{}
+			if err = util.LoadFromFile(path, m); err != nil {
+				return err
+			}
+			result = append(result, m)
+		}
+		return nil
+	}); err != nil {
+		return
+	}
+	return c.compiler.AppendNewMods(c.Folder(*game), *game, result)
 }

@@ -2,9 +2,9 @@ package remote
 
 import (
 	"github.com/kiamev/moogle-mod-manager/config"
+	"github.com/kiamev/moogle-mod-manager/discover/remote/curseforge"
+	"github.com/kiamev/moogle-mod-manager/discover/remote/util"
 	"github.com/kiamev/moogle-mod-manager/mods"
-	"github.com/kiamev/moogle-mod-manager/mods/remote/curseforge"
-	"github.com/kiamev/moogle-mod-manager/mods/remote/nexus"
 )
 
 type Client interface {
@@ -12,12 +12,14 @@ type Client interface {
 	GetFromID(game config.Game, id int) (found bool, mod *mods.Mod, err error)
 	GetFromUrl(url string) (found bool, mod *mods.Mod, err error)
 	GetNewestMods(game config.Game, lastID int) (result []*mods.Mod, err error)
+	GetMods(game *config.Game) (result []*mods.Mod, err error)
+	Folder(game config.Game) string
 }
 
 func NewCurseForgeClient() Client {
-	return &curseforge.CurseForgeClient{}
+	return curseforge.NewClient(util.NewModCompiler(mods.CurseForge))
 }
 
 func NewNexusClient() Client {
-	return &nexus.NexusClient{}
+	return curseforge.NewClient(util.NewModCompiler(mods.Nexus))
 }

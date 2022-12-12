@@ -292,7 +292,7 @@ func (m *Mod) Validate() string {
 					dlableNames[s] = true
 				}
 			}
-		} else {
+		} else if kind == Nexus {
 			if d.Nexus == nil {
 				sb.WriteString(fmt.Sprintf("Downloadables [%s]'s Nexus is required\n", d.Name))
 			}
@@ -301,6 +301,17 @@ func (m *Mod) Validate() string {
 			}
 			if d.Nexus.FileName == "" {
 				sb.WriteString(fmt.Sprintf("Downloadables [%s]'s Nexus FileName is required\n", d.Name))
+			}
+			dlableNames[d.Name] = true
+		} else if kind == CurseForge {
+			if d.CurseForge == nil {
+				sb.WriteString(fmt.Sprintf("Downloadables [%s]'s CF is required\n", d.Name))
+			}
+			if d.CurseForge.FileID <= 0 {
+				sb.WriteString(fmt.Sprintf("Downloadables [%s]'s CF FileID must be greater than 0\n", d.Name))
+			}
+			if d.CurseForge.FileName == "" {
+				sb.WriteString(fmt.Sprintf("Downloadables [%s]'s CF FileName is required\n", d.Name))
 			}
 			dlableNames[d.Name] = true
 		}

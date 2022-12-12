@@ -63,8 +63,8 @@ func (d *downloadsDef) onEditItem(item interface{}) {
 func (d *downloadsDef) createItem(item interface{}, done ...func(interface{})) {
 	var (
 		items = []*widget.FormItem{
-			d.getFormItem("Name"),
-			d.getFormItem("Version"),
+			d.newFormItem("Name"),
+			d.newFormItem("Version"),
 		}
 		m        = item.(*mods.Download)
 		k        = *d.kind
@@ -135,7 +135,7 @@ func (d *downloadsDef) createItem(item interface{}, done ...func(interface{})) {
 				m.CurseForge.FileName = d.getString("File Name")
 				m.CurseForge.FileID = d.getInt("File ID")
 				m.CurseForge.Url = d.getString("Url")
-				m.Name = filepath.Base(m.Nexus.FileName)
+				m.Name = filepath.Base(m.CurseForge.FileName)
 			} else if k == mods.Hosted {
 				if m.Hosted == nil {
 					m.Hosted = &mods.HostedDownloadable{}

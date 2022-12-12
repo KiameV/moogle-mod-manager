@@ -27,6 +27,8 @@ func DisplayDownloadsAndFiles(toInstall []*mods.ToInstall) {
 			}
 		} else if ti.Download.Nexus != nil {
 			sb.WriteString(fmt.Sprintf("  - %s\n\n", ti.Download.Nexus.FileName))
+		} else if ti.Download.CurseForge != nil {
+			sb.WriteString(fmt.Sprintf(" - "))
 		}
 		sb.WriteString("### Files:\n\n")
 		for _, dl := range ti.DownloadFiles {

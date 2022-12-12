@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"github.com/carwale/golibraries/workerpool"
 	"github.com/kiamev/moogle-mod-manager/config"
+	"github.com/kiamev/moogle-mod-manager/discover/remote"
 	"github.com/kiamev/moogle-mod-manager/discover/repo"
 	"github.com/kiamev/moogle-mod-manager/mods"
-	"github.com/kiamev/moogle-mod-manager/mods/remote"
 	"github.com/kiamev/moogle-mod-manager/ui/util"
 	"strings"
 	"sync"
@@ -20,8 +20,6 @@ func CheckForUpdates(game config.Game, result func(err error)) {
 			workerpool.SetMaxWorkers(4))
 		wg  = sync.WaitGroup{}
 		ucs []updateChecker
-		nc  = remote.NewNexusClient()
-		cfc = remote.NewCurseForgeClient()
 	)
 
 	if err := repo.NewGetter().Pull(); err != nil {
@@ -38,12 +36,12 @@ func CheckForUpdates(game config.Game, result func(err error)) {
 			dispatcher.JobQueue <- h
 		case mods.Nexus:
 			wg.Add(1)
-			n := &nexusUpdateChecker{tm: tm, wg: &wg, client: nc}
+			n := &nexusUpdateChecker{tm: tm, wg: &wg, client: remote.NewNexusClient()}
 			ucs = append(ucs, n)
 			dispatcher.JobQueue <- n
 		case mods.CurseForge:
 			wg.Add(1)
-			n := &nexusUpdateChecker{tm: tm, wg: &wg, client: cfc}
+			n := &nexusUpdateChecker{tm: tm, wg: &wg, client: remote.NewCurseForgeClient()}
 			ucs = append(ucs, n)
 			dispatcher.JobQueue <- n
 		default:

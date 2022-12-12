@@ -51,7 +51,7 @@ func (ti *ToInstall) GetDownloadLocation(game config.Game, tm *TrackedMod) (stri
 	switch ti.kind {
 	case Hosted:
 		return ti.getHostedDownloadLocation(game, tm)
-	case CurseForge, Nexus:
+	case Nexus, CurseForge:
 		return ti.getRemoteDownloadLocation(game, tm)
 	}
 	panic(fmt.Sprintf("unknown kind %v", ti.kind))

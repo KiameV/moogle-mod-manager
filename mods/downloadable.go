@@ -1,5 +1,9 @@
 package mods
 
+import (
+	"fmt"
+)
+
 type Download struct {
 	Name    string `json:"Name" xml:"Name"`
 	Version string `json:"Version" xml:"Version"`
@@ -10,6 +14,15 @@ type Download struct {
 
 	DownloadedArchiveLocation *string `json:"DownloadedLoc,omitempty" xml:"DownloadedLoc,omitempty"`
 	//InstallType   InstallType `json:"InstallType" xml:"InstallType"`
+}
+
+func (d Download) FileName() (string, error) {
+	if d.Nexus != nil {
+		return d.Nexus.FileName, nil
+	} else if d.CurseForge != nil {
+		return d.CurseForge.FileName, nil
+	}
+	return "", fmt.Errorf("no file name specified for %s", d.Name)
 }
 
 type HostedDownloadable struct {
