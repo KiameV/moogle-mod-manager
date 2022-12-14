@@ -129,8 +129,17 @@ func initialize() {
 		fyne.CurrentApp().Settings().SetTheme(theme.LightTheme())
 	}
 
-	resources.Initialize()
+	if err = repo.NewGetter().Pull(); err != nil {
+		util.ShowErrorLong(err)
+	}
 
+	for _, dir := range repo.Dirs() {
+		if err = config.Initialize(dir); err != nil {
+			util.ShowErrorLong(err)
+		}
+	}
+
+	resources.Initialize(config.GameDefs)
 	if resources.Icon != nil {
 		state.Window.SetIcon(resources.Icon)
 	}

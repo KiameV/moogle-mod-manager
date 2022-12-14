@@ -38,15 +38,19 @@ func (d *gamesDef) compile() (games []*mods.Game) {
 }
 
 func (d *gamesDef) getItemKey(item interface{}) string {
-	return string(item.(*mods.Game).Name)
+	return string(item.(*mods.Game).ID)
 }
 
 func (d *gamesDef) getItemFields(item interface{}) []string {
-	v := item.(*mods.Game).Versions
-	if len(v) == 0 {
+	versions := item.(*mods.Game).Versions
+	if len(versions) == 0 {
 		return nil
 	}
-	return []string{strings.Join(v, ", ")}
+	result := make([]string, len(versions))
+	for i, v := range versions {
+		result[i] = string(v.Version)
+	}
+	return []string{strings.Join(result, ", ")}
 }
 
 func (d *gamesDef) editItem(item interface{}) {

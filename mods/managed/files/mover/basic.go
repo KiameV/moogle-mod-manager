@@ -29,11 +29,11 @@ func (m *basicFileMover) AddModFiles(enabler *mods.ModEnabler, mmf *managed.Mana
 
 	for _, df := range files {
 		modDir := filepath.Join(modPath, df.DownloadName)
-		if err = m.MoveFiles(enabler.Game, df.Files, modDir, config.Get().GetGameDir(game), configs.GetBackupFullPath(game), &backedUp, &moved, cr, false); err != nil {
+		if err = m.MoveFiles(enabler.Game, df.Files, modDir, game.InstallDir, configs.GetBackupFullPath(game), &backedUp, &moved, cr, false); err != nil {
 			break
 		}
 		if err == nil {
-			if err = m.MoveDirs(game, df.Dirs, modDir, config.Get().GetGameDir(game), configs.GetBackupFullPath(game), &backedUp, &moved, cr, false); err != nil {
+			if err = m.MoveDirs(game, df.Dirs, modDir, game.InstallDir, configs.GetBackupFullPath(game), &backedUp, &moved, cr, false); err != nil {
 				break
 			}
 		}
@@ -117,7 +117,7 @@ func (m *basicFileMover) removeBackupFile(enabler *mods.ModEnabler, mf *managed.
 	}
 }
 
-func (m *basicFileMover) MoveFiles(game config.Game, files []*mods.ModFile, modDir string, toDir string, backupDir string, backedUp *[]*mods.ModFile, movedFiles *[]*mods.ModFile, cr conflict.Result, returnOnFail bool) (err error) {
+func (m *basicFileMover) MoveFiles(game config.GameDef, files []*mods.ModFile, modDir string, toDir string, backupDir string, backedUp *[]*mods.ModFile, movedFiles *[]*mods.ModFile, cr conflict.Result, returnOnFail bool) (err error) {
 	var (
 		c   = config.Get()
 		dir string
@@ -149,13 +149,12 @@ func (m *basicFileMover) MoveFiles(game config.Game, files []*mods.ModFile, modD
 	return
 }
 
-func (m *basicFileMover) MoveDirs(game config.Game, dirs []*mods.ModDir, modDir string, toDir string, backupDir string, replacedFiles *[]*mods.ModFile, movedFiles *[]*mods.ModFile, cr conflict.Result, returnOnFail bool) (err error) {
+func (m *basicFileMover) MoveDirs(game config.GameDef, dirs []*mods.ModDir, modDir string, toDir string, backupDir string, replacedFiles *[]*mods.ModFile, movedFiles *[]*mods.ModFile, cr conflict.Result, returnOnFail bool) (err error) {
 	var (
 		mf   []*mods.ModFile
 		from string
 		to   string
 	)
-	toBaseDir := mods.GameToInstallBaseDir(game)
 	modDir = strings.ReplaceAll(modDir, "\\", "/")
 	for _, d := range dirs {
 		fromDir := strings.ReplaceAll(d.From, "\\", "/")
@@ -182,11 +181,11 @@ func (m *basicFileMover) MoveDirs(game config.Game, dirs []*mods.ModDir, modDir 
 				to = filepath.Join(d.To, to)
 				to = strings.ReplaceAll(to, "\\", "/")
 				to = strings.TrimLeft(to, "/")
-				c := strings.Count(to, string(toBaseDir)+"/")
-				if c == 0 && strings.HasPrefix(to, mods.StreamingAssetsDir) {
-					to = filepath.Join(string(toBaseDir), to)
+				c := strings.Count(to, string(game.BaseDir)+"/")
+				if c == 0 && strings.HasPrefix(to, config.StreamingAssetsDir) {
+					to = filepath.Join(string(game.BaseDir), to)
 				} else if c > 1 {
-					to = strings.Replace(to, string(toBaseDir)+"/", "", 1)
+					to = strings.Replace(to, string(game.BaseDir)+"/", "", 1)
 				}
 
 				mf = append(mf, &mods.ModFile{

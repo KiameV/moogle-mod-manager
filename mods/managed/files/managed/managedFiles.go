@@ -13,7 +13,7 @@ const (
 )
 
 var (
-	managed = make(map[config.Game]*ManagedModsAndFiles)
+	managed = make(map[config.GameID]*ManagedModsAndFiles)
 )
 
 type (
@@ -34,13 +34,13 @@ func InitializeManagedFiles() error {
 	return json.Unmarshal(b, &managed)
 }
 
-func HasManagedFiles(game config.Game, modID mods.ModID) bool {
+func HasManagedFiles(game config.GameDef, modID mods.ModID) bool {
 	var (
 		mmf *ManagedModsAndFiles
 		ok  bool
 		mf  *ModFiles
 	)
-	if mmf, ok = managed[game]; !ok {
+	if mmf, ok = managed[game.ID]; !ok {
 		return false
 	}
 	if mf, ok = mmf.Mods[modID]; !ok {
@@ -49,18 +49,18 @@ func HasManagedFiles(game config.Game, modID mods.ModID) bool {
 	return len(mf.MovedFiles) > 0
 }
 
-func GetModsWithManagedFiles(game config.Game) (mmf *ManagedModsAndFiles) {
+func GetModsWithManagedFiles(game config.GameDef) (mmf *ManagedModsAndFiles) {
 	var ok bool
-	if mmf, ok = managed[game]; !ok {
+	if mmf, ok = managed[game.ID]; !ok {
 		mmf = &ManagedModsAndFiles{
 			Mods: make(map[mods.ModID]*ModFiles),
 		}
-		managed[game] = mmf
+		managed[game.ID] = mmf
 	}
 	return
 }
 
-func GetManagedFiles(game config.Game, modID mods.ModID) (mf *ModFiles, hasManaged bool) {
+func GetManagedFiles(game config.GameDef, modID mods.ModID) (mf *ModFiles, hasManaged bool) {
 	mf, hasManaged = GetModsWithManagedFiles(game).Mods[modID]
 	return
 }

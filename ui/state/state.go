@@ -18,7 +18,7 @@ const (
 )
 
 var (
-	CurrentGame *config.Game
+	CurrentGame *config.GameDef
 	App         fyne.App
 	Window      fyne.Window
 	popupWindow fyne.Window
@@ -133,33 +133,4 @@ func GetBaseDirBinding() binding.String {
 
 func SetBaseDir(dir string) {
 	_ = baseDir.Set(dir)
-}
-
-func SetCurrentGameFromString(s string) bool {
-	var g config.Game
-	switch s {
-	case "I":
-		g = config.I
-	case "II":
-		g = config.II
-	case "III":
-		g = config.III
-	case "IV":
-		g = config.IV
-	case "V":
-		g = config.V
-	case "VI":
-		g = config.VI
-	case "Chrono Cross":
-		g = config.ChronoCross
-	// TODO BoF
-	//case "BoF III":
-	//	g = config.BofIII
-	//case "BoF IV":
-	//	g = config.BofIV
-	default:
-		return false
-	}
-	CurrentGame = &g
-	return true
 }

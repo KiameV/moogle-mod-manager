@@ -10,11 +10,11 @@ import (
 
 type Client interface {
 	GetFromMod(in *mods.Mod) (found bool, mod *mods.Mod, err error)
-	GetFromID(game config.Game, id int) (found bool, mod *mods.Mod, err error)
+	GetFromID(game config.GameDef, id int) (found bool, mod *mods.Mod, err error)
 	GetFromUrl(url string) (found bool, mod *mods.Mod, err error)
-	GetNewestMods(game config.Game, lastID int) (result []*mods.Mod, err error)
-	GetMods(game *config.Game) (result []*mods.Mod, err error)
-	Folder(game config.Game) string
+	GetNewestMods(game config.GameDef, lastID int) (result []*mods.Mod, err error)
+	GetMods(game *config.GameDef) (result []*mods.Mod, err error)
+	Folder(game config.GameDef) string
 }
 
 func NewCurseForgeClient() Client {

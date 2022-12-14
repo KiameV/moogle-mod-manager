@@ -44,11 +44,11 @@ func CreatePreview(mod *mods.Mod, options ...ModPreviewOptions) fyne.CanvasObjec
 		container.NewTabItem("Release Notes", text)
 	}
 	if mod.ModCompatibility != nil && mod.ModCompatibility.HasItems() {
-		var game config.Game
 		if len(mod.Games) > 0 {
-			game = config.NameToGame(mod.Games[0].Name)
+			if game, err := config.GameDefFromID(mod.Games[0].ID); err == nil {
+				tabs.Append(container.NewTabItem("Compatibility", createCompatibility(&game, mod.ModCompatibility)))
+			}
 		}
-		tabs.Append(container.NewTabItem("Compatibility", createCompatibility(&game, mod.ModCompatibility)))
 	}
 	if mod.DonationLinks != nil && len(mod.DonationLinks) > 0 {
 		tabs.Append(container.NewTabItem("Donations", createDonationLinks(mod.DonationLinks)))
@@ -79,7 +79,7 @@ func createLink(name, value string) *fyne.Container {
 	)
 }
 
-func createCompatibility(game *config.Game, compatibility *mods.ModCompatibility) fyne.CanvasObject {
+func createCompatibility(game *config.GameDef, compatibility *mods.ModCompatibility) fyne.CanvasObject {
 	var (
 		c = container.NewVBox(
 			widget.NewLabelWithStyle("Compatibility", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),

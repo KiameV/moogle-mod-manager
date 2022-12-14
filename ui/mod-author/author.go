@@ -172,13 +172,13 @@ func (a *ModAuthorer) LoadModToEdit() (successfullyLoadedMod bool) {
 		err = json.Unmarshal(b, &mod)
 	}
 	*a.kind = mod.ModKind.Kind
-	a.modID = mod.ID
+	a.modID = mod.ModID
 	a.updateEntries(&mod)
 	return true
 }
 
 func (a *ModAuthorer) EditMod(mod *mods.Mod, editCallback func(*mods.Mod)) {
-	a.modID = mod.ID
+	a.modID = mod.ModID
 	*a.kind = mod.ModKind.Kind
 	a.editCallback = editCallback
 	a.updateEntries(mod)
@@ -287,7 +287,7 @@ func (a *ModAuthorer) Draw(w fyne.Window) {
 func (a *ModAuthorer) updateEntries(mod *mods.Mod) {
 	*a.kind = mod.ModKind.Kind
 	a.createBaseDir(state.GetBaseDirBinding())
-	a.modID = mod.ID
+	a.modID = mod.ModID
 	a.createFormItem("Name", mod.Name)
 	a.createFormItem("Author", mod.Author)
 	a.createFormItem("Release Date", mod.ReleaseDate)
@@ -300,7 +300,7 @@ func (a *ModAuthorer) updateEntries(mod *mods.Mod) {
 	//a.createFormSelect("Select Type", mods.SelectTypes, string(mod.ConfigSelectionType))
 
 	a.createFormItem("Working Dir", config.PWD)
-	if dir, ok := authored.GetDir(mod.ID); ok && dir != "" {
+	if dir, ok := authored.GetDir(mod.ModID); ok && dir != "" {
 		a.createFormItem("Working Dir", dir)
 	}
 
@@ -411,12 +411,12 @@ func (a *ModAuthorer) compileMod() (m *mods.Mod) {
 		name := u.CreateFileName(m.Name)
 		author := u.CreateFileName(m.Author)
 		if name != "" && author != "" {
-			m.ID = mods.ModID(strings.ToLower(fmt.Sprintf("%s.%s", name, author)))
+			m.ModID = mods.ModID(strings.ToLower(fmt.Sprintf("%s.%s", name, author)))
 		}
 	case mods.Nexus:
-		m.ID = mods.NewModID(mods.Nexus, string(a.modID))
+		m.ModID = mods.NewModID(mods.Nexus, string(a.modID))
 	case mods.CurseForge:
-		m.ID = mods.NewModID(mods.CurseForge, string(a.modID))
+		m.ModID = mods.NewModID(mods.CurseForge, string(a.modID))
 	default:
 		panic("invalid mod kind")
 	}
@@ -455,7 +455,7 @@ func (a *ModAuthorer) compileMod() (m *mods.Mod) {
 		}
 	}
 
-	authored.SetDir(m.ID, state.GetBaseDir())
+	authored.SetDir(m.ModID, state.GetBaseDir())
 	return m
 }
 

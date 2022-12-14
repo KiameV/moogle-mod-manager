@@ -65,7 +65,7 @@ func (d *modCompatsDef) onEditItem(item interface{}) {
 func (d *modCompatsDef) createItem(item interface{}, done ...func(interface{})) {
 	var m = item.(*mods.ModCompat)
 
-	var game *config.Game
+	var game *config.GameDef
 	if d.gd != nil && len(d.gd.list.Items) == 1 {
 		g := config.NameToGame(d.gd.compile()[0].Name)
 		game = &g
@@ -121,17 +121,17 @@ func (d *modCompatsDef) createItem(item interface{}, done ...func(interface{})) 
 				case mods.Hosted:
 					m.Kind = mods.Hosted
 					m.Hosted = &mods.ModCompatHosted{
-						ModID: selected.ID,
+						ModID: selected.ModID,
 					}
 				case mods.Nexus:
 					m.Kind = mods.Nexus
 					m.Nexus = &mods.ModCompatNexus{
-						ModID: selected.ID,
+						ModID: selected.ModID,
 					}
 				case mods.CurseForge:
 					m.Kind = mods.CurseForge
 					m.CurseForge = &mods.ModCompatCF{
-						ModID: selected.ID,
+						ModID: selected.ModID,
 					}
 				default:
 					panic(fmt.Sprint("unknown mod kind: ", selected.ModKind.Kind))

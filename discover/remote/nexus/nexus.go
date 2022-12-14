@@ -17,24 +17,7 @@ import (
 	"strings"
 )
 
-type NexusGame string
-type NexusGameID int
-
 const (
-	FFI   NexusGame = "finalfantasypixelremaster"
-	FFII  NexusGame = "finalfantasy2pixelremaster"
-	FFIII NexusGame = "finalfantasy3pixelremaster"
-	FFIV  NexusGame = "finalfantasy4pixelremaster"
-	FFV   NexusGame = "finalfantasy5pixelremaster"
-	FFVI  NexusGame = "finalfantasy6pixelremaster"
-
-	IdFFI   NexusGameID = 3934
-	IdFFII  NexusGameID = 3958
-	IdFFIII NexusGameID = 3942
-	IdFFIV  NexusGameID = 4022
-	IdFFV   NexusGameID = 4137
-	IdFFVI  NexusGameID = 4335
-
 	nexusApiModUrl         = "https://api.nexusmods.com/v1/games/%s/mods/%s.json"
 	nexusApiModDlUrl       = "https://api.nexusmods.com/v1/games/%s/mods/%s/files.json%s"
 	nexusApiModDlUrlSuffix = "?category=main,update,optional,miscellaneous"
@@ -61,58 +44,6 @@ func IsNexus(url string) bool {
 	return strings.Index(url, "nexusmods.com") >= 0
 }
 
-func GameToNexusGame(game config.Game) NexusGame {
-	switch game {
-	case config.I:
-		return FFI
-	case config.II:
-		return FFII
-	case config.III:
-		return FFIII
-	case config.IV:
-		return FFIV
-	case config.V:
-		return FFV
-	default:
-		return FFVI
-	}
-}
-
-func NexusGameToGame(game NexusGame) config.Game {
-	switch game {
-	case FFI:
-		return config.I
-	case FFII:
-		return config.II
-	case FFIII:
-		return config.III
-	case FFIV:
-		return config.IV
-	case FFV:
-		return config.V
-	default:
-		return config.VI
-
-	}
-}
-
-func GameToID(game config.Game) NexusGameID {
-	switch game {
-	case config.I:
-		return IdFFI
-	case config.II:
-		return IdFFII
-	case config.III:
-		return IdFFIII
-	case config.IV:
-		return IdFFIV
-	case config.V:
-		return IdFFV
-	default:
-		return IdFFVI
-	}
-}
-
 func (c *client) GetFromMod(in *mods.Mod) (found bool, mod *mods.Mod, err error) {
 	if len(in.Games) == 0 {
 		err = errors.New("no games found for mod " + in.Name)
@@ -120,42 +51,45 @@ func (c *client) GetFromMod(in *mods.Mod) (found bool, mod *mods.Mod, err error)
 	}
 	var (
 		id   uint64
-		game = config.NameToGame(in.Games[0].Name)
+		game config.GameDef
 	)
-	if id, err = in.ModIdAsNumber(); err != nil {
-		err = fmt.Errorf("could not parse mod id %s for %s", in.ID, in.Name)
+	if game, err = config.GameDefFromID(in.Games[0].ID); err != nil {
 		return
 	}
-	return c.GetFromUrl(fmt.Sprintf(nexusUrl, GameToNexusGame(game), id))
+	if id, err = in.ModIdAsNumber(); err != nil {
+		err = fmt.Errorf("could not parse mod id %s for %s", in.ModID, in.Name)
+		return
+	}
+	return c.GetFromUrl(fmt.Sprintf(nexusUrl, game.Remote.Nexus.Path, id))
 }
 
-func (c *client) GetFromID(game config.Game, id int) (found bool, mod *mods.Mod, err error) {
-	return c.GetFromUrl(fmt.Sprintf(nexusUrl, GameToNexusGame(game), id))
+func (c *client) GetFromID(game config.GameDef, id int) (found bool, mod *mods.Mod, err error) {
+	return c.GetFromUrl(fmt.Sprintf(nexusUrl, game.Remote.Nexus.Path, id))
 }
 
 func (c *client) GetFromUrl(url string) (found bool, mod *mods.Mod, err error) {
 	var (
-		sp      = strings.Split(url, "/")
-		nexusID string
-		modID   string
-		b       []byte
-		nMod    nexusMod
-		nDls    fileParent
+		sp    = strings.Split(url, "/")
+		path  string
+		modID string
+		b     []byte
+		nMod  nexusMod
+		nDls  fileParent
 	)
 	for i, s := range sp {
 		if s == "mods" {
 			if i > 0 && i < len(sp)-1 {
-				nexusID = sp[i-1]
+				path = sp[i-1]
 				modID = strings.Split(sp[i+1], "?")[0]
 				break
 			}
 		}
 	}
-	if nexusID == "" || modID == "" {
-		err = fmt.Errorf("could not get Game and Mod ID from %s", url)
+	if path == "" || modID == "" {
+		err = fmt.Errorf("could not get GameDef and Mod ModID from %s", url)
 		return
 	}
-	if b, err = sendRequest(fmt.Sprintf(nexusApiModUrl, nexusID, modID)); err != nil {
+	if b, err = sendRequest(fmt.Sprintf(nexusApiModUrl, path, modID)); err != nil {
 		return
 	}
 	if err = json.Unmarshal(b, &nMod); err != nil {
@@ -165,21 +99,21 @@ func (c *client) GetFromUrl(url string) (found bool, mod *mods.Mod, err error) {
 		err = errors.New("no mod found for " + modID)
 		return
 	}
-	if nDls, err = getDownloads(NexusGame(nexusID), modID); err != nil {
+	if nDls, err = getDownloads(config.NexusPath(path), modID); err != nil {
 		return
 	}
 	return toMod(nMod, nDls.Files)
 }
 
-func (c *client) GetNewestMods(game config.Game, lastID int) (result []*mods.Mod, err error) {
+func (c *client) GetNewestMods(game config.GameDef, lastID int) (result []*mods.Mod, err error) {
 	var (
-		b       []byte
-		nexusID = GameToNexusGame(game)
-		nDls    fileParent
-		mod     *mods.Mod
-		found   bool
+		b     []byte
+		path  = game.Remote.Nexus.Path
+		nDls  fileParent
+		mod   *mods.Mod
+		found bool
 	)
-	if b, err = sendRequest(fmt.Sprintf(nexusApiNewestModsUrl, GameToNexusGame(game))); err != nil {
+	if b, err = sendRequest(fmt.Sprintf(nexusApiNewestModsUrl, path)); err != nil {
 		return
 	}
 	var nMods []nexusMod
@@ -190,7 +124,7 @@ func (c *client) GetNewestMods(game config.Game, lastID int) (result []*mods.Mod
 	result = make([]*mods.Mod, 0, len(nMods))
 	for _, nMod := range nMods {
 		if nMod.ModID > lastID {
-			if nDls, err = getDownloads(nexusID, fmt.Sprintf("%d", nMod.ModID)); err != nil {
+			if nDls, err = getDownloads(path, fmt.Sprintf("%d", nMod.ModID)); err != nil {
 				return
 			}
 			if found, mod, err = toMod(nMod, nDls.Files); err != nil {
@@ -204,10 +138,10 @@ func (c *client) GetNewestMods(game config.Game, lastID int) (result []*mods.Mod
 	return
 }
 
-func getDownloads(nexusID NexusGame, modID string) (nDls fileParent, err error) {
+func getDownloads(path config.NexusPath, modID string) (nDls fileParent, err error) {
 	var (
 		b   []byte
-		url = fmt.Sprintf(nexusApiModDlUrl, nexusID, modID, nexusApiModDlUrlSuffix)
+		url = fmt.Sprintf(nexusApiModDlUrl, path, modID, nexusApiModDlUrlSuffix)
 	)
 	if b, err = sendRequest(url); err != nil {
 		return
@@ -252,10 +186,15 @@ func sendRequest(url string) (response []byte, err error) {
 }
 
 func toMod(n nexusMod, dls []NexusFile) (include bool, mod *mods.Mod, err error) {
-	modID := fmt.Sprintf("%d", n.ModID)
-	game := NexusGameToGame(n.Game)
+	var (
+		modID = fmt.Sprintf("%d", n.ModID)
+		game  config.GameDef
+	)
+	if game, err = config.GameDefFromNexusID(n.Game); err != nil {
+		return
+	}
 	mod = &mods.Mod{
-		ID:           mods.NewModID(mods.Nexus, modID),
+		ModID:        mods.NewModID(mods.Nexus, modID),
 		Name:         n.Name,
 		Version:      n.Version,
 		Author:       n.Author,
@@ -273,7 +212,7 @@ func toMod(n nexusMod, dls []NexusFile) (include bool, mod *mods.Mod, err error)
 			Kind: mods.Nexus,
 		},
 		Games: []*mods.Game{{
-			Name:     config.GameToName(game),
+			ID:       game.ID,
 			Versions: nil,
 		}},
 		Downloadables:  make([]*mods.Download, len(dls)),
@@ -307,8 +246,8 @@ func toMod(n nexusMod, dls []NexusFile) (include bool, mod *mods.Mod, err error)
 			DownloadName: d.Name,
 			Dirs: []*mods.ModDir{
 				{
-					From:      string(mods.GameToInstallBaseDir(game)),
-					To:        string(mods.GameToInstallBaseDir(game)),
+					From:      string(game.BaseDir),
+					To:        string(game.BaseDir),
 					Recursive: true,
 				},
 			},
@@ -354,11 +293,11 @@ func removeFont(s string) string {
 	return s
 }
 
-func (c *client) Folder(game config.Game) string {
-	return filepath.Join(config.PWD, "remote", config.String(game), "nexus")
+func (c *client) Folder(game config.GameDef) string {
+	return filepath.Join(config.PWD, "remote", string(game.ID), string(mods.Nexus))
 }
 
-func (c *client) GetMods(game *config.Game) (result []*mods.Mod, err error) {
+func (c *client) GetMods(game *config.GameDef) (result []*mods.Mod, err error) {
 	if game == nil {
 		return nil, errors.New("GetMods called with a nil game")
 	}

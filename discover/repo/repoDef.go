@@ -35,20 +35,12 @@ func (d repoDef) repoUtilDir() string {
 	return filepath.Join(d.repoDir(), "utilities")
 }
 
-func (d repoDef) repoGameDir(game config.Game) string {
-	return filepath.Join(d.repoDir(), config.String(game))
+func (d repoDef) repoGameDir(game config.GameDef) string {
+	return filepath.Join(d.repoDir(), string(game.ID))
 }
 
-func (d repoDef) repoNexusIDDir(game config.Game, id mods.ModID) string {
-	return filepath.Join(d.repoGameDir(game), "nexus", strings.ReplaceAll(string(id), "nexus.", ""))
-}
-
-func (d repoDef) repoCfIDDir(game config.Game, id mods.ModID) string {
-	return filepath.Join(d.repoGameDir(game), "cf", strings.ReplaceAll(string(id), "cf.", ""))
-}
-
-func (d repoDef) repoNexusDir(game config.Game, mod *mods.Mod) string {
-	return d.repoNexusIDDir(game, mod.ID)
+func (d repoDef) repoGameModDir(game config.GameDef, kind mods.Kind, id mods.ModID) string {
+	return filepath.Join(d.repoGameDir(game), string(kind), string(id))
 }
 
 func Initialize() (err error) {
@@ -68,6 +60,14 @@ func Initialize() (err error) {
 	if len(repoDefs) == 0 {
 		err = fmt.Errorf("no repositories found in %s, using default repository", f)
 		_ = saveDefaultRepo(f)
+	}
+	return
+}
+
+func Dirs() (dirs []string) {
+	dirs = make([]string, len(repoDefs))
+	for i, rd := range repoDefs {
+		dirs[i] = rd.repoDir()
 	}
 	return
 }

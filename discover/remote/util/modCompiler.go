@@ -11,12 +11,12 @@ import (
 )
 
 type Finder interface {
-	GetNewestMods(game config.Game, lastID int) ([]*mods.Mod, error)
-	GetFromID(game config.Game, id int) (found bool, mod *mods.Mod, err error)
+	GetNewestMods(game config.GameDef, lastID int) ([]*mods.Mod, error)
+	GetFromID(game config.GameDef, id int) (found bool, mod *mods.Mod, err error)
 }
 
 type ModCompiler interface {
-	AppendNewMods(folder string, game config.Game, ms []*mods.Mod) (result []*mods.Mod, err error)
+	AppendNewMods(folder string, game config.GameDef, ms []*mods.Mod) (result []*mods.Mod, err error)
 	SetFinder(finder Finder)
 }
 
@@ -33,7 +33,7 @@ func (c *modCompiler) SetFinder(finder Finder) {
 	c.finder = finder
 }
 
-func (c *modCompiler) AppendNewMods(folder string, game config.Game, ms []*mods.Mod) (result []*mods.Mod, err error) {
+func (c *modCompiler) AppendNewMods(folder string, game config.GameDef, ms []*mods.Mod) (result []*mods.Mod, err error) {
 	var (
 		lastID = c.getLastModID(ms)
 		nm     []*mods.Mod
@@ -61,7 +61,7 @@ func (c *modCompiler) AppendNewMods(folder string, game config.Game, ms []*mods.
 		}
 	} else if c.kind == mods.CurseForge {
 		for _, mod = range nm {
-			id := strings.Split(string(mod.ID), ".")[1]
+			id := strings.Split(string(mod.ModID), ".")[1]
 			file = filepath.Join(folder, id, "mod.json")
 			if _, err = os.Stat(file); err != nil {
 				if err = util.SaveToFile(file, mod); err != nil {

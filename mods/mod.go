@@ -33,7 +33,7 @@ var SelectTypes = []string{string(Auto), string(Select), string(Radio)}
 const (
 	BattleScene        Category = "Battle Scene"
 	EnemySprite        Category = "Enemy Sprite"
-	GameOverhauls      Category = "Game Overhauls"
+	GameOverhauls      Category = "GameDef Overhauls"
 	Gameplay           Category = "Gameplay"
 	General            Category = "General"
 	Fonts              Category = "Fonts"
@@ -66,43 +66,44 @@ var Categories = []string{
 	string(Utility)}
 
 type Mod struct {
-	ID                  ModID             `json:"ID" xml:"ID"`
-	Name                string            `json:"Name" xml:"Name"`
-	Author              string            `json:"Author" xml:"Author"`
-	AuthorLink          string            `json:"AuthorLink" xml:"AuthorLink"`
-	ReleaseDate         string            `json:"ReleaseDate" xml:"ReleaseDate"`
-	Category            Category          `json:"Category" xml:"Category"`
-	Description         string            `json:"Description" xml:"Description"`
-	ReleaseNotes        string            `json:"ReleaseNotes" xml:"ReleaseNotes"`
-	Link                string            `json:"Link" xml:"Link"`
-	Version             string            `json:"Version"`
-	Preview             *Preview          `json:"Preview,omitempty" xml:"Preview,omitempty"`
-	ModKind             ModKind           `json:"ModKind" xml:"ModKind"`
-	ModCompatibility    *ModCompatibility `json:"Compatibility,omitempty" xml:"ModCompatibility,omitempty"`
-	Downloadables       []*Download       `json:"Downloadable" xml:"Downloadables"`
-	DonationLinks       []*DonationLink   `json:"DonationLink" xml:"DonationLinks"`
-	Games               []*Game           `json:"Games" xml:"Games"`
-	AlwaysDownload      []*DownloadFiles  `json:"AlwaysDownload,omitempty" xml:"AlwaysDownload,omitempty"`
-	Configurations      []*Configuration  `json:"Configuration,omitempty" xml:"Configurations,omitempty"`
-	ConfigSelectionType SelectType        `json:"ConfigSelectionType" xml:"ConfigSelectionType"`
-	IsManuallyCreated   bool              `json:"IsManuallyCreated" xml:"IsManuallyCreated"`
+	ModID               ModID               `json:"ModID" xml:"ModID"`
+	Name                string              `json:"Name" xml:"Name"`
+	Author              string              `json:"Author" xml:"Author"`
+	AuthorLink          string              `json:"AuthorLink" xml:"AuthorLink"`
+	ReleaseDate         string              `json:"ReleaseDate" xml:"ReleaseDate"`
+	Category            Category            `json:"Category" xml:"Category"`
+	Description         string              `json:"Description" xml:"Description"`
+	ReleaseNotes        string              `json:"ReleaseNotes" xml:"ReleaseNotes"`
+	Link                string              `json:"Link" xml:"Link"`
+	Version             string              `json:"Version" xml:"Version"`
+	InstallType         *config.InstallType `json:"InstallType,omitempty" xml:"InstallType,omitempty"`
+	Preview             *Preview            `json:"Preview,omitempty" xml:"Preview,omitempty"`
+	ModKind             ModKind             `json:"ModKind" xml:"ModKind"`
+	ModCompatibility    *ModCompatibility   `json:"Compatibility,omitempty" xml:"ModCompatibility,omitempty"`
+	Downloadables       []*Download         `json:"Downloadable" xml:"Downloadables"`
+	DonationLinks       []*DonationLink     `json:"DonationLink" xml:"DonationLinks"`
+	Games               []*Game             `json:"Games" xml:"Games"`
+	AlwaysDownload      []*DownloadFiles    `json:"AlwaysDownload,omitempty" xml:"AlwaysDownload,omitempty"`
+	Configurations      []*Configuration    `json:"Configuration,omitempty" xml:"Configurations,omitempty"`
+	ConfigSelectionType SelectType          `json:"ConfigSelectionType" xml:"ConfigSelectionType"`
+	IsManuallyCreated   bool                `json:"IsManuallyCreated" xml:"IsManuallyCreated"`
 }
 
-func UniqueModID(game config.Game, modID ModID) string {
-	return fmt.Sprintf("%d.%s", game, modID)
+func (m *Mod) ID() ModID {
+	return m.ModID
 }
 
-func (m *Mod) UniqueModID(game config.Game) string {
-	return UniqueModID(game, NewModID(m.ModKind.Kind, string(m.ID)))
+func (m *Mod) Kind() Kind {
+	return m.Kind()
 }
 
 func (m *Mod) ModIdAsNumber() (uint64, error) {
-	sp := strings.Split(string(m.ID), ".")
+	sp := strings.Split(string(m.ModID), ".")
 	return strconv.ParseUint(sp[len(sp)-1], 10, 64)
 }
 
 func (m *Mod) BranchName() string {
-	return fmt.Sprintf("%s_%s", m.ID, m.Version)
+	return fmt.Sprintf("%s_%s", m.ModID, m.Version)
 }
 
 type Preview struct {
@@ -156,23 +157,11 @@ func (c *ModCompatibility) HasItems() bool {
 	return c != nil && (len(c.Requires) > 0 || len(c.Forbids) > 0)
 }
 
-type InstallType string
-
-const (
-	//Bundles  InstallType = "Bundles"
-	//Memoria  InstallType = "Memoria"
-	//Magicite InstallType = "Magicite"
-	//BepInEx  InstallType = "BepInEx"
-	// DLL Patcher https://discord.com/channels/371784427162042368/518331294858608650/863930606446182420
-	//DllPatch   InstallType = "DllPatch"
-	Compressed InstallType = "Compressed"
-)
-
-var InstallTypes = []string{ /*string(Bundles), string(Memoria), string(Magicite), string(BepInEx), /*string(DllPatch),*/ string(Compressed)}
+var InstallTypes = []string{string(config.Move), string(config.Archive)}
 
 type Game struct {
-	Name     config.GameName `json:"Name" xml:"Name"`
-	Versions []string        `json:"Version,omitempty" xml:"GameVersions,omitempty"`
+	ID       config.GameID    `json:"Name" xml:"Name"`
+	Versions []config.Version `json:"Version,omitempty" xml:"GameVersions,omitempty"`
 }
 
 type DownloadFiles struct {
@@ -202,7 +191,7 @@ type ModDir struct {
 type Configuration struct {
 	Name        string    `json:"Name" xml:"Name"`
 	Description string    `json:"Description" xml:"Description"`
-	Preview     *Preview  `json:"Preview,omitempty" xml:"Preview, omitempty"`
+	Preview     *Preview  `json:"Preview,omitempty" xml:"Preview,omitempty"`
 	Root        bool      `json:"Root" xml:"Root"`
 	Choices     []*Choice `json:"Choice" xml:"Choices"`
 
@@ -225,8 +214,8 @@ type DonationLink struct {
 
 func (m *Mod) Validate() string {
 	sb := strings.Builder{}
-	if m.ID == "" {
-		sb.WriteString("ID is required\n")
+	if m.ModID == "" {
+		sb.WriteString("ModID is required\n")
 	}
 	if m.Name == "" {
 		sb.WriteString("Name is required\n")
@@ -370,16 +359,15 @@ func (m *Mod) Validate() string {
 	return sb.String()
 }
 
-func (m *Mod) Supports(game config.Game) error {
-	name := config.GameToName(game)
+func (m *Mod) Supports(game config.GameDef) error {
 	if len(m.Games) > 0 {
 		for _, g := range m.Games {
-			if name == g.Name {
+			if game.ID == g.ID {
 				return nil
 			}
 		}
 	}
-	return fmt.Errorf("%s does not support %s", m.Name, config.GameNameString(game))
+	return fmt.Errorf("%s does not support %s", m.Name, game.Name)
 }
 
 func (m *Mod) Merge(from Mod) {
@@ -411,7 +399,11 @@ func NewModForVersion(manual *Mod, remote *Mod) *Mod {
 }
 
 func (m *Mod) DirectoryName() string {
-	return util.CreateFileName(string(m.ID))
+	return util.CreateFileName(string(m.ModID))
+}
+
+func (m *Mod) Mod() *Mod {
+	return m
 }
 
 func Sort(mods []*Mod) (sorted []*Mod) {
@@ -423,7 +415,7 @@ func Sort(mods []*Mod) (sorted []*Mod) {
 		key    string
 	)
 	for i, m = range mods {
-		key = fmt.Sprintf("%s%s", m.Name, m.ID)
+		key = fmt.Sprintf("%s%s", m.Name, m.ModID)
 		lookup[key] = m
 		sl[i] = key
 	}

@@ -1,25 +1,26 @@
 package nexus
 
 import (
+	"github.com/kiamev/moogle-mod-manager/config"
 	"time"
 )
 
 type nexusMod struct {
-	ModID           int       `json:"mod_id"`
-	Name            string    `json:"name"`
-	Summary         string    `json:"summary"`
-	Description     string    `json:"description"`
-	PictureUrl      string    `json:"picture_url"`
-	CreatedTime     time.Time `json:"created_time"`
-	UpdatedTime     time.Time `json:"updated_time"`
-	Version         string    `json:"version"`
-	Game            NexusGame `json:"domain_name"`
-	CategoryID      int       `json:"category_id"`
-	Author          string    `json:"author"`
-	AuthorLink      string    `json:"author_link"`
-	HasAdultContent bool      `json:"contains_adult_content"`
-	Available       bool      `json:"available"`
-	Link            string    `json:"-"`
+	ModID           int                `json:"mod_id"`
+	Name            string             `json:"name"`
+	Summary         string             `json:"summary"`
+	Description     string             `json:"description"`
+	PictureUrl      string             `json:"picture_url"`
+	CreatedTime     time.Time          `json:"created_time"`
+	UpdatedTime     time.Time          `json:"updated_time"`
+	Version         string             `json:"version"`
+	Game            config.NexusGameID `json:"domain_name"`
+	CategoryID      int                `json:"category_id"`
+	Author          string             `json:"author"`
+	AuthorLink      string             `json:"author_link"`
+	HasAdultContent bool               `json:"contains_adult_content"`
+	Available       bool               `json:"available"`
+	Link            string             `json:"-"`
 }
 
 type NexusFile struct {

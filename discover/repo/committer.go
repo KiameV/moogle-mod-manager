@@ -49,6 +49,7 @@ func (c *repoClient) Submit() (url string, err error) {
 		ref  *github.Reference
 		tree *github.Tree
 		file string
+		game config.GameDef
 	)
 
 	if err = NewGetter().pull(rd); err != nil {
@@ -56,22 +57,21 @@ func (c *repoClient) Submit() (url string, err error) {
 	}
 
 	if len(c.mod.Games) == 1 {
+		if game, err = config.GameDefFromID(c.mod.Games[0].ID); err != nil {
+			return
+		}
 		switch c.mod.ModKind.Kind {
 		case mods.Hosted:
-			file = filepath.Join(rd.repoGameDir(config.NameToGame(c.mod.Games[0].Name)), c.mod.DirectoryName())
-		case mods.Nexus:
-			file = rd.repoNexusIDDir(config.NameToGame(c.mod.Games[0].Name), c.mod.ID)
-		case mods.CurseForge:
-			file = rd.repoCfIDDir(config.NameToGame(c.mod.Games[0].Name), c.mod.ID)
+			file = filepath.Join(rd.repoGameDir(game), string(mods.Hosted), c.mod.DirectoryName())
 		default:
-			err = fmt.Errorf("unknown mod kind: %v", c.mod.ModKind.Kind)
+			file = rd.repoGameModDir(game, c.mod.ModKind.Kind, c.mod.ModID)
 		}
 	} else if len(c.mod.Games) > 1 {
 		if c.mod.ModKind.Kind != mods.Hosted {
 			err = errors.New("multi-game mods must be hosted")
 			return
 		}
-		file = filepath.Join(rd.repoDir(), "utilities", util.CreateFileName(string(c.mod.ID)))
+		file = filepath.Join(rd.repoDir(), "utilities", util.CreateFileName(string(c.mod.ModID)))
 	} else {
 		err = errors.New("no games specified")
 		return

@@ -23,7 +23,7 @@ var defaultGames = []string{
 func Show(w fyne.Window) {
 	configs := *config.Get()
 	items := []*widget.FormItem{
-		createSelectRow("Default Game", &configs.DefaultGame, defaultGames...),
+		createSelectRow("Default GameDef", &configs.DefaultGame, defaultGames...),
 		createDirRow("FF I Dir", &configs.DirI),
 		createDirRow("FF II Dir", &configs.DirII),
 		createDirRow("FF III Dir", &configs.DirIII),

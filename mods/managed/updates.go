@@ -13,7 +13,7 @@ import (
 	"sync"
 )
 
-func CheckForUpdates(game config.Game, result func(err error)) {
+func CheckForUpdates(game config.GameDef, result func(err error)) {
 	var (
 		dispatcher = workerpool.NewDispatcher(
 			fmt.Sprintf("Checker%d", game),
@@ -78,7 +78,7 @@ func (c *hostedUpdateChecker) Process() error {
 		return nil
 	}
 
-	if remoteMod.ID != c.tm.Mod.ID {
+	if remoteMod.ModID != c.tm.Mod.ModID {
 		util.ShowErrorLong(errors.New("Could not download remote version for " + c.tm.Mod.Name))
 		return nil
 	}

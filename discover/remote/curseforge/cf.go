@@ -16,24 +16,7 @@ import (
 	"strings"
 )
 
-type CfGame string
-type CfGameID int
-
 const (
-	FFI   CfGame = "final-fantasy-i"
-	FFII  CfGame = "final-fantasy-ii"
-	FFIII CfGame = "final-fantasy-iii"
-	FFIV  CfGame = "final-fantasy-iv"
-	FFV   CfGame = "final-fantasy-v"
-	FFVI  CfGame = "final-fantasy-vi"
-
-	IdFFI   CfGameID = 5230
-	IdFFII  CfGameID = 5001
-	IdFFIII CfGameID = 5026
-	IdFFIV  CfGameID = 4741
-	IdFFV   CfGameID = 5021
-	IdFFVI  CfGameID = 4773
-
 	getModsByGameID        = "https://api.curseforge.com/v1/mods/search?gameId=%d"
 	GetModsByGameIDAndName = "https://api.curseforge.com/v1/mods/search?gameId=%d&slug=%s"
 	getModDataByModID      = "https://api.curseforge.com/v1/mods/%d"
@@ -55,92 +38,6 @@ func IsCurseforge(url string) bool {
 	return strings.Index(url, "curseforge.com") >= 0
 }
 
-func GameToCfGame(game config.Game) CfGame {
-	switch game {
-	case config.I:
-		return FFI
-	case config.II:
-		return FFII
-	case config.III:
-		return FFIII
-	case config.IV:
-		return FFIV
-	case config.V:
-		return FFV
-	default:
-		return FFVI
-	}
-}
-
-func CfGameIDToGame(id CfGameID) config.Game {
-	switch id {
-	case IdFFI:
-		return config.I
-	case IdFFII:
-		return config.II
-	case IdFFIII:
-		return config.III
-	case IdFFIV:
-		return config.IV
-	case IdFFV:
-		return config.V
-	default:
-		return config.VI
-	}
-}
-
-func CfGameToGameID(game CfGame) CfGameID {
-	switch game {
-	case FFI:
-		return IdFFI
-	case FFII:
-		return IdFFII
-	case FFIII:
-		return IdFFIII
-	case FFIV:
-		return IdFFIV
-	case FFV:
-		return IdFFV
-	default:
-		return IdFFVI
-	}
-}
-
-func CfGameToGame(game CfGame) config.Game {
-	switch game {
-	case FFI:
-		return config.I
-	case FFII:
-		return config.II
-	case FFIII:
-		return config.III
-	case FFIV:
-		return config.IV
-	case FFV:
-		return config.V
-	default:
-		return config.VI
-
-	}
-}
-
-func GameToID(game config.Game) CfGameID {
-	switch game {
-	case config.I:
-		return IdFFI
-	case config.II:
-		return IdFFII
-	case config.III:
-		return IdFFIII
-	case config.IV:
-		return IdFFIV
-	case config.V:
-		return IdFFV
-	default:
-		return IdFFVI
-	}
-}
-
 func (c *client) GetFromMod(in *mods.Mod) (found bool, mod *mods.Mod, err error) {
 	if len(in.Games) == 0 {
 		err = errors.New("no games found for mod " + in.Name)
@@ -148,13 +45,13 @@ func (c *client) GetFromMod(in *mods.Mod) (found bool, mod *mods.Mod, err error)
 	}
 	var id uint64
 	if id, err = in.ModIdAsNumber(); err != nil {
-		err = fmt.Errorf("could not parse mod id %s for %s", in.ID, in.Name)
+		err = fmt.Errorf("could not parse mod id %s for %s", in.ModID, in.Name)
 		return
 	}
 	return c.get(fmt.Sprintf(getModDataByModID, id))
 }
 
-func (c *client) GetFromID(_ config.Game, id int) (found bool, mod *mods.Mod, err error) {
+func (c *client) GetFromID(_ config.GameDef, id int) (found bool, mod *mods.Mod, err error) {
 	return c.get(fmt.Sprintf(getModDataByModID, id))
 }
 
@@ -167,9 +64,12 @@ func (c *client) GetFromUrl(url string) (found bool, mod *mods.Mod, err error) {
 		err = errors.New("invalid url")
 		return
 	}
-	game := sp[1]
+	var game config.GameDef
+	if game, err = config.GameDefFromCfPath(config.CfPath(sp[1])); err != nil {
+		return
+	}
 	slug := sp[3]
-	return c.get(fmt.Sprintf(GetModsByGameIDAndName, CfGameToGameID(CfGame(game)), slug))
+	return c.get(fmt.Sprintf(GetModsByGameIDAndName, game.Remote.CurseForge.ID, slug))
 }
 
 func (c *client) get(url string) (found bool, mod *mods.Mod, err error) {
@@ -201,7 +101,7 @@ func (c *client) get(url string) (found bool, mod *mods.Mod, err error) {
 	return toMod(result.Data[0], desc, dls.Files)
 }
 
-func (c *client) GetNewestMods(game config.Game, lastID int) (result []*mods.Mod, err error) {
+func (c *client) GetNewestMods(game config.GameDef, lastID int) (result []*mods.Mod, err error) {
 	var (
 		b       []byte
 		dls     fileParent
@@ -209,7 +109,7 @@ func (c *client) GetNewestMods(game config.Game, lastID int) (result []*mods.Mod
 		desc    string
 		include bool
 	)
-	if b, err = sendRequest(fmt.Sprintf(getModsByGameID, GameToID(game))); err != nil {
+	if b, err = sendRequest(fmt.Sprintf(getModsByGameID, game.Remote.CurseForge.ID)); err != nil {
 		return
 	}
 	var data struct {
@@ -316,10 +216,15 @@ func sendRequest(url string) (response []byte, err error) {
 }
 
 func toMod(m cfMod, desc string, dls []CfFile) (include bool, mod *mods.Mod, err error) {
-	modID := fmt.Sprintf("%d", m.ModID)
-	game := CfGameIDToGame(m.Game)
+	var (
+		modID = fmt.Sprintf("%d", m.ModID)
+		game  config.GameDef
+	)
+	if game, err = config.GameDefFromCfID(m.Game); err != nil {
+		return
+	}
 	mod = &mods.Mod{
-		ID:           mods.NewModID(mods.CurseForge, modID),
+		ModID:        mods.NewModID(mods.CurseForge, modID),
 		Name:         m.Name,
 		Version:      m.Version(),
 		Description:  desc,
@@ -334,7 +239,7 @@ func toMod(m cfMod, desc string, dls []CfFile) (include bool, mod *mods.Mod, err
 			Kind: mods.CurseForge,
 		},
 		Games: []*mods.Game{{
-			Name:     config.GameToName(game),
+			ID:       game.ID,
 			Versions: nil,
 		}},
 		Downloadables:  make([]*mods.Download, len(dls)),
@@ -369,8 +274,8 @@ func toMod(m cfMod, desc string, dls []CfFile) (include bool, mod *mods.Mod, err
 			DownloadName: d.Name,
 			Dirs: []*mods.ModDir{
 				{
-					From:      string(mods.GameToInstallBaseDir(game)),
-					To:        string(mods.GameToInstallBaseDir(game)),
+					From:      string(game.BaseDir),
+					To:        string(game.BaseDir),
 					Recursive: true,
 				},
 			},
@@ -416,11 +321,11 @@ func removeFont(s string) string {
 	return s
 }
 
-func (c *client) Folder(game config.Game) string {
-	return filepath.Join(config.PWD, "remote", config.String(game), "cf")
+func (c *client) Folder(game config.GameDef) string {
+	return filepath.Join(config.PWD, "remote", string(game.ID), string(mods.CurseForge))
 }
 
-func (c *client) GetMods(game *config.Game) (result []*mods.Mod, err error) {
+func (c *client) GetMods(game *config.GameDef) (result []*mods.Mod, err error) {
 	if game == nil {
 		return nil, errors.New("GetMods called with a nil game")
 	}

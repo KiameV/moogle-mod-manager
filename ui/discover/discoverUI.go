@@ -53,7 +53,7 @@ func (ui *discoverUI) PreDraw(w fyne.Window, args ...interface{}) (err error) {
 
 	ui.mods = make([]*mods.Mod, 0, len(lookup))
 	for _, m := range lookup {
-		if _, ok = ui.localMods[m.ID]; !ok {
+		if _, ok = ui.localMods[m.ModID]; !ok {
 			ui.mods = append(ui.mods, m)
 		}
 	}

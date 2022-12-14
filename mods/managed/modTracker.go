@@ -30,28 +30,43 @@ const (
 	modTrackerName = "tracker.json"
 )
 
-type trackedModsForGame struct {
-	Game config.Game        `json:"game"`
-	Mods []*mods.TrackedMod `json:"mods"`
-}
+type (
+	gameMods struct {
+		Game config.GameDef                  `json:"game"`
+		Mods mods.ModLookup[mods.TrackedMod] `json:"mods"`
+	}
+)
 
-var lookup = make([]*trackedModsForGame, config.GameCount)
+var (
+	lookup = make(map[config.GameID]*gameMods)
+)
 
 func Initialize() (err error) {
+	games := config.GameDefs()
 	if err = util.LoadFromFile(filepath.Join(config.PWD, modTrackerName), &lookup); err != nil {
 		// first run
-		for i := range lookup {
-			lookup[i] = &trackedModsForGame{Game: config.Game(i)}
+		for _, game := range games {
+			lookup[game.ID] = &gameMods{
+				Game: game,
+				Mods: mods.NewModLookup(),
+			}
 		}
 		return saveToJson()
 	}
-	if len(lookup) != config.GameCount {
-		for i := len(lookup); i < config.GameCount; i++ {
-			lookup = append(lookup, &trackedModsForGame{Game: config.Game(i)})
+
+	if len(games) != len(lookup) {
+		for _, game := range games {
+			if _, found := lookup[game]; !found {
+				lookup[game.ID] = &gameMods{
+					Game: game,
+					Mods: mods.NewModLookup(),
+				}
+			}
 		}
 	}
-	for _, tms := range lookup {
-		for _, tm := range tms.Mods {
+
+	for _, gm := range lookup {
+		for _, tm := range gm.Mods.All() {
 			var mod *mods.Mod
 			if err = util.LoadFromFile(tm.MoogleModFile, &mod); err != nil {
 				return
@@ -62,7 +77,7 @@ func Initialize() (err error) {
 	return managed.InitializeManagedFiles()
 }
 
-func AddModFromFile(game config.Game, file string) (tm *mods.TrackedMod, err error) {
+func AddModFromFile(game config.GameDef, file string) (tm *mods.TrackedMod, err error) {
 	var mod *mods.Mod
 	if err = util.LoadFromFile(file, &mod); err != nil {
 		return
@@ -78,7 +93,7 @@ func AddModFromFile(game config.Game, file string) (tm *mods.TrackedMod, err err
 	return tm, saveToJson()
 }
 
-func AddModFromUrl(game config.Game, url string) (tm *mods.TrackedMod, err error) {
+func AddModFromUrl(game config.GameDef, url string) (tm *mods.TrackedMod, err error) {
 	var (
 		mod *mods.Mod
 		b   []byte
@@ -115,14 +130,14 @@ func AddModFromUrl(game config.Game, url string) (tm *mods.TrackedMod, err error
 	return tm, saveToJson()
 }
 
-func AddMod(game config.Game, tm *mods.TrackedMod) error {
+func AddMod(game config.GameDef, tm *mods.TrackedMod) error {
 	if err := addMod(game, tm); err != nil {
 		return err
 	}
 	return saveToJson()
 }
 
-func addMod(game config.Game, tm *mods.TrackedMod) (err error) {
+func addMod(game config.GameDef, tm *mods.TrackedMod) (err error) {
 	if err = tm.GetMod().Supports(game); err != nil {
 		return
 	}
@@ -131,7 +146,7 @@ func addMod(game config.Game, tm *mods.TrackedMod) (err error) {
 	i := int(game)
 	m := lookup[i]
 	for i = range m.Mods {
-		if m.Mods[i].Mod.ID == tm.Mod.ID {
+		if m.Mods[i].Mod.ID == tm.Mod.ModID {
 			return errors.New("mod already added")
 		}
 	}
@@ -144,7 +159,7 @@ func addMod(game config.Game, tm *mods.TrackedMod) (err error) {
 	return
 }
 
-func UpdateMod(game config.Game, tm *mods.TrackedMod) (err error) {
+func UpdateMod(game config.GameDef, tm *mods.TrackedMod) (err error) {
 	if err = tm.GetMod().Supports(game); err != nil {
 		return
 	}
@@ -164,11 +179,11 @@ func UpdateMod(game config.Game, tm *mods.TrackedMod) (err error) {
 	return saveToJson()
 }
 
-func GetMods(game config.Game) []*mods.TrackedMod {
+func GetMods(game config.GameDef) []*mods.TrackedMod {
 	return lookup[game].Mods
 }
 
-func GetEnabledMods(game config.Game) (result []*mods.TrackedMod) {
+func GetEnabledMods(game config.GameDef) (result []*mods.TrackedMod) {
 	for _, tm := range lookup[game].Mods {
 		if tm.Enabled {
 			result = append(result, tm)
@@ -177,7 +192,7 @@ func GetEnabledMods(game config.Game) (result []*mods.TrackedMod) {
 	return
 }
 
-func IsModEnabled(game config.Game, id mods.ModID) (mod *mods.TrackedMod, found bool, enabled bool) {
+func IsModEnabled(game config.GameDef, id mods.ModID) (mod *mods.TrackedMod, found bool, enabled bool) {
 	if mod, found = TryGetMod(game, id); found {
 		enabled = mod.Enabled
 	} else {
@@ -186,11 +201,11 @@ func IsModEnabled(game config.Game, id mods.ModID) (mod *mods.TrackedMod, found 
 	return
 }
 
-func TryGetMod(game config.Game, id mods.ModID) (*mods.TrackedMod, bool) {
+func TryGetMod(game config.GameDef, id mods.ModID) (*mods.TrackedMod, bool) {
 	var m *mods.TrackedMod
 	if gm := lookup[game]; gm != nil {
 		for _, m = range gm.Mods {
-			if m.Mod.ID == id {
+			if m.Mod.ModID == id {
 				return m, true
 			}
 		}
@@ -321,7 +336,7 @@ func decompress(from string, to string) error {
 	return err
 }
 
-func DisableMod(game config.Game, tm *mods.TrackedMod) (err error) {
+func DisableMod(game config.GameDef, tm *mods.TrackedMod) (err error) {
 	if err = canDisable(game, tm); err != nil {
 		return
 	}
@@ -332,7 +347,7 @@ func DisableMod(game config.Game, tm *mods.TrackedMod) (err error) {
 	return saveToJson()
 }
 
-func RemoveMod(game config.Game, tm *mods.TrackedMod) error {
+func RemoveMod(game config.GameDef, tm *mods.TrackedMod) error {
 	gm := lookup[game].Mods
 	for i, m := range gm {
 		if m.Mod.ID == tm.GetModID() {
@@ -387,10 +402,10 @@ func canInstall(enabler *mods.ModEnabler) error {
 	return nil
 }
 
-func canDisable(game config.Game, tm *mods.TrackedMod) error {
+func canDisable(game config.GameDef, tm *mods.TrackedMod) error {
 	var (
 		c  = tm.Mod.ModCompatibility
-		id = tm.Mod.ID
+		id = tm.Mod.ModID
 		mc *mods.ModCompat
 	)
 	for _, m := range lookup[game].Mods {

@@ -9,58 +9,79 @@ import (
 
 const moogleModName = "mod.moogle"
 
-func NewTrackerMod(mod *Mod, game config.Game) *TrackedMod {
-	tm := &TrackedMod{
-		Enabled: false,
-		Mod:     mod,
+type (
+	TrackedMod interface {
+		ID() ModID
+		Kind() Kind
+		Mod() *Mod
+		Enable()
+		Enabled() bool
+		Disable()
+		Toggle() bool
+		DirSuffix() string
+		Save() error
 	}
-	tm.MoogleModFile = filepath.Join(config.Get().GetModsFullPath(game), tm.GetDirSuffix(), moogleModName)
+	trackedMod struct {
+		IsEnabled     bool   `json:"Enabled"`
+		MoogleModFile string `json:"MoogleModFile"`
+		//Installed     []*InstalledDownload `json:"Installed"`
+		m           *Mod   `json:"-"`
+		UpdatedMod  *Mod   `json:"-"`
+		DisplayName string `json:"-"`
+	}
+)
+
+func (m *trackedMod) Enable() {
+	m.IsEnabled = true
+}
+
+func (m *trackedMod) Disable() {
+	m.IsEnabled = false
+}
+
+func NewTrackerMod(mod *Mod, game config.GameDef) TrackedMod {
+	tm := &trackedMod{
+		IsEnabled: false,
+		m:         mod,
+	}
+	tm.MoogleModFile = filepath.Join(config.Get().GetModsFullPath(game), tm.DirSuffix(), moogleModName)
 	return tm
 }
 
-type TrackedMod struct {
-	Enabled       bool   `json:"Enabled"`
-	MoogleModFile string `json:"MoogleModFile"`
-	//Installed     []*InstalledDownload `json:"Installed"`
-	Mod         *Mod   `json:"-"`
-	UpdatedMod  *Mod   `json:"-"`
-	DisplayName string `json:"-"`
+func (m *trackedMod) ID() ModID {
+	return m.ID()
 }
 
-func (m *TrackedMod) IsEnabled() bool {
-	return m.Enabled
+func (m *trackedMod) Kind() Kind {
+	return m.Kind()
 }
 
-func (m *TrackedMod) SetIsEnabled(isEnabled bool) {
-	m.Enabled = isEnabled
+func (m *trackedMod) Mod() *Mod {
+	return m.Mod()
 }
 
-func (m *TrackedMod) Toggle() bool {
-	m.Enabled = !m.Enabled
-	return m.Enabled
+func (m *trackedMod) Enabled() bool {
+	return m.IsEnabled
 }
 
-func (m *TrackedMod) GetModID() ModID {
-	return m.Mod.ID
+func (m *trackedMod) Toggle() bool {
+	m.IsEnabled = !m.IsEnabled
+	return m.IsEnabled
 }
 
-func (m *TrackedMod) GetDirSuffix() string {
-	switch m.Mod.ModKind.Kind {
+func (m *trackedMod) DirSuffix() string {
+	switch m.Kind() {
 	case Hosted:
-		return filepath.Join(util.CreateFileName(string(m.GetModID())), util.CreateFileName(m.Mod.Version))
+		return filepath.Join(util.CreateFileName(string(m.ID())), util.CreateFileName(m.Mod().Version))
 	case Nexus:
-		return filepath.Join(util.CreateFileName(string(m.GetModID())))
+		return filepath.Join(util.CreateFileName(string(m.ID())))
 	case CurseForge:
-		return filepath.Join(util.CreateFileName(string(m.GetModID())))
+		return filepath.Join(util.CreateFileName(string(m.ID())))
 	}
-	panic(fmt.Sprintf("unknown kind %v", m.Mod.ModKind.Kind))
+	panic(fmt.Sprintf("unknown kind %v", m.Kind()))
 }
 
-func (m *TrackedMod) GetMod() *Mod {
-	return m.Mod
-}
-
-func (m *TrackedMod) Save() error {
+func (m *trackedMod) Save() error {
 	return util.SaveToFile(m.MoogleModFile, m.Mod)
 }
 
