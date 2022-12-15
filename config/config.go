@@ -2,6 +2,7 @@ package config
 
 import (
 	"errors"
+	"fmt"
 	"fyne.io/fyne/v2"
 	"github.com/kiamev/moogle-mod-manager/util"
 	"os"
@@ -13,7 +14,9 @@ const configsFile = "configs.json"
 
 var (
 	PWD     string
-	configs = &Configs{}
+	configs = &Configs{
+		GameDirs: make(map[string]*GameDir),
+	}
 )
 
 const (
@@ -42,26 +45,23 @@ const (
 	LightThemeColor
 )
 
-type Configs struct {
-	FirstTime   bool       `json:"firstTime"`
-	WindowX     int        `json:"width"`
-	WindowY     int        `json:"height"`
-	DirI        string     `json:"dir1"`
-	DirII       string     `json:"dir2"`
-	DirIII      string     `json:"dir3"`
-	DirIV       string     `json:"dir4"`
-	DirV        string     `json:"dir5"`
-	DirVI       string     `json:"dir6"`
-	DirChrCrs   string     `json:"chrCrs"`
-	DirBofIII   string     `json:"bof3"`
-	DirBofIV    string     `json:"bof4"`
-	ModsDir     string     `json:"modDir"`
-	ImgCacheDir string     `json:"imgCacheDir"`
-	DownloadDir string     `json:"downloadDir"`
-	BackupDir   string     `json:"backupDir"`
-	Theme       ThemeColor `json:"theme"`
-	DefaultGame string     `json:"openTo"`
-}
+type (
+	GameDir struct {
+		Dir string `json:"dir"`
+	}
+	Configs struct {
+		FirstTime   bool                `json:"firstTime"`
+		WindowX     int                 `json:"width"`
+		WindowY     int                 `json:"height"`
+		ModsDir     string              `json:"modDir"`
+		ImgCacheDir string              `json:"imgCacheDir"`
+		DownloadDir string              `json:"downloadDir"`
+		BackupDir   string              `json:"backupDir"`
+		Theme       ThemeColor          `json:"theme"`
+		DefaultGame string              `json:"openTo"`
+		GameDirs    map[string]*GameDir `json:"gameDirs"`
+	}
+)
 
 func Get() *Configs {
 	return configs
@@ -79,7 +79,7 @@ func (c *Configs) Size() fyne.Size {
 }
 
 func (c *Configs) GetModsFullPath(game GameDef) string {
-	return filepath.Join(c.ModsDir, string(game.ID))
+	return filepath.Join(c.ModsDir, string(game.ID()))
 }
 
 func (c *Configs) GetDownloadFullPathForUtility() string {
@@ -87,11 +87,11 @@ func (c *Configs) GetDownloadFullPathForUtility() string {
 }
 
 func (c *Configs) GetDownloadFullPathForGame(game GameDef) string {
-	return filepath.Join(c.DownloadDir, string(game.ID))
+	return filepath.Join(c.DownloadDir, string(game.ID()))
 }
 
 func (c *Configs) GetBackupFullPath(game GameDef) string {
-	return filepath.Join(c.BackupDir, string(game.ID))
+	return filepath.Join(c.BackupDir, string(game.ID()))
 }
 
 func (c *Configs) AddDir(game GameDef, dirKind DirKind, from string) (string, error) {
@@ -116,7 +116,11 @@ func (c *Configs) GetDir(game GameDef, dirKind DirKind) (dir string, err error) 
 	case BackupDirKind:
 		dir = c.GetBackupFullPath(game)
 	case GameDirKind:
-		dir = game.InstallDir
+		if gd, ok := c.GameDirs[string(game.ID())]; !ok {
+			err = fmt.Errorf("game dir not found for %v", game.ID())
+		} else {
+			dir = gd.Dir
+		}
 	default:
 		err = errors.New("unknown dir kind")
 	}
@@ -134,12 +138,16 @@ func (c *Configs) RemoveDir(game GameDef, dirKind DirKind, from string) (string,
 	return strings.TrimPrefix(from, "/"), nil
 }
 
-func (c *Configs) RemoveGameDir(game GameDef, to string) string {
-	dir := game.InstallDir
+func (c *Configs) RemoveGameDir(game GameDef, to string) (string, error) {
+	gd, ok := c.GameDirs[string(game.ID())]
+	if !ok {
+		return "", fmt.Errorf("game dir not found for %v", game.ID())
+	}
+	dir := gd.Dir
 	dir = strings.ReplaceAll(dir, "\\", "/")
 	to = strings.ReplaceAll(to, "\\", "/")
 	to = strings.TrimPrefix(to, dir)
-	return strings.TrimPrefix(to, "/")
+	return strings.TrimPrefix(to, "/"), nil
 }
 
 func (c *Configs) Initialize() (err error) {

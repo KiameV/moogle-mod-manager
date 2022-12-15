@@ -18,7 +18,7 @@ const (
 )
 
 var (
-	CurrentGame *config.GameDef
+	CurrentGame config.GameDef
 	App         fyne.App
 	Window      fyne.Window
 	popupWindow fyne.Window

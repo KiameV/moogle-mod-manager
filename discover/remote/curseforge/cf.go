@@ -69,7 +69,7 @@ func (c *client) GetFromUrl(url string) (found bool, mod *mods.Mod, err error) {
 		return
 	}
 	slug := sp[3]
-	return c.get(fmt.Sprintf(GetModsByGameIDAndName, game.Remote.CurseForge.ID, slug))
+	return c.get(fmt.Sprintf(GetModsByGameIDAndName, game.Remote().CurseForge.ID, slug))
 }
 
 func (c *client) get(url string) (found bool, mod *mods.Mod, err error) {
@@ -109,7 +109,7 @@ func (c *client) GetNewestMods(game config.GameDef, lastID int) (result []*mods.
 		desc    string
 		include bool
 	)
-	if b, err = sendRequest(fmt.Sprintf(getModsByGameID, game.Remote.CurseForge.ID)); err != nil {
+	if b, err = sendRequest(fmt.Sprintf(getModsByGameID, game.Remote().CurseForge.ID)); err != nil {
 		return
 	}
 	var data struct {
@@ -223,7 +223,7 @@ func toMod(m cfMod, desc string, dls []CfFile) (include bool, mod *mods.Mod, err
 	if game, err = config.GameDefFromCfID(m.Game); err != nil {
 		return
 	}
-	mod = &mods.Mod{
+	mod = mods.NewMod(&mods.ModDef{
 		ModID:        mods.NewModID(mods.CurseForge, modID),
 		Name:         m.Name,
 		Version:      m.Version(),
@@ -239,14 +239,14 @@ func toMod(m cfMod, desc string, dls []CfFile) (include bool, mod *mods.Mod, err
 			Kind: mods.CurseForge,
 		},
 		Games: []*mods.Game{{
-			ID:       game.ID,
+			ID:       game.ID(),
 			Versions: nil,
 		}},
 		Downloadables:  make([]*mods.Download, len(dls)),
 		DonationLinks:  nil,
 		AlwaysDownload: nil,
 		Configurations: nil,
-	}
+	})
 	if len(m.Category) > 0 {
 		if mod.Category, err = m.Category[0].toCategory(); err != nil {
 			return
@@ -274,8 +274,8 @@ func toMod(m cfMod, desc string, dls []CfFile) (include bool, mod *mods.Mod, err
 			DownloadName: d.Name,
 			Dirs: []*mods.ModDir{
 				{
-					From:      string(game.BaseDir),
-					To:        string(game.BaseDir),
+					From:      string(game.BaseDir()),
+					To:        string(game.BaseDir()),
 					Recursive: true,
 				},
 			},
@@ -322,14 +322,14 @@ func removeFont(s string) string {
 }
 
 func (c *client) Folder(game config.GameDef) string {
-	return filepath.Join(config.PWD, "remote", string(game.ID), string(mods.CurseForge))
+	return filepath.Join(config.PWD, "remote", string(game.ID()), string(mods.CurseForge))
 }
 
-func (c *client) GetMods(game *config.GameDef) (result []*mods.Mod, err error) {
+func (c *client) GetMods(game config.GameDef) (result []*mods.Mod, err error) {
 	if game == nil {
 		return nil, errors.New("GetMods called with a nil game")
 	}
-	dir := c.Folder(*game)
+	dir := c.Folder(game)
 	_ = os.MkdirAll(dir, 0777)
 	if err = filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
@@ -349,5 +349,5 @@ func (c *client) GetMods(game *config.GameDef) (result []*mods.Mod, err error) {
 	}); err != nil {
 		return
 	}
-	return c.compiler.AppendNewMods(c.Folder(*game), *game, result)
+	return c.compiler.AppendNewMods(c.Folder(game), game, result)
 }

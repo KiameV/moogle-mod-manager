@@ -11,6 +11,11 @@ import (
 	"strings"
 )
 
+func FileExists(file string) bool {
+	_, err := os.Stat(file)
+	return err == nil
+}
+
 func CreateFileName(s string) string {
 	if reg, err := regexp.Compile("[^a-zA-Z0-9]+"); err == nil {
 		s = strings.TrimSpace(reg.ReplaceAllString(s, ""))
@@ -21,11 +26,10 @@ func CreateFileName(s string) string {
 	return strings.Trim(base64.StdEncoding.EncodeToString([]byte(s)), "=")
 }
 
-func LoadFromFile(file string, i interface{}) error {
+func LoadFromFile(file string, i interface{}) (err error) {
 	var (
 		b   []byte
 		ext = filepath.Ext(file)
-		err error
 	)
 	if _, err = os.Stat(file); err != nil {
 		return err
@@ -35,16 +39,13 @@ func LoadFromFile(file string, i interface{}) error {
 	}
 	switch ext {
 	case ".json", ".moogle":
-		err = json.Unmarshal(b, &i)
+		err = json.Unmarshal(b, i)
 	case ".xml":
-		err = xml.Unmarshal(b, &i)
+		err = xml.Unmarshal(b, i)
 	default:
 		return fmt.Errorf("unknown file extension: %s", file)
 	}
-	if err = json.Unmarshal(b, i); err != nil {
-		return fmt.Errorf("failed to unmarshal %s: %v", file, err)
-	}
-	return nil
+	return
 }
 
 func SaveToFile(file string, i interface{}, endFileChar ...byte) (err error) {

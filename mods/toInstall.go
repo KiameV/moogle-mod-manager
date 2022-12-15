@@ -47,7 +47,7 @@ func NewToInstallForMod(kind Kind, mod *Mod, downloadFiles []*DownloadFiles) (re
 	return
 }
 
-func (ti *ToInstall) GetDownloadLocation(game config.GameDef, tm *TrackedMod) (string, error) {
+func (ti *ToInstall) GetDownloadLocation(game config.GameDef, tm TrackedMod) (string, error) {
 	switch ti.kind {
 	case Hosted:
 		return ti.getHostedDownloadLocation(game, tm)
@@ -57,7 +57,7 @@ func (ti *ToInstall) GetDownloadLocation(game config.GameDef, tm *TrackedMod) (s
 	panic(fmt.Sprintf("unknown kind %v", ti.kind))
 }
 
-func (ti *ToInstall) getHostedDownloadLocation(game config.GameDef, tm *TrackedMod) (string, error) {
+func (ti *ToInstall) getHostedDownloadLocation(game config.GameDef, tm TrackedMod) (string, error) {
 	if ti.downloadDir == "" {
 		var (
 			v = ti.Download.Version
@@ -71,7 +71,7 @@ func (ti *ToInstall) getHostedDownloadLocation(game config.GameDef, tm *TrackedM
 		} else {
 			ti.downloadDir = config.Get().GetDownloadFullPathForGame(game)
 		}
-		ti.downloadDir = filepath.Join(ti.downloadDir, tm.GetDirSuffix(), util.CreateFileName(v))
+		ti.downloadDir = filepath.Join(ti.downloadDir, tm.DirSuffix(), util.CreateFileName(v))
 		if err := createPath(ti.downloadDir); err != nil {
 			return "", err
 		}
@@ -79,9 +79,9 @@ func (ti *ToInstall) getHostedDownloadLocation(game config.GameDef, tm *TrackedM
 	return ti.downloadDir, nil
 }
 
-func (ti *ToInstall) getRemoteDownloadLocation(game config.GameDef, tm *TrackedMod) (string, error) {
+func (ti *ToInstall) getRemoteDownloadLocation(game config.GameDef, tm TrackedMod) (string, error) {
 	if ti.downloadDir == "" {
-		ti.downloadDir = filepath.Join(config.Get().GetDownloadFullPathForGame(game), tm.GetDirSuffix(), util.CreateFileName(ti.Download.Version))
+		ti.downloadDir = filepath.Join(config.Get().GetDownloadFullPathForGame(game), tm.DirSuffix(), util.CreateFileName(ti.Download.Version))
 		if err := createPath(ti.downloadDir); err != nil {
 			return "", err
 		}

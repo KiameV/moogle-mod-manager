@@ -19,13 +19,13 @@ import (
 	"github.com/kiamev/moogle-mod-manager/ui/state"
 	"github.com/kiamev/moogle-mod-manager/ui/util"
 	"github.com/kiamev/moogle-mod-manager/ui/util/resources"
-	"io/ioutil"
+	"os"
 )
 
 func main() {
 	defer func() {
 		if err := recover(); err != nil {
-			_ = ioutil.WriteFile("log.txt", []byte(err.(string)), 0644)
+			_ = os.WriteFile("log.txt", []byte(err.(string)), 0644)
 		}
 	}()
 
@@ -97,7 +97,8 @@ func main() {
 		configure.Show(state.Window)
 	}
 
-	if state.SetCurrentGameFromString(config.Get().DefaultGame) {
+	if game, err := config.GameDefFromID(config.GameID(config.Get().DefaultGame)); err == nil {
+		state.CurrentGame = game
 		state.ShowScreen(state.LocalMods)
 	}
 
@@ -106,12 +107,6 @@ func main() {
 
 func initialize() {
 	var err error
-	if err = managed.Initialize(); err != nil {
-		util.ShowErrorLong(err)
-	}
-	if err = authored.Initialize(); err != nil {
-		util.ShowErrorLong(err)
-	}
 	config.GetSecrets().Initialize()
 
 	if err = repo.Initialize(); err != nil {
@@ -133,13 +128,18 @@ func initialize() {
 		util.ShowErrorLong(err)
 	}
 
-	for _, dir := range repo.Dirs() {
-		if err = config.Initialize(dir); err != nil {
-			util.ShowErrorLong(err)
-		}
+	if err = config.Initialize(repo.Dirs()); err != nil {
+		util.ShowErrorLong(err)
 	}
 
-	resources.Initialize(config.GameDefs)
+	if err = managed.Initialize(config.GameDefs()); err != nil {
+		util.ShowErrorLong(err)
+	}
+	if err = authored.Initialize(); err != nil {
+		util.ShowErrorLong(err)
+	}
+
+	resources.Initialize(config.GameDefs())
 	if resources.Icon != nil {
 		state.Window.SetIcon(resources.Icon)
 	}

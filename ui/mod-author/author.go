@@ -83,24 +83,24 @@ func (a *ModAuthorer) OnClose() {
 
 func (a *ModAuthorer) NewHostedMod() {
 	a.modID = ""
-	a.updateEntries(&mods.Mod{
+	a.updateEntries(mods.NewMod(&mods.ModDef{
 		ModKind: mods.ModKind{
 			Kind: mods.Hosted,
 		},
 		ReleaseDate:         time.Now().Format("Jan 02 2006"),
 		ConfigSelectionType: mods.Auto,
-	})
+	}))
 }
 
 func (a *ModAuthorer) NewNexusMod() {
 	a.modID = ""
-	a.updateEntries(&mods.Mod{
+	a.updateEntries(mods.NewMod(&mods.ModDef{
 		ModKind: mods.ModKind{
 			Kind: mods.Nexus,
 		},
 		ReleaseDate:         time.Now().Format("Jan 02 2006"),
 		ConfigSelectionType: mods.Auto,
-	})
+	}))
 
 	e := widget.NewEntry()
 	d := dialog.NewForm("", "Ok", "Cancel", []*widget.FormItem{widget.NewFormItem("Link", e)},
@@ -122,13 +122,13 @@ func (a *ModAuthorer) NewNexusMod() {
 
 func (a *ModAuthorer) NewCurseForgeMod() {
 	a.modID = ""
-	a.updateEntries(&mods.Mod{
+	a.updateEntries(mods.NewMod(&mods.ModDef{
 		ModKind: mods.ModKind{
 			Kind: mods.CurseForge,
 		},
 		ReleaseDate:         time.Now().Format("Jan 02 2006"),
 		ConfigSelectionType: mods.Auto,
-	})
+	}))
 
 	e := widget.NewEntry()
 	d := dialog.NewForm("", "Ok", "Cancel", []*widget.FormItem{widget.NewFormItem("Link", e)},
@@ -383,7 +383,7 @@ func (a *ModAuthorer) Marshal(mod *mods.Mod, as As) (b []byte, err error) {
 }
 
 func (a *ModAuthorer) compileMod() (m *mods.Mod) {
-	m = &mods.Mod{
+	m = mods.NewMod(&mods.ModDef{
 		Name:         a.getString("Name"),
 		Author:       a.getString("Author"),
 		ReleaseDate:  a.getString("Release Date"),
@@ -404,7 +404,7 @@ func (a *ModAuthorer) compileMod() (m *mods.Mod) {
 		DonationLinks:       a.donationsDef.compile(),
 		Games:               a.gamesDef.compile(),
 		IsManuallyCreated:   true,
-	}
+	})
 
 	switch *a.kind {
 	case mods.Hosted:

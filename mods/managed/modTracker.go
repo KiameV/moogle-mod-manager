@@ -30,54 +30,40 @@ const (
 	modTrackerName = "tracker.json"
 )
 
-type (
-	gameMods struct {
-		Game config.GameDef                  `json:"game"`
-		Mods mods.ModLookup[mods.TrackedMod] `json:"mods"`
-	}
-)
-
 var (
-	lookup = make(map[config.GameID]*gameMods)
+	lookup = newGameModLookup()
 )
 
-func Initialize() (err error) {
-	games := config.GameDefs()
+func Initialize(games []config.GameDef) (err error) {
 	if err = util.LoadFromFile(filepath.Join(config.PWD, modTrackerName), &lookup); err != nil {
 		// first run
 		for _, game := range games {
-			lookup[game.ID] = &gameMods{
-				Game: game,
-				Mods: mods.NewModLookup(),
-			}
+			lookup.Set(game)
 		}
 		return saveToJson()
 	}
 
-	if len(games) != len(lookup) {
+	if len(games) != lookup.Len() {
 		for _, game := range games {
-			if _, found := lookup[game]; !found {
-				lookup[game.ID] = &gameMods{
-					Game: game,
-					Mods: mods.NewModLookup(),
-				}
+			if !lookup.Has(game) {
+				lookup.Set(game)
 			}
 		}
 	}
 
-	for _, gm := range lookup {
-		for _, tm := range gm.Mods.All() {
+	for _, game := range games {
+		for _, tm := range lookup.GetMods(game) {
 			var mod *mods.Mod
-			if err = util.LoadFromFile(tm.MoogleModFile, &mod); err != nil {
+			if err = util.LoadFromFile(tm.MoogleModFile(), &mod); err != nil {
 				return
 			}
-			tm.Mod = mod
+			tm.SetMod(mod)
 		}
 	}
 	return managed.InitializeManagedFiles()
 }
 
-func AddModFromFile(game config.GameDef, file string) (tm *mods.TrackedMod, err error) {
+func AddModFromFile(game config.GameDef, file string) (tm mods.TrackedMod, err error) {
 	var mod *mods.Mod
 	if err = util.LoadFromFile(file, &mod); err != nil {
 		return
@@ -93,7 +79,7 @@ func AddModFromFile(game config.GameDef, file string) (tm *mods.TrackedMod, err 
 	return tm, saveToJson()
 }
 
-func AddModFromUrl(game config.GameDef, url string) (tm *mods.TrackedMod, err error) {
+func AddModFromUrl(game config.GameDef, url string) (tm mods.TrackedMod, err error) {
 	var (
 		mod *mods.Mod
 		b   []byte
@@ -130,87 +116,80 @@ func AddModFromUrl(game config.GameDef, url string) (tm *mods.TrackedMod, err er
 	return tm, saveToJson()
 }
 
-func AddMod(game config.GameDef, tm *mods.TrackedMod) error {
+func AddMod(game config.GameDef, tm mods.TrackedMod) error {
 	if err := addMod(game, tm); err != nil {
 		return err
 	}
 	return saveToJson()
 }
 
-func addMod(game config.GameDef, tm *mods.TrackedMod) (err error) {
-	if err = tm.GetMod().Supports(game); err != nil {
+func addMod(game config.GameDef, tm mods.TrackedMod) (err error) {
+	if err = tm.Mod().Supports(game); err != nil {
 		return
 	}
 
-	tm.Enabled = false
-	i := int(game)
-	m := lookup[i]
-	for i = range m.Mods {
-		if m.Mods[i].Mod.ID == tm.Mod.ModID {
-			return errors.New("mod already added")
-		}
+	//tm.Disable()
+	if lookup.HasMod(game, tm) {
+		return errors.New("mod already added")
 	}
 
 	if err = saveMoogle(tm); err != nil {
 		return
 	}
 
-	m.Mods = append(m.Mods, tm)
+	lookup.SetMod(game, tm)
 	return
 }
 
-func UpdateMod(game config.GameDef, tm *mods.TrackedMod) (err error) {
-	if err = tm.GetMod().Supports(game); err != nil {
+func UpdateMod(game config.GameDef, tm mods.TrackedMod) (err error) {
+	if tm.UpdatedMod() == nil {
+		return errors.New("no update available")
+	}
+
+	if err = tm.Mod().Supports(game); err != nil {
 		return
 	}
 
-	if tm.IsEnabled() {
+	if tm.Enabled() {
 		if err = DisableMod(game, tm); err != nil {
 			return
 		}
 	}
 
-	tm.Mod = tm.UpdatedMod
+	tm.SetMod(tm.UpdatedMod())
 	if err = saveMoogle(tm); err != nil {
 		return
 	}
 
-	tm.UpdatedMod = nil
+	tm.SetUpdatedMod(nil)
 	return saveToJson()
 }
 
-func GetMods(game config.GameDef) []*mods.TrackedMod {
-	return lookup[game].Mods
+func GetMods(game config.GameDef) []mods.TrackedMod {
+	return lookup.GetMods(game)
 }
 
-func GetEnabledMods(game config.GameDef) (result []*mods.TrackedMod) {
-	for _, tm := range lookup[game].Mods {
-		if tm.Enabled {
+func GetEnabledMods(game config.GameDef) (result []mods.TrackedMod) {
+	for _, tm := range lookup.GetMods(game) {
+		if tm.Enabled() {
 			result = append(result, tm)
 		}
 	}
 	return
 }
 
-func IsModEnabled(game config.GameDef, id mods.ModID) (mod *mods.TrackedMod, found bool, enabled bool) {
+func IsModEnabled(game config.GameDef, id mods.ModID) (mod mods.TrackedMod, found bool, enabled bool) {
 	if mod, found = TryGetMod(game, id); found {
-		enabled = mod.Enabled
+		enabled = mod.Enabled()
 	} else {
 		mod = nil
 	}
 	return
 }
 
-func TryGetMod(game config.GameDef, id mods.ModID) (*mods.TrackedMod, bool) {
-	var m *mods.TrackedMod
-	if gm := lookup[game]; gm != nil {
-		for _, m = range gm.Mods {
-			if m.Mod.ModID == id {
-				return m, true
-			}
-		}
-	}
-	return nil, false
+func TryGetMod(game config.GameDef, id mods.ModID) (m mods.TrackedMod, found bool) {
+	m, found = lookup.GetModByID(game, id)
+	return
 }
 
 func EnableMod(enabler *mods.ModEnabler) (err error) {
@@ -225,10 +204,10 @@ func enableMod(enabler *mods.ModEnabler, err error) {
 		game    = enabler.Game
 		tm      = enabler.TrackedMod
 		tis     = enabler.ToInstall
-		modPath = filepath.Join(config.Get().GetModsFullPath(game), tm.GetDirSuffix())
+		modPath = filepath.Join(config.Get().GetModsFullPath(game), tm.DirSuffix())
 	)
 	if err != nil {
-		tm.Enabled = false
+		tm.Disable()
 		enabler.DoneCallback(mods.Error, err)
 		return
 	}
@@ -237,10 +216,10 @@ func enableMod(enabler *mods.ModEnabler, err error) {
 	for _, ti := range tis {
 		var (
 			to   = filepath.Join(modPath, ti.Download.Name)
-			kind = tm.Mod.ModKind.Kind
+			kind = tm.Kind()
 		)
 		if err = decompress(*ti.Download.DownloadedArchiveLocation, to); err != nil {
-			tm.Enabled = false
+			tm.Disable()
 			enabler.DoneCallback(mods.Error, err)
 			return
 		}
@@ -248,13 +227,13 @@ func enableMod(enabler *mods.ModEnabler, err error) {
 			var fi os.FileInfo
 			sa := filepath.Join(to, "StreamingAssets")
 			if fi, err = os.Stat(sa); err == nil && fi.IsDir() {
-				newTo := filepath.Join(to, string(mods.GameToInstallBaseDir(game)))
+				newTo := filepath.Join(to, string(game.BaseDir()))
 				_ = os.MkdirAll(newTo, 0777)
 				_ = os.Rename(sa, filepath.Join(newTo, "StreamingAssets"))
-			} else if !tm.Mod.IsManuallyCreated {
-				dir := filepath.Join(to, string(mods.GameToInstallBaseDir(enabler.Game)))
+			} else if !tm.Mod().IsManuallyCreated {
+				dir := filepath.Join(to, string(game.BaseDir()))
 				if _, err = os.Stat(dir); err != nil {
-					tm.Enabled = false
+					tm.Disable()
 					enabler.DoneCallback(mods.Error, errors.New("unsupported nexus mod"))
 					return
 				}
@@ -265,13 +244,13 @@ func enableMod(enabler *mods.ModEnabler, err error) {
 	for _, ti := range tis {
 		files.AddModFiles(enabler, ti.DownloadFiles, func(result mods.Result, err ...error) {
 			if result == mods.Error || result == mods.Cancel {
-				tm.Enabled = false
+				tm.Disable()
 			} else {
-				tm.Enabled = true
+				tm.Enable()
 				// Find any mods that are now disabled because all the files have been replaced by other mods
 				for _, mod := range GetEnabledMods(enabler.Game) {
-					if !managed.HasManagedFiles(enabler.Game, mod.GetModID()) {
-						mod.Enabled = false
+					if !managed.HasManagedFiles(enabler.Game, mod.ID()) {
+						mod.Disable()
 					}
 				}
 				_ = saveToJson()
@@ -336,65 +315,54 @@ func decompress(from string, to string) error {
 	return err
 }
 
-func DisableMod(game config.GameDef, tm *mods.TrackedMod) (err error) {
+func DisableMod(game config.GameDef, tm mods.TrackedMod) (err error) {
 	if err = canDisable(game, tm); err != nil {
 		return
 	}
 	if err = files.RemoveModFiles(game, tm); err != nil {
 		return
 	}
-	tm.Enabled = false
+	tm.Disable()
 	return saveToJson()
 }
 
-func RemoveMod(game config.GameDef, tm *mods.TrackedMod) error {
-	gm := lookup[game].Mods
-	for i, m := range gm {
-		if m.Mod.ID == tm.GetModID() {
-			if m.Enabled {
-				if err := files.RemoveModFiles(game, tm); err != nil {
-					return errors.New("failed to disable mod")
-				}
-			}
-			lookup[game].Mods = append(gm[:i], gm[i+1:]...)
-			return saveToJson()
-		}
-	}
-	return fmt.Errorf("failed to find %s", tm.Mod.Name)
+func RemoveMod(game config.GameDef, tm mods.TrackedMod) error {
+	lookup.RemoveMod(game, tm)
+	return nil
 }
 
 func saveToJson() error {
 	return util.SaveToFile(filepath.Join(config.PWD, modTrackerName), &lookup)
 }
 
-func saveMoogle(tm *mods.TrackedMod) (err error) {
+func saveMoogle(tm mods.TrackedMod) (err error) {
 	return tm.Save()
 }
 
 func canInstall(enabler *mods.ModEnabler) error {
 	var (
 		tm      = enabler.TrackedMod
-		c       = tm.Mod.ModCompatibility
+		c       = tm.Mod().ModCompatibility
 		mc      *mods.ModCompat
-		mod     *mods.TrackedMod
+		mod     mods.TrackedMod
 		found   bool
 		enabled bool
 	)
 	if c != nil {
 		if len(c.Forbids) > 0 {
 			for _, mc = range c.Forbids {
-				if mod, found, enabled = IsModEnabled(*state.CurrentGame, mc.ModID()); found && enabled {
-					return fmt.Errorf("[%s] cannot be enabled because [%s] is enabled", tm.DisplayName, mod.DisplayName)
+				if mod, found, enabled = IsModEnabled(state.CurrentGame, mc.ModID()); found && enabled {
+					return fmt.Errorf("[%s] cannot be enabled because [%s] is enabled", tm.DisplayName(), mod.DisplayName())
 				}
 			}
 		}
 		if len(c.Requires) > 0 {
 			for _, mc = range c.Requires {
-				mod, found, enabled = IsModEnabled(*state.CurrentGame, mc.ModID())
+				mod, found, enabled = IsModEnabled(state.CurrentGame, mc.ModID())
 				if !found {
-					return fmt.Errorf("[%s] cannot be enabled because [%s] is not enabled", tm.DisplayName, mc.ModID())
+					return fmt.Errorf("[%s] cannot be enabled because [%s] is not enabled", tm.DisplayName(), mc.ModID())
 				} else if !enabled {
-					return fmt.Errorf("[%s] cannot be enabled because [%s] is not enabled", tm.DisplayName, mod.DisplayName)
+					return fmt.Errorf("[%s] cannot be enabled because [%s] is not enabled", tm.DisplayName(), mod.DisplayName())
 				}
 			}
 		}
@@ -402,20 +370,19 @@ func canInstall(enabler *mods.ModEnabler) error {
 	return nil
 }
 
-func canDisable(game config.GameDef, tm *mods.TrackedMod) error {
+func canDisable(game config.GameDef, tm mods.TrackedMod) error {
 	var (
-		c  = tm.Mod.ModCompatibility
-		id = tm.Mod.ModID
+		c  = tm.Mod().ModCompatibility
+		id = tm.Mod().ModID
 		mc *mods.ModCompat
 	)
-	for _, m := range lookup[game].Mods {
-		if m != tm && m.Enabled {
-			c = m.Mod.ModCompatibility
-			if c != nil {
+	for _, m := range lookup.GetMods(game) {
+		if m.ID() != tm.ID() && m.Enabled() {
+			if c = m.Mod().ModCompatibility; c != nil {
 				if len(c.Requires) > 0 {
 					for _, mc = range c.Requires {
 						if mc.ModID() == id {
-							return fmt.Errorf("[%s] cannot be disabled because [%s] is enabled", tm.DisplayName, m.DisplayName)
+							return fmt.Errorf("[%s] cannot be disabled because [%s] is enabled", tm.DisplayName(), m.DisplayName())
 						}
 					}
 				}

@@ -13,13 +13,13 @@ import (
 )
 
 type ModPreviewOptions struct {
-	UpdateCallback func(mod *mods.TrackedMod)
-	TrackedMod     *mods.TrackedMod
+	UpdateCallback func(mod mods.TrackedMod)
+	TrackedMod     mods.TrackedMod
 }
 
 func CreatePreview(mod *mods.Mod, options ...ModPreviewOptions) fyne.CanvasObject {
 	c := container.NewVBox()
-	if len(options) > 0 && options[0].UpdateCallback != nil && options[0].TrackedMod != nil && options[0].TrackedMod.UpdatedMod != nil {
+	if len(options) > 0 && options[0].UpdateCallback != nil && options[0].TrackedMod != nil && options[0].TrackedMod.UpdatedMod() != nil {
 		c.Add(widget.NewButton("Update", func() {
 			options[0].UpdateCallback(options[0].TrackedMod)
 		}))
@@ -46,7 +46,7 @@ func CreatePreview(mod *mods.Mod, options ...ModPreviewOptions) fyne.CanvasObjec
 	if mod.ModCompatibility != nil && mod.ModCompatibility.HasItems() {
 		if len(mod.Games) > 0 {
 			if game, err := config.GameDefFromID(mod.Games[0].ID); err == nil {
-				tabs.Append(container.NewTabItem("Compatibility", createCompatibility(&game, mod.ModCompatibility)))
+				tabs.Append(container.NewTabItem("Compatibility", createCompatibility(game, mod.ModCompatibility)))
 			}
 		}
 	}
@@ -79,7 +79,7 @@ func createLink(name, value string) *fyne.Container {
 	)
 }
 
-func createCompatibility(game *config.GameDef, compatibility *mods.ModCompatibility) fyne.CanvasObject {
+func createCompatibility(game config.GameDef, compatibility *mods.ModCompatibility) fyne.CanvasObject {
 	var (
 		c = container.NewVBox(
 			widget.NewLabelWithStyle("Compatibility", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
@@ -92,7 +92,7 @@ func createCompatibility(game *config.GameDef, compatibility *mods.ModCompatibil
 	if len(compatibility.Requires) > 0 {
 		c.Add(widget.NewLabelWithStyle("  Requires", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}))
 		for _, r := range compatibility.Requires {
-			name, err = discover.GetDisplayName(*game, r.ModID())
+			name, err = discover.GetDisplayName(game, r.ModID())
 			if err != nil {
 				util.ShowErrorLong(err)
 			}
@@ -104,7 +104,7 @@ func createCompatibility(game *config.GameDef, compatibility *mods.ModCompatibil
 	if len(compatibility.Forbids) > 0 {
 		c.Add(widget.NewLabelWithStyle("  Forbids", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}))
 		for _, r := range compatibility.Forbids {
-			name, err = discover.GetDisplayName(*game, r.ModID())
+			name, err = discover.GetDisplayName(game, r.ModID())
 			if err != nil {
 				util.ShowErrorLong(err)
 			}

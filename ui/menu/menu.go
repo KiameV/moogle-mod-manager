@@ -110,8 +110,8 @@ Contributors:
 			fyne.NewMenuItem("Edit Current Mod", func() {
 				if state.GetCurrentGUI() == state.LocalMods {
 					if tm := state.GetScreen(state.LocalMods).(local.LocalUI).GetSelected(); tm != nil {
-						state.GetScreen(state.ModAuthor).(*a.ModAuthorer).EditMod(tm.Mod, func(mod *mods.Mod) {
-							tm.Mod = mod
+						state.GetScreen(state.ModAuthor).(*a.ModAuthorer).EditMod(tm.Mod(), func(mod *mods.Mod) {
+							tm.SetMod(mod)
 							if err := tm.Save(); err != nil {
 								util.ShowErrorLong(err)
 							}

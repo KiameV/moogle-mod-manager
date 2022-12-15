@@ -30,7 +30,7 @@ func (_ *nexusConfirmer) ConfirmDownload(enabler *mods.ModEnabler, competeCallba
 	for _, ti := range enabler.ToInstall {
 		if ti.Download != nil {
 			dl := toDownload{
-				uri: fmt.Sprintf(nexus.NexusFileDownload, ti.Download.Nexus.FileID, enabler.Game.Remote.Nexus.ID),
+				uri: fmt.Sprintf(nexus.NexusFileDownload, ti.Download.Nexus.FileID, enabler.Game.Remote().Nexus.ID),
 			}
 			if dl.dir, err = ti.GetDownloadLocation(enabler.Game, enabler.TrackedMod); err != nil {
 				return

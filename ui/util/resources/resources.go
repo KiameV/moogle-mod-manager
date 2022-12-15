@@ -6,6 +6,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods/managed/cache"
+	"github.com/kiamev/moogle-mod-manager/util"
 	"path/filepath"
 )
 
@@ -20,7 +21,7 @@ var (
 
 func Initialize(games []config.GameDef) {
 	for _, g := range games {
-		if g.LogoPath != "" {
+		if g.LogoPath() != "" {
 			g.SetLogo(loadLogo(g))
 		}
 	}
@@ -29,10 +30,9 @@ func Initialize(games []config.GameDef) {
 
 func loadLogo(game config.GameDef) fyne.CanvasObject {
 	var (
-		r, err = loadImage(game.LogoPath)
+		r, err = loadImage(game.LogoPath())
 		img    *canvas.Image
 	)
-
 	if err != nil {
 		return createTextLogo(game)
 	}
@@ -46,10 +46,12 @@ func loadLogo(game config.GameDef) fyne.CanvasObject {
 }
 
 func loadImage(f string) (fyne.Resource, error) {
-	dir := filepath.Join(config.PWD, resourcesDir)
-	return cache.GetImage(mmmRepoResources+f, dir)
+	if util.FileExists(f) {
+		return fyne.LoadResourceFromPath(f)
+	}
+	return cache.GetImage(mmmRepoResources+f, filepath.Join(config.PWD, resourcesDir))
 }
 
 func createTextLogo(game config.GameDef) fyne.CanvasObject {
-	return widget.NewLabel(string(game.Name))
+	return widget.NewLabel(string(game.Name()))
 }

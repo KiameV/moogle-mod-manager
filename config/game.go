@@ -44,19 +44,85 @@ type (
 		Version VersionID     `json:"version"`
 		Steam   *SteamVersion `json:"steam,omitempty"`
 	}
-	GameDef struct {
-		ID                 GameID            `json:"id"`
-		Name               GameName          `json:"name"`
-		SteamID            SteamID           `json:"steamID"`
-		Versions           []Version         `json:"versions"`
-		BaseDir            BaseDir           `json:"baseDir"`
-		Remote             Remote            `json:"remote"`
-		DefaultInstallType InstallType       `json:"defaultInstallType"`
-		LogoPath           string            `json:"-"`
-		Logo               fyne.CanvasObject `json:"-"`
-		InstallDir         string            `json:"-"`
+	gameDef struct {
+		ID_                 GameID            `json:"id"`
+		Name_               GameName          `json:"name"`
+		SteamID_            SteamID           `json:"steamID"`
+		Versions_           []Version         `json:"versions"`
+		BaseDir_            BaseDir           `json:"baseDir"`
+		Remote_             Remote            `json:"remote"`
+		DefaultInstallType_ InstallType       `json:"defaultInstallType"`
+		LogoPath_           string            `json:"-"`
+		Logo_               fyne.CanvasObject `json:"-"`
+		InstallDir_         string            `json:"-"`
+	}
+	GameDef interface {
+		ID() GameID
+		Name() GameName
+		SteamID() SteamID
+		Versions() []Version
+		BaseDir() BaseDir
+		Remote() Remote
+		DefaultInstallType() InstallType
+		LogoPath() string
+		SetLogoPath(path string)
+		Logo() fyne.CanvasObject
+		SetLogo(logo fyne.CanvasObject)
+		getSteamDirFromRegistry() string
 	}
 )
+
+func (g *gameDef) ID() GameID {
+	return g.ID_
+}
+
+func (g *gameDef) Name() GameName {
+	return g.Name_
+}
+
+func (g *gameDef) SteamID() SteamID {
+	return g.SteamID_
+}
+
+func (g *gameDef) Versions() []Version {
+	return g.Versions_
+}
+
+func (g *gameDef) BaseDir() BaseDir {
+	return g.BaseDir_
+}
+
+func (g *gameDef) Remote() Remote {
+	return g.Remote_
+}
+
+func (g *gameDef) DefaultInstallType() InstallType {
+	return g.DefaultInstallType_
+}
+
+func (g *gameDef) LogoPath() string {
+	return g.LogoPath_
+}
+
+func (g *gameDef) SetLogoPath(path string) {
+	g.LogoPath_ = path
+}
+
+func (g *gameDef) Logo() fyne.CanvasObject {
+	return g.Logo_
+}
+
+func (g *gameDef) InstallDir() string {
+	return g.InstallDir_
+}
+
+func (g *gameDef) InstallDirPtr() *string {
+	return &g.InstallDir_
+}
+
+func (g *gameDef) SetInstallDir(dir string) {
+	g.InstallDir_ = dir
+}
 
 const (
 	StreamingAssetsDir = "StreamingAssets"
@@ -74,112 +140,107 @@ func GameDefs() []GameDef {
 
 func GameDefFromID(id GameID) (GameDef, error) {
 	for _, g := range gameDefs {
-		if g.ID == id {
+		if g.ID() == id {
 			return g, nil
 		}
 	}
-	return GameDef{}, fmt.Errorf("game with ModID [%s] not found", id)
+	return nil, fmt.Errorf("game with ModID [%s] not found", id)
 }
 
 func GameDefFromNexusID(id NexusGameID) (GameDef, error) {
 	for _, g := range gameDefs {
-		if g.Remote.Nexus.ID == id {
+		if g.Remote().Nexus.ID == id {
 			return g, nil
 		}
 	}
-	return GameDef{}, fmt.Errorf("game with Nexus ModID [%d] not found", id)
+	return nil, fmt.Errorf("game with Nexus ModID [%d] not found", id)
+}
+
+func GameDefFromNexusPath(path NexusPath) (GameDef, error) {
+	for _, g := range gameDefs {
+		if g.Remote().Nexus.Path == path {
+			return g, nil
+		}
+	}
+	return nil, fmt.Errorf("game with Nexus Path [%s] not found", path)
 }
 
 func GameDefFromCfID(id CfGameID) (GameDef, error) {
 	for _, g := range gameDefs {
-		if g.Remote.CurseForge.ID == id {
+		if g.Remote().CurseForge.ID == id {
 			return g, nil
 		}
 	}
-	return GameDef{}, fmt.Errorf("game with CurseForge ModID [%d] not found", id)
+	return nil, fmt.Errorf("game with CurseForge ModID [%d] not found", id)
 }
 
 func GameDefFromCfPath(path CfPath) (GameDef, error) {
 	for _, g := range gameDefs {
-		if g.Remote.CurseForge.Path == path {
+		if g.Remote().CurseForge.Path == path {
 			return g, nil
 		}
 	}
-	return GameDef{}, fmt.Errorf("game with CurseForge path [%s] not found", path)
+	return nil, fmt.Errorf("game with CurseForge path [%s] not found", path)
 }
 
 func GameDefFromName(name GameName) (GameDef, error) {
 	for _, g := range gameDefs {
-		if g.Name == name {
+		if g.Name() == name {
 			return g, nil
 		}
 	}
-	return GameDef{}, fmt.Errorf("game with name [%s] not found", name)
+	return nil, fmt.Errorf("game with name [%s] not found", name)
 }
 
 func Initialize(dirs []string) (err error) {
-	var (
-		des    []os.DirEntry
-		dirMap = make(map[GameID]string)
-		logo   string
-		def    string
-	)
+	var des []os.DirEntry
 	for _, dir := range dirs {
 		if err = filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
 			if d.IsDir() {
 				if err != nil {
 					return err
 				}
-				if des, err = os.ReadDir(filepath.Join(path, d.Name())); err != nil {
+				if strings.Contains(path, ".git") {
+					return nil
+				}
+				if des, err = os.ReadDir(path); err != nil {
 					return err
 				}
-
+				var (
+					logo string
+					def  string
+				)
 				for _, de := range des {
 					if de.Name() == "game.json" {
 						def = filepath.Join(path, de.Name())
 					} else if strings.HasPrefix(de.Name(), "logo.") {
 						logo = filepath.Join(path, de.Name())
 					}
-					if def != "" {
-						var game GameDef
-						if err = util.LoadFromFile(def, &game); err != nil {
-							return err
-						}
-						game.LogoPath = logo
-						gameDefs = append(gameDefs, game)
+					if def != "" && logo != "" {
+						break
 					}
+				}
+				if def != "" {
+					var game gameDef
+					if err = util.LoadFromFile(def, &game); err != nil {
+						return err
+					}
+					game.LogoPath_ = logo
+					gameDefs = append(gameDefs, &game)
 				}
 			}
 			return nil
 		}); err != nil {
-			break
-		}
-	}
-
-	if err = util.LoadFromFile(filepath.Join(PWD, "gameDirs.json"), &dirMap); err != nil {
-		err = nil
-	} else {
-		for _, game := range gameDefs {
-			if dir, ok := dirMap[game.ID]; ok {
-				game.InstallDir = dir
-			}
-		}
-	}
-
-	if configs.FirstTime {
-		for i, game := range gameDefs {
-			if s := game.GetSteamDirFromRegistry(); s != "" {
-				gameDefs[i].InstallDir = s
-			}
+			return
 		}
 	}
 	return
 }
 
-func (g *GameDef) GetSteamDirFromRegistry() (dir string) {
+func (g *gameDef) getSteamDirFromRegistry() (dir string) {
 	//only poke into registry for Windows, there's probably a similar method for Mac/Linux
 	if runtime.GOOS == "windows" {
-		key, err := registry.OpenKey(registry.LOCAL_MACHINE, fmt.Sprintf("%s%s", windowsRegLookup, g.SteamID), registry.QUERY_VALUE)
+		key, err := registry.OpenKey(registry.LOCAL_MACHINE, fmt.Sprintf("%s%s", windowsRegLookup, g.SteamID_), registry.QUERY_VALUE)
 		if err != nil {
 			return
 		}
@@ -190,6 +251,15 @@ func (g *GameDef) GetSteamDirFromRegistry() (dir string) {
 	return
 }
 
-func (g *GameDef) SetLogo(logo fyne.CanvasObject) {
-	g.Logo = logo
+func (g *gameDef) SetLogo(logo fyne.CanvasObject) {
+	g.Logo_ = logo
+}
+
+func GameIDs() []string {
+	names := make([]string, len(gameDefs)+1)
+	names[0] = ""
+	for i, g := range gameDefs {
+		names[i+1] = string(g.ID())
+	}
+	return names
 }

@@ -8,7 +8,6 @@ import (
 	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
-	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/mods/managed"
 	cw "github.com/kiamev/moogle-mod-manager/ui/custom-widgets"
@@ -20,7 +19,7 @@ import (
 
 type LocalUI interface {
 	state.Screen
-	GetSelected() *mods.TrackedMod
+	GetSelected() mods.TrackedMod
 }
 
 func New() LocalUI {
@@ -28,20 +27,20 @@ func New() LocalUI {
 }
 
 type localUI struct {
-	selectedMod   *mods.TrackedMod
+	selectedMod   mods.TrackedMod
 	data          binding.UntypedList
 	split         *container.Split
 	checkAll      *widget.Button
 	modList       *widget.List
 	workingDialog dialog.Dialog
-	mods          []*mods.TrackedMod
+	mods          []mods.TrackedMod
 }
 
 func (ui *localUI) PreDraw(fyne.Window, ...interface{}) error { return nil }
 
 func (ui *localUI) OnClose() {}
 
-func (ui *localUI) GetSelected() *mods.TrackedMod {
+func (ui *localUI) GetSelected() mods.TrackedMod {
 	return ui.selectedMod
 }
 
@@ -49,22 +48,22 @@ func (ui *localUI) DrawAsDialog(fyne.Window) {}
 
 func (ui *localUI) Draw(w fyne.Window) {
 	ui.data = binding.NewUntypedList()
-	ui.mods = make([]*mods.TrackedMod, 0)
+	ui.mods = make([]mods.TrackedMod, 0)
 	ui.modList = widget.NewListWithData(
 		ui.data,
 		func() fyne.CanvasObject {
 			return container.NewBorder(nil, nil, widget.NewLabel(""), widget.NewCheck("", func(b bool) {}), NewUpdateButton(ui.updateMod))
 		},
 		func(item binding.DataItem, co fyne.CanvasObject) {
-			var tm *mods.TrackedMod
+			var tm mods.TrackedMod
 			if i, ok := cw.GetValueFromDataItem(item); ok {
-				if tm, ok = i.(*mods.TrackedMod); ok {
-					if tm.DisplayName == "" {
-						tm.DisplayName = tm.Mod.Name
+				if tm, ok = i.(mods.TrackedMod); ok {
+					if tm.DisplayName() == "" {
+						tm.SetDisplayName(tm.Mod().Name)
 					}
 					c := co.(*fyne.Container)
 					c.Objects[0].(*UpdateButton).SetTrackedMod(tm)
-					c.Objects[1].(*widget.Label).Bind(binding.BindString(&tm.DisplayName))
+					c.Objects[1].(*widget.Label).Bind(binding.BindString(tm.DisplayNamePtr()))
 					c.Objects[2].(*widget.Check).Bind(newEnableBind(tm, ui.startEnableDisableCallback, ui.showWorkingDialog, ui.endEnableDisableCallback))
 				}
 			}
@@ -83,7 +82,7 @@ func (ui *localUI) Draw(w fyne.Window) {
 	removeButton := widget.NewButton("Remove", func() {
 		dialog.NewConfirm("Delete?", "Are you sure you want to delete this mod?", func(ok bool) {
 			if ok && ui.selectedMod != nil {
-				if err := managed.RemoveMod(*state.CurrentGame, ui.selectedMod); err != nil {
+				if err := managed.RemoveMod(state.CurrentGame, ui.selectedMod); err != nil {
 					util.ShowErrorLong(err)
 					return
 				}
@@ -108,7 +107,7 @@ func (ui *localUI) Draw(w fyne.Window) {
 			ui.split.Refresh()
 			ui.checkAll.Enable()
 		}()
-		managed.CheckForUpdates(*state.CurrentGame, func(err error) {
+		managed.CheckForUpdates(state.CurrentGame, func(err error) {
 			if err != nil {
 				util.ShowErrorLong(err)
 			} else {
@@ -117,7 +116,7 @@ func (ui *localUI) Draw(w fyne.Window) {
 		})
 	})
 
-	for _, mod := range managed.GetMods(*state.CurrentGame) {
+	for _, mod := range managed.GetMods(state.CurrentGame) {
 		ui.addModToList(mod)
 	}
 
@@ -128,14 +127,14 @@ func (ui *localUI) Draw(w fyne.Window) {
 			return
 		}
 		if i, ok := cw.GetValueFromDataItem(data); ok {
-			ui.selectedMod = i.(*mods.TrackedMod)
+			ui.selectedMod = i.(mods.TrackedMod)
 			removeButton.Enable()
 			ui.split.Trailing = container.NewCenter(widget.NewLabel("Loading..."))
 			ui.split.Refresh()
-			ui.split.Trailing = mp.CreatePreview(ui.selectedMod.Mod, mp.ModPreviewOptions{
-				UpdateCallback: func(tm *mods.TrackedMod) {
+			ui.split.Trailing = mp.CreatePreview(ui.selectedMod.Mod(), mp.ModPreviewOptions{
+				UpdateCallback: func(tm mods.TrackedMod) {
 					var err error
-					if err = managed.UpdateMod(*state.CurrentGame, tm); err != nil {
+					if err = managed.UpdateMod(state.CurrentGame, tm); err != nil {
 						util.ShowErrorLong(err)
 						return
 					}
@@ -143,7 +142,7 @@ func (ui *localUI) Draw(w fyne.Window) {
 						util.ShowErrorLong(err)
 						return
 					}
-					tm.DisplayName = tm.Mod.Name
+					tm.SetDisplayName(tm.Mod().Name)
 				},
 				TrackedMod: ui.selectedMod,
 			})
@@ -164,7 +163,7 @@ func (ui *localUI) Draw(w fyne.Window) {
 
 	w.SetContent(container.NewBorder(
 		container.NewVBox(
-			widget.NewLabelWithStyle(config.GameNameString(*state.CurrentGame), fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
+			widget.NewLabelWithStyle(string(state.CurrentGame.Name()), fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
 			widget.NewSeparator(),
 			buttons,
 		), nil, nil, nil,
@@ -172,14 +171,14 @@ func (ui *localUI) Draw(w fyne.Window) {
 }
 
 func (ui *localUI) addFromFile() {
-	var tm *mods.TrackedMod
+	var tm mods.TrackedMod
 	if file, err := zenity.SelectFile(
 		zenity.Title("Select a mod file"),
 		zenity.FileFilter{
 			Name:     "mod file",
 			Patterns: []string{"*.xml", "*.json"},
 		}); err == nil {
-		if tm, err = managed.AddModFromFile(*state.CurrentGame, file); err != nil {
+		if tm, err = managed.AddModFromFile(state.CurrentGame, file); err != nil {
 			util.ShowErrorLong(err)
 			return
 		} else {
@@ -194,7 +193,7 @@ func (ui *localUI) addFromUrl() {
 		[]*widget.FormItem{widget.NewFormItem("URL", e)},
 		func(ok bool) {
 			if ok && e.Text != "" {
-				if tm, err := managed.AddModFromUrl(*state.CurrentGame, e.Text); err != nil {
+				if tm, err := managed.AddModFromUrl(state.CurrentGame, e.Text); err != nil {
 					util.ShowErrorLong(err)
 					return
 				} else {
@@ -204,7 +203,7 @@ func (ui *localUI) addFromUrl() {
 		}, state.Window)
 }
 
-func (ui *localUI) addModToList(mod *mods.TrackedMod) {
+func (ui *localUI) addModToList(mod mods.TrackedMod) {
 	u := binding.NewUntyped()
 	if err := u.Set(mod); err == nil {
 		_ = ui.data.Append(u)
@@ -212,7 +211,7 @@ func (ui *localUI) addModToList(mod *mods.TrackedMod) {
 	ui.mods = append(ui.mods, mod)
 }
 
-func (ui *localUI) removeModFromList(mod *mods.TrackedMod) {
+func (ui *localUI) removeModFromList(mod mods.TrackedMod) {
 	var item binding.DataItem
 	sl, err := ui.data.Get()
 	if err != nil {
@@ -269,8 +268,8 @@ func (ui *localUI) endEnableDisableCallback(result mods.Result, err ...error) {
 	ui.split.Leading.Refresh()
 }
 
-func (ui *localUI) updateMod(tm *mods.TrackedMod) {
-	if err := managed.UpdateMod(*state.CurrentGame, tm); err != nil {
+func (ui *localUI) updateMod(tm mods.TrackedMod) {
+	if err := managed.UpdateMod(state.CurrentGame, tm); err != nil {
 		util.ShowErrorLong(err)
 	}
 	ui.split.Leading.Refresh()

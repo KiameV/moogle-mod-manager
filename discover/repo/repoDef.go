@@ -36,7 +36,7 @@ func (d repoDef) repoUtilDir() string {
 }
 
 func (d repoDef) repoGameDir(game config.GameDef) string {
-	return filepath.Join(d.repoDir(), string(game.ID))
+	return filepath.Join(d.repoDir(), string(game.ID()))
 }
 
 func (d repoDef) repoGameModDir(game config.GameDef, kind mods.Kind, id mods.ModID) string {

@@ -12,34 +12,27 @@ import (
 	"os"
 )
 
-var defaultGames = []string{
-	"None",
-	"I", "II", "III", "IV", "V", "VI",
-	"Chrono Cross",
-	// TODO BoF
-	//"BoF III", "BoF IV",
-}
-
 func Show(w fyne.Window) {
 	configs := *config.Get()
 	items := []*widget.FormItem{
-		createSelectRow("Default GameDef", &configs.DefaultGame, defaultGames...),
-		createDirRow("FF I Dir", &configs.DirI),
-		createDirRow("FF II Dir", &configs.DirII),
-		createDirRow("FF III Dir", &configs.DirIII),
-		createDirRow("FF IV Dir", &configs.DirIV),
-		createDirRow("FF V Dir", &configs.DirV),
-		createDirRow("FF VI Dir", &configs.DirVI),
-		createDirRow("Chrono Cross Dir", &configs.DirChrCrs),
-		// TODO BOF
-		//createDirRow("BoF III Dir", &configs.DirBofIII),
-		//createDirRow("BoF IV Dir", &configs.DirBofIV),
-		//createDirRow("Mods Dir", &configs.ModsDir),
-		createDirRow("Download Dir", &configs.DownloadDir),
-		createDirRow("Backup Dir", &configs.BackupDir),
-		createDirRow("Image Cache Dir", &configs.ImgCacheDir),
-		createThemeChoice(&configs),
+		createSelectRow("Default GameDef", &configs.DefaultGame, config.GameIDs()...),
 	}
+	for _, g := range config.GameDefs() {
+		var (
+			gd *config.GameDir
+			ok bool
+		)
+		if gd, ok = configs.GameDirs[string(g.ID())]; !ok {
+			gd = &config.GameDir{}
+			configs.GameDirs[string(g.ID())] = gd
+		}
+		items = append(items, createDirRow(string(g.ID()+" Dir"), &gd.Dir))
+	}
+	items = append(items, createDirRow("Download Dir", &configs.DownloadDir))
+	items = append(items, createDirRow("Backup Dir", &configs.BackupDir))
+	items = append(items, createDirRow("Image Cache Dir", &configs.ImgCacheDir))
+	items = append(items, createThemeChoice(&configs))
+
 	d := dialog.NewForm("Configure", "Save", "Cancel", items, func(ok bool) {
 		if ok {
 			c := config.Get()

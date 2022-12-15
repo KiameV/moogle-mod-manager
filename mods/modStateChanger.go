@@ -32,7 +32,7 @@ func (c *FileConflict) OnChange(selected string) {
 
 type ModEnabler struct {
 	Game         config.GameDef
-	TrackedMod   *TrackedMod
+	TrackedMod   TrackedMod
 	ToInstall    []*ToInstall
 	OnConflict   OnConflict
 	ShowWorking  func()
@@ -43,7 +43,7 @@ func (e *ModEnabler) Kind() Kind {
 	return e.TrackedMod.Kind()
 }
 
-func NewModEnabler(game config.GameDef, tm *TrackedMod, toInstall []*ToInstall, onConflict OnConflict, showWorking func(), doneCallback DoneCallback) *ModEnabler {
+func NewModEnabler(game config.GameDef, tm TrackedMod, toInstall []*ToInstall, onConflict OnConflict, showWorking func(), doneCallback DoneCallback) *ModEnabler {
 	return &ModEnabler{
 		Game:         game,
 		TrackedMod:   tm,

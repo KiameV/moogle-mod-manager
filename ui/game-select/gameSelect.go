@@ -29,8 +29,8 @@ func (s *GameSelect) Draw(w fyne.Window) {
 		if i > 0 {
 			inputs = append(inputs, widget.NewSeparator())
 		}
-		inputs = append(inputs, container.NewMax(g.Logo, widget.NewButton("", func() {
-			state.CurrentGame = &g
+		inputs = append(inputs, container.NewMax(g.Logo(), widget.NewButton("", func() {
+			state.CurrentGame = g
 			state.ShowScreen(state.LocalMods)
 		})))
 	}

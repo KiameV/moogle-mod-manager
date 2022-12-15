@@ -13,18 +13,30 @@ const (
 )
 
 var (
-	managed = make(map[config.GameID]*ManagedModsAndFiles)
+	managed = &GameMods{Games: make(map[config.GameID]*ModsAndFiles)}
 )
 
 type (
-	ManagedModsAndFiles struct {
+	ModsAndFiles struct {
 		Mods map[mods.ModID]*ModFiles
+	}
+	GameMods struct {
+		Games map[config.GameID]*ModsAndFiles
 	}
 	ModFiles struct {
 		BackedUpFiles map[string]*mods.ModFile
 		MovedFiles    map[string]*mods.ModFile
 	}
 )
+
+func (mg *GameMods) Get(game config.GameDef) (mmf *ModsAndFiles, ok bool) {
+	mmf, ok = mg.Games[game.ID()]
+	return
+}
+
+func (mg *GameMods) Set(game config.GameDef, mmf *ModsAndFiles) {
+	mg.Games[game.ID()] = mmf
+}
 
 func InitializeManagedFiles() error {
 	b, err := ioutil.ReadFile(filepath.Join(config.PWD, managedXmlName))
@@ -36,11 +48,11 @@ func InitializeManagedFiles() error {
 
 func HasManagedFiles(game config.GameDef, modID mods.ModID) bool {
 	var (
-		mmf *ManagedModsAndFiles
+		mmf *ModsAndFiles
 		ok  bool
 		mf  *ModFiles
 	)
-	if mmf, ok = managed[game.ID]; !ok {
+	if mmf, ok = managed.Get(game); !ok {
 		return false
 	}
 	if mf, ok = mmf.Mods[modID]; !ok {
@@ -49,13 +61,13 @@ func HasManagedFiles(game config.GameDef, modID mods.ModID) bool {
 	return len(mf.MovedFiles) > 0
 }
 
-func GetModsWithManagedFiles(game config.GameDef) (mmf *ManagedModsAndFiles) {
+func GetModsWithManagedFiles(game config.GameDef) (mmf *ModsAndFiles) {
 	var ok bool
-	if mmf, ok = managed[game.ID]; !ok {
-		mmf = &ManagedModsAndFiles{
+	if mmf, ok = managed.Get(game); !ok {
+		mmf = &ModsAndFiles{
 			Mods: make(map[mods.ModID]*ModFiles),
 		}
-		managed[game.ID] = mmf
+		managed.Set(game, mmf)
 	}
 	return
 }

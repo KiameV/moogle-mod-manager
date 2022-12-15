@@ -65,8 +65,8 @@ var Categories = []string{
 	string(UiTextBoxPortraits),
 	string(Utility)}
 
-type Mod struct {
-	ModID               ModID               `json:"ModID" xml:"ModID"`
+type ModDef struct {
+	ModID               ModID               `json:"ID" xml:"ID"`
 	Name                string              `json:"Name" xml:"Name"`
 	Author              string              `json:"Author" xml:"Author"`
 	AuthorLink          string              `json:"AuthorLink" xml:"AuthorLink"`
@@ -89,12 +89,20 @@ type Mod struct {
 	IsManuallyCreated   bool                `json:"IsManuallyCreated" xml:"IsManuallyCreated"`
 }
 
+func NewMod(def *ModDef) *Mod {
+	return &Mod{ModDef: def}
+}
+
+type Mod struct {
+	*ModDef
+}
+
 func (m *Mod) ID() ModID {
 	return m.ModID
 }
 
 func (m *Mod) Kind() Kind {
-	return m.Kind()
+	return m.ModKind.Kind
 }
 
 func (m *Mod) ModIdAsNumber() (uint64, error) {
@@ -104,6 +112,10 @@ func (m *Mod) ModIdAsNumber() (uint64, error) {
 
 func (m *Mod) BranchName() string {
 	return fmt.Sprintf("%s_%s", m.ModID, m.Version)
+}
+
+func (m *Mod) Save(to string) error {
+	return util.SaveToFile(to, m.ModDef)
 }
 
 type Preview struct {
@@ -362,7 +374,7 @@ func (m *Mod) Validate() string {
 func (m *Mod) Supports(game config.GameDef) error {
 	if len(m.Games) > 0 {
 		for _, g := range m.Games {
-			if game.ID == g.ID {
+			if game.ID() == g.ID {
 				return nil
 			}
 		}

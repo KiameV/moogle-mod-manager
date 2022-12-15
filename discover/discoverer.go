@@ -10,12 +10,27 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-var (
-	utilLookup    = mods.NewModLookup()
-	gameModLookup = make(map[config.GameID]mods.ModLookup[*mods.TrackedMod])
+type (
+	gameMods struct {
+		lookup map[config.GameID]mods.ModLookup[*mods.Mod]
+	}
 )
 
-/* TODO REMOVE func GetMods(game *config.GameDef) (found []*mods.Mod, lookup mods.ModLookup, err error) {
+func (m gameMods) Get(game config.GameDef) (l mods.ModLookup[*mods.Mod], found bool) {
+	l, found = m.lookup[game.ID()]
+	return
+}
+
+func (m gameMods) Set(game config.GameDef, lookup mods.ModLookup[*mods.Mod]) {
+	m.lookup[game.ID()] = lookup
+}
+
+var (
+	utilLookup    = mods.NewModLookup[*mods.Mod]()
+	gameModLookup = &gameMods{lookup: make(map[config.GameID]mods.ModLookup[*mods.Mod])}
+)
+
+/* TODO REMOVE func GetMods(game config.GameDef) (found []*mods.Mod, lookup mods.ModLookup, err error) {
 	if lookup, err = GetModsAsLookup(game); err != nil {
 		return
 	}
@@ -27,38 +42,39 @@ var (
 	return
 }*/
 
-func GetModsAsLookup(game *config.GameDef) (lookup mods.ModLookup, err error) {
-	if game == nil {
-		lookup = utilLookup
-	} else {
-		lookup = gameModLookup[game.ID]
-	}
-	if lookup.Len() > 0 {
-		return
-	}
-
+func GetModsAsLookup(game config.GameDef) (lookup mods.ModLookup[*mods.Mod], err error) {
 	var (
 		remoteMods []*mods.Mod
 		repoMods   []*mods.Mod
-		found      mods.IMod
+		found      *mods.Mod
 		eg         errgroup.Group
 		ok         bool
 	)
+
+	if game == nil {
+		lookup = utilLookup
+	} else {
+		lookup, ok = gameModLookup.Get(game)
+	}
+	if ok {
+		return
+	}
+
 	eg.Go(func() (e error) {
-		remoteMods, e = remote.GetMods(*game)
+		remoteMods, e = remote.GetMods(game)
 		return
 	})
 	eg.Go(func() (e error) {
-		repoMods, e = repo.NewGetter().GetMods(*state.CurrentGame)
+		repoMods, e = repo.NewGetter().GetMods(state.CurrentGame)
 		return
 	})
 	if err = eg.Wait(); err != nil {
 		return
 	}
 
-	lookup = mods.NewModLookup()
+	lookup = mods.NewModLookup[*mods.Mod]()
 	for _, m := range repoMods {
-		if lookup.Has(m) {
+		if !lookup.Has(m) {
 			lookup.Set(m)
 		}
 	}
@@ -72,13 +88,13 @@ func GetModsAsLookup(game *config.GameDef) (lookup mods.ModLookup, err error) {
 	if game == nil {
 		utilLookup = lookup
 	} else {
-		gameModLookup[game.ID] = lookup
+		gameModLookup.Set(game, lookup)
 	}
 	return
 }
 
 func GetDisplayName(game config.GameDef, modID mods.ModID) (string, error) {
-	lookup, err := GetModsAsLookup(&game)
+	lookup, err := GetModsAsLookup(game)
 	if err != nil {
 		return "", err
 	}

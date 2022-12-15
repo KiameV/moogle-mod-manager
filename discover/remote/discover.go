@@ -43,13 +43,13 @@ func GetClients() []Client {
 
 func getMods(game config.GameDef, c Client, eg *errgroup.Group, m *sync.Mutex, result *[]*mods.Mod) {
 	eg.Go(func() error {
-		r, e := c.GetMods(&game)
+		r, e := c.GetMods(game)
 		if e != nil {
 			return e
 		}
 		m.Lock()
-		defer m.Unlock()
 		*result = append(*result, r...)
+		m.Unlock()
 		return nil
 	})
 }

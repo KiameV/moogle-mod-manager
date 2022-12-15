@@ -10,12 +10,12 @@ import (
 )
 
 type FileMover interface {
-	AddModFiles(enabler *mods.ModEnabler, mmf *managed.ManagedModsAndFiles, files []*mods.DownloadFiles, cr conflict.Result) (err error)
+	AddModFiles(enabler *mods.ModEnabler, mmf *managed.ModsAndFiles, files []*mods.DownloadFiles, cr conflict.Result) (err error)
 	MoveFiles(game config.GameDef, files []*mods.ModFile, modDir string, toDir string, backupDir string, backedUp *[]*mods.ModFile, movedFiles *[]*mods.ModFile, cr conflict.Result, returnOnFail bool) (err error)
 	MoveDirs(game config.GameDef, dirs []*mods.ModDir, modDir string, toDir string, backupDir string, replacedFiles *[]*mods.ModFile, movedFiles *[]*mods.ModFile, cr conflict.Result, returnOnFail bool) (err error)
 	MoveFile(a action.FileAction, from, to string, files *[]*mods.ModFile) (err error)
 	IsDir(path string) bool
-	RemoveModFiles(mf *managed.ModFiles, mmf *managed.ManagedModsAndFiles, tm *mods.TrackedMod) (err error)
+	RemoveModFiles(mf *managed.ModFiles, mmf *managed.ModsAndFiles, tm mods.TrackedMod) (err error)
 }
 
 func NewFileMover(mod *mods.Mod, game config.GameDef) (mover FileMover) {
@@ -23,7 +23,7 @@ func NewFileMover(mod *mods.Mod, game config.GameDef) (mover FileMover) {
 	if mod.InstallType != nil {
 		it = *mod.InstallType
 	} else {
-		it = game.DefaultInstallType
+		it = game.DefaultInstallType()
 	}
 	switch it {
 	case config.Move:

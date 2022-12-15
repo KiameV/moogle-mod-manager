@@ -17,23 +17,29 @@ import (
 
 type basicFileMover struct{}
 
-func (m *basicFileMover) AddModFiles(enabler *mods.ModEnabler, mmf *managed.ManagedModsAndFiles, files []*mods.DownloadFiles, cr conflict.Result) (err error) {
+func (m *basicFileMover) AddModFiles(enabler *mods.ModEnabler, mmf *managed.ModsAndFiles, files []*mods.DownloadFiles, cr conflict.Result) (err error) {
 	var (
 		game     = enabler.Game
 		tm       = enabler.TrackedMod
 		configs  = config.Get()
-		modPath  = filepath.Join(configs.GetModsFullPath(game), tm.GetDirSuffix())
+		modPath  = filepath.Join(configs.GetModsFullPath(game), tm.DirSuffix())
 		backedUp []*mods.ModFile
 		moved    []*mods.ModFile
 	)
 
 	for _, df := range files {
-		modDir := filepath.Join(modPath, df.DownloadName)
-		if err = m.MoveFiles(enabler.Game, df.Files, modDir, game.InstallDir, configs.GetBackupFullPath(game), &backedUp, &moved, cr, false); err != nil {
+		var (
+			modDir     = filepath.Join(modPath, df.DownloadName)
+			installDir string
+		)
+		if installDir, err = configs.GetDir(game, config.GameDirKind); err != nil {
+			break
+		}
+		if err = m.MoveFiles(enabler.Game, df.Files, modDir, installDir, configs.GetBackupFullPath(game), &backedUp, &moved, cr, false); err != nil {
 			break
 		}
 		if err == nil {
-			if err = m.MoveDirs(game, df.Dirs, modDir, game.InstallDir, configs.GetBackupFullPath(game), &backedUp, &moved, cr, false); err != nil {
+			if err = m.MoveDirs(game, df.Dirs, modDir, installDir, configs.GetBackupFullPath(game), &backedUp, &moved, cr, false); err != nil {
 				break
 			}
 		}
@@ -55,13 +61,13 @@ func (m *basicFileMover) AddModFiles(enabler *mods.ModEnabler, mmf *managed.Mana
 		return errors.New(fmt.Sprintf("%s: %v", sb.String(), err))
 	}
 
-	mf, found := mmf.Mods[tm.GetModID()]
+	mf, found := mmf.Mods[tm.ID()]
 	if !found {
 		mf = &managed.ModFiles{
 			BackedUpFiles: make(map[string]*mods.ModFile),
 			MovedFiles:    make(map[string]*mods.ModFile),
 		}
-		mmf.Mods[tm.GetModID()] = mf
+		mmf.Mods[tm.ID()] = mf
 	}
 
 	for _, f := range backedUp {
@@ -71,11 +77,11 @@ func (m *basicFileMover) AddModFiles(enabler *mods.ModEnabler, mmf *managed.Mana
 		mf.MovedFiles[f.To] = f
 	}
 	m.removeBackupFile(enabler, mf, mmf, cr.Replace)
-	mmf.Mods[tm.GetModID()] = mf
+	mmf.Mods[tm.ID()] = mf
 	return managed.SaveManagedJson()
 }
 
-func (m *basicFileMover) removeBackupFile(enabler *mods.ModEnabler, mf *managed.ModFiles, mmf *managed.ManagedModsAndFiles, toRemove map[string]bool) {
+func (m *basicFileMover) removeBackupFile(enabler *mods.ModEnabler, mf *managed.ModFiles, mmf *managed.ModsAndFiles, toRemove map[string]bool) {
 	var (
 		c    = config.Get()
 		game = enabler.Game
@@ -87,7 +93,7 @@ func (m *basicFileMover) removeBackupFile(enabler *mods.ModEnabler, mf *managed.
 	if len(toRemove) > 0 {
 		// If there are skipped files, remove from backup
 		for id, mod := range mmf.Mods {
-			if id != enabler.TrackedMod.GetModID() {
+			if id != enabler.TrackedMod.ID() {
 				var toDelete []string
 				for k = range mod.BackedUpFiles {
 					if dir, err = c.RemoveDir(game, config.GameDirKind, k); err != nil {
@@ -127,7 +133,9 @@ func (m *basicFileMover) MoveFiles(game config.GameDef, files []*mods.ModFile, m
 		if m.IsDir(to) {
 			to = filepath.Join(to, filepath.Base(f.From))
 		}
-		dir = c.RemoveGameDir(game, to)
+		if dir, err = c.RemoveGameDir(game, to); err != nil {
+			return
+		}
 		if cr.Skip[dir] {
 			continue
 		}
@@ -181,11 +189,11 @@ func (m *basicFileMover) MoveDirs(game config.GameDef, dirs []*mods.ModDir, modD
 				to = filepath.Join(d.To, to)
 				to = strings.ReplaceAll(to, "\\", "/")
 				to = strings.TrimLeft(to, "/")
-				c := strings.Count(to, string(game.BaseDir)+"/")
+				c := strings.Count(to, string(game.BaseDir())+"/")
 				if c == 0 && strings.HasPrefix(to, config.StreamingAssetsDir) {
-					to = filepath.Join(string(game.BaseDir), to)
+					to = filepath.Join(string(game.BaseDir()), to)
 				} else if c > 1 {
-					to = strings.Replace(to, string(game.BaseDir)+"/", "", 1)
+					to = strings.Replace(to, string(game.BaseDir())+"/", "", 1)
 				}
 
 				mf = append(mf, &mods.ModFile{
@@ -296,7 +304,7 @@ func (m *basicFileMover) copyFile(src, dst string) error {
 	return nil
 }
 
-func (m *basicFileMover) RemoveModFiles(mf *managed.ModFiles, mmf *managed.ManagedModsAndFiles, tm *mods.TrackedMod) (err error) {
+func (m *basicFileMover) RemoveModFiles(mf *managed.ModFiles, mmf *managed.ModsAndFiles, tm mods.TrackedMod) (err error) {
 	var (
 		handled = make([]string, 0, len(mf.MovedFiles))
 		sb      = strings.Builder{}
@@ -340,6 +348,6 @@ func (m *basicFileMover) RemoveModFiles(mf *managed.ModFiles, mmf *managed.Manag
 		return
 	}
 
-	delete(mmf.Mods, tm.GetModID())
+	delete(mmf.Mods, tm.ID())
 	return
 }
