@@ -241,9 +241,9 @@ func (m *Mod) Validate() string {
 	if m.ReleaseDate == "" {
 		sb.WriteString("Release Date is required\n")
 	}
-	if m.Category == "" {
-		//	sb.WriteString("Category is required\n")
-	}
+	//if m.Category == "" {
+	//  sb.WriteString("Category is required\n")
+	//}
 	if m.Description == "" {
 		sb.WriteString("Description is required\n")
 	}
@@ -339,9 +339,9 @@ func (m *Mod) Validate() string {
 		if c.Name == "" {
 			sb.WriteString("Configuration's Name is required\n")
 		}
-		if c.Description == "" {
-			//sb.WriteString(fmt.Sprintf("Configuration's [%s] Description is required\n", c.Name))
-		}
+		//if c.Description == "" {
+		//	sb.WriteString(fmt.Sprintf("Configuration's [%s] Description is required\n", c.Name))
+		//}
 		if len(c.Choices) == 0 {
 			sb.WriteString(fmt.Sprintf("Configuration's [%s] must have Choices\n", c.Name))
 		}
@@ -379,7 +379,7 @@ func (m *Mod) Supports(game config.GameDef) error {
 			}
 		}
 	}
-	return fmt.Errorf("%s does not support %s", m.Name, game.Name)
+	return fmt.Errorf("%s does not support %s", m.Name, game.Name())
 }
 
 func (m *Mod) Merge(from Mod) {
@@ -395,7 +395,6 @@ func (m *Mod) Merge(from Mod) {
 		m.Description = from.Description
 		m.ReleaseNotes = from.ReleaseNotes
 	}
-	return
 }
 
 func NewModForVersion(manual *Mod, remote *Mod) *Mod {

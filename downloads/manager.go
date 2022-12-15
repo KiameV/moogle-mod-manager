@@ -30,10 +30,12 @@ func Download(enabler *mods.ModEnabler, done confirm.DownloadCompleteCallback) e
 }
 
 func hosted(enabler *mods.ModEnabler, done confirm.DownloadCompleteCallback, err error) {
+	if err != nil {
+		return
+	}
 	for _, ti := range enabler.ToInstall {
 		if len(ti.Download.Hosted.Sources) == 0 {
-			err = fmt.Errorf("%s has no download sources", ti.Download.Name)
-			done(enabler, err)
+			done(enabler, fmt.Errorf("%s has no download sources", ti.Download.Name))
 			return
 		}
 		for _, source := range ti.Download.Hosted.Sources {
@@ -60,6 +62,9 @@ func hosted(enabler *mods.ModEnabler, done confirm.DownloadCompleteCallback, err
 }
 
 func remote(enabler *mods.ModEnabler, done confirm.DownloadCompleteCallback, err error) {
+	if err != nil {
+		return
+	}
 	var (
 		dir  []os.DirEntry
 		path string
@@ -96,10 +101,12 @@ func remote(enabler *mods.ModEnabler, done confirm.DownloadCompleteCallback, err
 }
 
 func curseForge(enabler *mods.ModEnabler, done confirm.DownloadCompleteCallback, err error) {
+	if err != nil {
+		return
+	}
 	for _, ti := range enabler.ToInstall {
 		if len(enabler.ToInstall) == 0 {
-			err = fmt.Errorf("%s has no download sources", ti.Download.Name)
-			done(enabler, err)
+			done(enabler, fmt.Errorf("%s has no download sources", ti.Download.Name))
 			return
 		}
 		for _, i := range enabler.ToInstall {

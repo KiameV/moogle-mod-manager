@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 )
 
@@ -39,7 +39,7 @@ func (mg *GameMods) Set(game config.GameDef, mmf *ModsAndFiles) {
 }
 
 func InitializeManagedFiles() error {
-	b, err := ioutil.ReadFile(filepath.Join(config.PWD, managedXmlName))
+	b, err := os.ReadFile(filepath.Join(config.PWD, managedXmlName))
 	if err != nil {
 		return nil
 	}
@@ -82,5 +82,5 @@ func SaveManagedJson() error {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(filepath.Join(config.PWD, managedXmlName), b, 0777)
+	return os.WriteFile(filepath.Join(config.PWD, managedXmlName), b, 0777)
 }

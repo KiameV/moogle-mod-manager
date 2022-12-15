@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
-	"io/ioutil"
 	"os"
 	"path"
 )
@@ -20,7 +19,7 @@ func Initialize() (err error) {
 		return nil
 	}
 	var b []byte
-	if b, err = ioutil.ReadFile(f); err != nil {
+	if b, err = os.ReadFile(f); err != nil {
 		return fmt.Errorf("failed to read %s: %v", file, err)
 	}
 	if err = json.Unmarshal(b, &lookup); err != nil {

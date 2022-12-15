@@ -20,7 +20,6 @@ import (
 	"github.com/kiamev/moogle-mod-manager/util"
 	archiver "github.com/mholt/archiver/v4"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -262,8 +261,8 @@ func enableMod(enabler *mods.ModEnabler, err error) {
 
 func decompress(from string, to string) error {
 	if fi, err := os.Stat(to); err == nil && fi.IsDir() {
-		var fis []os.FileInfo
-		if fis, err = ioutil.ReadDir(to); err == nil && len(fis) > 0 {
+		var fis []os.DirEntry
+		if fis, err = os.ReadDir(to); err == nil && len(fis) > 0 {
 			return nil
 		}
 	}

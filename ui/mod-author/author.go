@@ -21,7 +21,6 @@ import (
 	u "github.com/kiamev/moogle-mod-manager/util"
 	"github.com/ncruces/zenity"
 	"golang.design/x/clipboard"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"path"
@@ -162,7 +161,7 @@ func (a *ModAuthorer) LoadModToEdit() (successfullyLoadedMod bool) {
 	if err != nil {
 		return false
 	}
-	if b, err = ioutil.ReadFile(file); err != nil {
+	if b, err = os.ReadFile(file); err != nil {
 		util.ShowErrorLong(err)
 		return false
 	}
@@ -455,7 +454,7 @@ func (a *ModAuthorer) compileMod() (m *mods.Mod) {
 		}
 	}
 
-	authored.SetDir(m.ModID, state.GetBaseDir())
+	_ = authored.SetDir(m.ModID, state.GetBaseDir())
 	return m
 }
 
@@ -495,7 +494,7 @@ func (a *ModAuthorer) saveFile(asJson As) {
 	}
 }
 
-func (a *ModAuthorer) save(mod *mods.Mod, asJson As) {
+func (a *ModAuthorer) save(mod *mods.Mod, json As) {
 	var (
 		b    []byte
 		ext  string
@@ -508,7 +507,7 @@ func (a *ModAuthorer) save(mod *mods.Mod, asJson As) {
 		return
 	}
 
-	if asJson == asJson {
+	if json == asJson {
 		ext = ".json"
 	} else {
 		ext = ".xml"
@@ -523,7 +522,7 @@ func (a *ModAuthorer) save(mod *mods.Mod, asJson As) {
 		}); err != nil {
 		return
 	}
-	if strings.Index(file, ext) == -1 {
+	if !strings.Contains(file, ext) {
 		file = file + ext
 	}
 	if _, err = os.Stat(file); err == nil {
@@ -532,7 +531,7 @@ func (a *ModAuthorer) save(mod *mods.Mod, asJson As) {
 		}, state.Window)
 	}
 	if save {
-		if err = ioutil.WriteFile(file, b, 0755); err != nil {
+		if err = os.WriteFile(file, b, 0755); err != nil {
 			util.ShowErrorLong(err)
 		}
 	}

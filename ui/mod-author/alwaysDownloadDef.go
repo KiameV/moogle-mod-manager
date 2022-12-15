@@ -81,10 +81,6 @@ func (d *alwaysDownloadDef) draw() fyne.CanvasObject {
 		d.list.Draw())
 }
 
-func (d *alwaysDownloadDef) clear() {
-	d.list.Clear()
-}
-
 func (d *alwaysDownloadDef) set(alwaysDownload []*mods.DownloadFiles) {
 	d.list.Clear()
 	for _, f := range alwaysDownload {

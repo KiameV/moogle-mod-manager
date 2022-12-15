@@ -9,7 +9,7 @@ import (
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/util"
 	"golang.org/x/oauth2"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -156,7 +156,7 @@ func (c *repoClient) getTree(rd repoDef, ref *github.Reference, file string) (tr
 
 	// Load each file into the tree.
 	var b []byte
-	if b, err = ioutil.ReadFile(file); err != nil {
+	if b, err = os.ReadFile(file); err != nil {
 		return nil, err
 	}
 	file = strings.TrimPrefix(strings.TrimPrefix(strings.TrimPrefix(file, rd.repoDir()), "\\"), "/")

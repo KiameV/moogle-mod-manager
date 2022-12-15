@@ -35,7 +35,6 @@ func ResolveConflicts(enabler *mods.ModEnabler, managedFiles map[mods.ModID]*man
 	}
 
 	detectCollisions(enabler, toInstall, fileToMod, done)
-	return
 }
 
 func compileFilesToMove(game config.GameDef, mod mods.TrackedMod, modFiles []*mods.DownloadFiles) (toInstall []string, err error) {

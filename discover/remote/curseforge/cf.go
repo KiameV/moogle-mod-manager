@@ -35,7 +35,7 @@ func NewClient(compiler u.ModCompiler) *client {
 }
 
 func IsCurseforge(url string) bool {
-	return strings.Index(url, "curseforge.com") >= 0
+	return strings.Contains(url, "curseforge.com")
 }
 
 func (c *client) GetFromMod(in *mods.Mod) (found bool, mod *mods.Mod, err error) {

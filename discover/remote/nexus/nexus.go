@@ -24,7 +24,7 @@ const (
 	nexusUrl               = "https://www.nexusmods.com/%s/mods/%d"
 	nexusApiNewestModsUrl  = "https://api.nexusmods.com/v1/games/%s/mods/latest_added.json"
 
-	nexusUsersApiUrl = "https://users.nexusmods.com/oauth/token"
+	//nexusUsersApiUrl = "https://users.nexusmods.com/oauth/token"
 
 	// NexusFileDownload file_id, NexusGameID
 	NexusFileDownload = "https://www.nexusmods.com/Core/Libs/Common/Widgets/DownloadPopUp?id=%d&game_id=%v"
@@ -41,7 +41,7 @@ func NewClient(compiler u.ModCompiler) *client {
 }
 
 func IsNexus(url string) bool {
-	return strings.Index(url, "nexusmods.com") >= 0
+	return strings.Contains(url, "nexusmods.com")
 }
 
 func (c *client) GetFromMod(in *mods.Mod) (found bool, mod *mods.Mod, err error) {

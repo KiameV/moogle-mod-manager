@@ -1,13 +1,13 @@
 package mods
 
 type ModCompat struct {
-	Kind        Kind             `json:"ModKind" xml:"ModKind"`
-	Versions    []string         `json:"Version,omitempty" xml:"Versions,omitempty"`
-	Hosted      *ModCompatHosted `json:"Hosted,omitempty" xml:"Hosted,omitempty"`
-	Nexus       *ModCompatNexus  `json:"Nexus,omitempty" xml:"Nexus,omitempty"`
-	CurseForge  *ModCompatCF     `json:"CurseForge,omitempty" xml:"CurseForge,omitempty"`
-	Order       *ModCompatOrder  `json:"Order,omitempty" xml:"Order,omitempty"`
-	displayName string           `json:"-" xml:"-"`
+	Kind       Kind             `json:"ModKind" xml:"ModKind"`
+	Versions   []string         `json:"Version,omitempty" xml:"Versions,omitempty"`
+	Hosted     *ModCompatHosted `json:"Hosted,omitempty" xml:"Hosted,omitempty"`
+	Nexus      *ModCompatNexus  `json:"Nexus,omitempty" xml:"Nexus,omitempty"`
+	CurseForge *ModCompatCF     `json:"CurseForge,omitempty" xml:"CurseForge,omitempty"`
+	Order      *ModCompatOrder  `json:"Order,omitempty" xml:"Order,omitempty"`
+	//displayName string           `json:"-" xml:"-"`
 }
 
 type ModCompatHosted struct {

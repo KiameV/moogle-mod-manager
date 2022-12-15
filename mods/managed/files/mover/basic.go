@@ -1,7 +1,6 @@
 package mover
 
 import (
-	"errors"
 	"fmt"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
@@ -58,7 +57,7 @@ func (m *basicFileMover) AddModFiles(enabler *mods.ModEnabler, mmf *managed.Mods
 				sb.WriteString(fmt.Sprintf("failed to restore [%s] from [%s]\n", f.To, f.From))
 			}
 		}
-		return errors.New(fmt.Sprintf("%s: %v", sb.String(), err))
+		return fmt.Errorf("%s: %v", sb.String(), err)
 	}
 
 	mf, found := mmf.Mods[tm.ID()]
