@@ -18,18 +18,19 @@ type (
 		Remove(m T)
 		Set(m T)
 	}
-	modLookup[T mod] struct {
+	// ModLookupConc is a public for serialization purposes.
+	ModLookupConc[T mod] struct {
 		Lookup map[lookupID]T `json:"Lookup"`
 	}
 )
 
 func NewModLookup[T mod]() ModLookup[T] {
-	return &modLookup[T]{
+	return &ModLookupConc[T]{
 		Lookup: make(map[lookupID]T),
 	}
 }
 
-func (l *modLookup[T]) All() []T {
+func (l *ModLookupConc[T]) All() []T {
 	s := make([]T, 0, len(l.Lookup))
 	for _, m := range l.Lookup {
 		s = append(s, m)
@@ -37,21 +38,21 @@ func (l *modLookup[T]) All() []T {
 	return s
 }
 
-func (l *modLookup[T]) Set(m T) {
+func (l *ModLookupConc[T]) Set(m T) {
 	l.Lookup[l.newLookupID(m)] = m
 }
 
-func (l *modLookup[T]) Has(m T) bool {
+func (l *ModLookupConc[T]) Has(m T) bool {
 	_, ok := l.Lookup[l.newLookupID(m)]
 	return ok
 }
 
-func (l *modLookup[T]) Get(m T) (found T, ok bool) {
+func (l *ModLookupConc[T]) Get(m T) (found T, ok bool) {
 	found, ok = l.Lookup[l.newLookupID(m)]
 	return
 }
 
-func (l *modLookup[T]) GetByID(modID ModID) (found T, ok bool) {
+func (l *ModLookupConc[T]) GetByID(modID ModID) (found T, ok bool) {
 	for _, m := range l.Lookup {
 		if m.ID() == modID {
 			found = m
@@ -62,14 +63,14 @@ func (l *modLookup[T]) GetByID(modID ModID) (found T, ok bool) {
 	return
 }
 
-func (l *modLookup[T]) Remove(m T) {
+func (l *ModLookupConc[T]) Remove(m T) {
 	delete(l.Lookup, l.newLookupID(m))
 }
 
-func (l *modLookup[T]) Len() int {
+func (l *ModLookupConc[T]) Len() int {
 	return len(l.Lookup)
 }
 
-func (l *modLookup[T]) newLookupID(m T) lookupID {
+func (l *ModLookupConc[T]) newLookupID(m T) lookupID {
 	return lookupID(fmt.Sprintf("%s.%s", m.Kind(), m.ID()))
 }

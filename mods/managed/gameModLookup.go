@@ -18,120 +18,78 @@ type (
 		Set(game config.GameDef)
 		SetMod(game config.GameDef, tm mods.TrackedMod)
 	}
-	gameModLookup_ struct {
-		Games []*gameMods `json:"Games"`
-	}
 	gameMods struct {
-		Game config.GameID          `json:"GameID"`
-		Mods []*mods.TrackedModConc `json:"Mods"`
+		GameMods map[string]*mods.ModLookupConc[*mods.TrackedModConc] `json:"Mods"`
 	}
 )
 
 func newGameModLookup() gameModLookup {
-	return &gameModLookup_{}
+	return &gameMods{GameMods: make(map[string]*mods.ModLookupConc[*mods.TrackedModConc])}
 }
 
-func (l *gameModLookup_) Has(game config.GameDef) bool {
-	_, ok := l.getGameMods(game)
+func (gm *gameMods) Has(game config.GameDef) bool {
+	_, ok := gm.GameMods[string(game.ID())]
 	return ok
 }
 
-func (l *gameModLookup_) HasMod(game config.GameDef, tm mods.TrackedMod) bool {
-	if gm, ok := l.getGameMods(game); ok {
-		if _, ok = gm.getMod(tm.ID()); ok {
-			return true
-		}
+func (gm *gameMods) HasMod(game config.GameDef, tm mods.TrackedMod) bool {
+	if l, ok := gm.GameMods[string(game.ID())]; ok {
+		return l.Has(tm.(*mods.TrackedModConc))
 	}
 	return false
 }
 
-func (l *gameModLookup_) Len() int {
-	return len(l.Games)
+func (gm *gameMods) Len() int {
+	return len(gm.GameMods)
 }
 
-func (l *gameModLookup_) GetMod(game config.GameDef, tm mods.TrackedMod) (found mods.TrackedMod, ok bool) {
-	var gm *gameMods
-	if gm, ok = l.getGameMods(game); ok {
-		found, ok = gm.getMod(tm.ID())
+func (gm *gameMods) GetMod(game config.GameDef, tm mods.TrackedMod) (mods.TrackedMod, bool) {
+	if l, found := gm.GameMods[string(game.ID())]; found {
+		return l.Get(tm.(*mods.TrackedModConc))
 	}
-	return
+	return nil, false
 }
 
-func (l *gameModLookup_) GetMods(game config.GameDef) (found []mods.TrackedMod) {
-	if gm, ok := l.getGameMods(game); ok {
-		found = make([]mods.TrackedMod, len(gm.Mods))
-		for i, tm := range gm.Mods {
-			found[i] = tm
+func (gm *gameMods) GetMods(game config.GameDef) (tms []mods.TrackedMod) {
+	if l, found := gm.GameMods[string(game.ID())]; found {
+		all := l.All()
+		tms = make([]mods.TrackedMod, len(all))
+		for i, tm := range all {
+			tms[i] = tm
 		}
 	}
 	return
 }
 
-func (l *gameModLookup_) GetModByID(game config.GameDef, id mods.ModID) (tm mods.TrackedMod, ok bool) {
-	var gm *gameMods
-	if gm, ok = l.getGameMods(game); ok {
-		for _, tm = range gm.Mods {
-			if tm.ID() == id {
-				ok = true
-				break
-			}
-		}
+func (gm *gameMods) GetModByID(game config.GameDef, id mods.ModID) (tm mods.TrackedMod, ok bool) {
+	if l, found := gm.GameMods[string(game.ID())]; found {
+		return l.GetByID(id)
 	}
 	return
 }
 
-func (l *gameModLookup_) ModCount(game config.GameDef) int {
-	if gm, ok := l.getGameMods(game); ok {
-		return len(gm.Mods)
+func (gm *gameMods) ModCount(game config.GameDef) int {
+	if l, found := gm.GameMods[string(game.ID())]; found {
+		return l.Len()
 	}
 	return 0
 }
 
-func (l *gameModLookup_) RemoveMod(game config.GameDef, tm mods.TrackedMod) {
-	if gm, ok := l.getGameMods(game); ok {
-		for i, mod := range gm.Mods {
-			if mod.ID() == tm.ID() {
-				gm.Mods = append(gm.Mods[:i], gm.Mods[i+1:]...)
-				break
-			}
-		}
+func (gm *gameMods) RemoveMod(game config.GameDef, tm mods.TrackedMod) {
+	if l, found := gm.GameMods[string(game.ID())]; found {
+		l.Remove(tm.(*mods.TrackedModConc))
 	}
 }
 
-func (l *gameModLookup_) Set(game config.GameDef) {
-	for _, gm := range l.Games {
-		if gm.Game == game.ID() {
-			return
-		}
-	}
-	l.Games = append(l.Games, &gameMods{Game: game.ID()})
-}
-
-func (l *gameModLookup_) SetMod(game config.GameDef, tm mods.TrackedMod) {
-	if gm, ok := l.getGameMods(game); ok {
-		if _, ok = gm.getMod(tm.ID()); ok {
-			return
-		}
-		gm.Mods = append(gm.Mods, tm.(*mods.TrackedModConc))
+func (gm *gameMods) Set(game config.GameDef) {
+	if _, found := gm.GameMods[string(game.ID())]; !found {
+		c := mods.NewModLookup[*mods.TrackedModConc]()
+		gm.GameMods[string(game.ID())] = c.(*mods.ModLookupConc[*mods.TrackedModConc])
 	}
 }
 
-func (l *gameModLookup_) getGameMods(game config.GameDef) (gm *gameMods, ok bool) {
-	for _, gm = range l.Games {
-		if gm.Game == game.ID() {
-			ok = true
-			break
-		}
+func (gm *gameMods) SetMod(game config.GameDef, tm mods.TrackedMod) {
+	if l, found := gm.GameMods[string(game.ID())]; found {
+		l.Set(tm.(*mods.TrackedModConc))
 	}
-	return
-}
-
-func (gm *gameMods) getMod(id mods.ModID) (tm mods.TrackedMod, ok bool) {
-	for _, tm = range gm.Mods {
-		if tm.ID() == id {
-			ok = true
-			break
-		}
-	}
-	return
 }
