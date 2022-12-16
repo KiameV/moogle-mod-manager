@@ -71,7 +71,7 @@ func (ti *ToInstall) getHostedDownloadLocation(game config.GameDef, tm TrackedMo
 		} else {
 			ti.downloadDir = config.Get().GetDownloadFullPathForGame(game)
 		}
-		ti.downloadDir = filepath.Join(ti.downloadDir, tm.DirSuffix(), util.CreateFileName(v))
+		ti.downloadDir = filepath.Join(ti.downloadDir, tm.ID().AsDir(), util.CreateFileName(v))
 		if err := createPath(ti.downloadDir); err != nil {
 			return "", err
 		}
@@ -81,7 +81,7 @@ func (ti *ToInstall) getHostedDownloadLocation(game config.GameDef, tm TrackedMo
 
 func (ti *ToInstall) getRemoteDownloadLocation(game config.GameDef, tm TrackedMod) (string, error) {
 	if ti.downloadDir == "" {
-		ti.downloadDir = filepath.Join(config.Get().GetDownloadFullPathForGame(game), tm.DirSuffix(), util.CreateFileName(ti.Download.Version))
+		ti.downloadDir = filepath.Join(config.Get().GetDownloadFullPathForGame(game), tm.ID().AsDir(), util.CreateFileName(ti.Download.Version))
 		if err := createPath(ti.downloadDir); err != nil {
 			return "", err
 		}

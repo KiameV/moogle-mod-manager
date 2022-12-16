@@ -84,7 +84,7 @@ func (b *enableBind) EnableMod() (err error) {
 }
 
 func (b *enableBind) enableModWithConfig() (err error) {
-	modPath := filepath.Join(config.Get().GetModsFullPath(state.CurrentGame), b.tm.DirSuffix())
+	modPath := filepath.Join(config.Get().GetModsFullPath(state.CurrentGame), b.tm.ID().AsDir())
 	if err = state.GetScreen(state.ConfigInstaller).(ci.ConfigInstaller).Setup(b.tm.Mod(), modPath, b.enableMod); err != nil {
 		// Failed to set up config installer screen
 		return

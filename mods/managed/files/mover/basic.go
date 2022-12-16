@@ -21,7 +21,7 @@ func (m *basicFileMover) AddModFiles(enabler *mods.ModEnabler, mmf *managed.Mods
 		game     = enabler.Game
 		tm       = enabler.TrackedMod
 		configs  = config.Get()
-		modPath  = filepath.Join(configs.GetModsFullPath(game), tm.DirSuffix())
+		modPath  = filepath.Join(configs.GetModsFullPath(game), tm.ID().AsDir())
 		backedUp []*mods.ModFile
 		moved    []*mods.ModFile
 	)

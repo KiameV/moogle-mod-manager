@@ -203,7 +203,7 @@ func enableMod(enabler *mods.ModEnabler, err error) {
 		game    = enabler.Game
 		tm      = enabler.TrackedMod
 		tis     = enabler.ToInstall
-		modPath = filepath.Join(config.Get().GetModsFullPath(game), tm.DirSuffix())
+		modPath = filepath.Join(config.Get().GetModsFullPath(game), tm.ID().AsDir())
 	)
 	if err != nil {
 		tm.Disable()

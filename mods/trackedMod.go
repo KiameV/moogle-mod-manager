@@ -1,10 +1,9 @@
 package mods
 
 import (
-	"fmt"
 	"github.com/kiamev/moogle-mod-manager/config"
-	"github.com/kiamev/moogle-mod-manager/util"
 	"path/filepath"
+	"strings"
 )
 
 const moogleModName = "mod.moogle"
@@ -19,7 +18,6 @@ type (
 		Enabled() bool
 		Disable()
 		Toggle() bool
-		DirSuffix() string
 		Save() error
 		DisplayName() string
 		DisplayNamePtr() *string
@@ -76,8 +74,13 @@ func NewTrackerMod(mod *Mod, game config.GameDef) TrackedMod {
 		IsEnabled: false,
 		Mod_:      mod,
 	}
-	tm.MoogleModFile_ = filepath.Join(config.Get().GetModsFullPath(game), tm.DirSuffix(), moogleModName)
+	tm.MoogleModFile_ = filepath.Join(config.Get().GetModsFullPath(game), tm.ID().AsDir(), moogleModName)
 	return tm
+}
+
+func (id ModID) AsDir() string {
+	sp := strings.Split(string(id), ".")
+	return filepath.Join(sp...)
 }
 
 func (m *TrackedModConc) ID() ModID {
@@ -103,18 +106,6 @@ func (m *TrackedModConc) Enabled() bool {
 func (m *TrackedModConc) Toggle() bool {
 	m.IsEnabled = !m.IsEnabled
 	return m.IsEnabled
-}
-
-func (m *TrackedModConc) DirSuffix() string {
-	switch m.Kind() {
-	case Hosted:
-		return filepath.Join(util.CreateFileName(string(m.ID())), util.CreateFileName(m.Mod().Version))
-	case Nexus:
-		return filepath.Join(util.CreateFileName(string(m.ID())))
-	case CurseForge:
-		return filepath.Join(util.CreateFileName(string(m.ID())))
-	}
-	panic(fmt.Sprintf("unknown kind %v", m.Kind()))
 }
 
 func (m *TrackedModConc) Save() error {

@@ -54,7 +54,7 @@ func compileFilesToMove(game config.GameDef, mod mods.TrackedMod, modFiles []*mo
 			if dir, err = config.Get().GetDir(game, config.ModsDirKind); err != nil {
 				return
 			}
-			dir = filepath.Join(dir, mod.DirSuffix(), mf.DownloadName, d.From)
+			dir = filepath.Join(dir, mod.ID().AsDir(), mf.DownloadName, d.From)
 			if d.Recursive {
 				if err = filepath.WalkDir(dir, func(path string, de fs.DirEntry, err error) error {
 					if err != nil {
