@@ -7,7 +7,7 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/mods"
-	"github.com/kiamev/moogle-mod-manager/ui/state"
+	"github.com/kiamev/moogle-mod-manager/ui/ui"
 	"strings"
 )
 
@@ -42,7 +42,7 @@ func DisplayDownloadsAndFiles(toInstall []*mods.ToInstall) {
 		}
 		sb.WriteString("_____________________\n\n")
 	}
-	d := dialog.NewCustom("Downloads and File/Dir Copies", "ok", container.NewVScroll(widget.NewRichTextFromMarkdown(sb.String())), state.Window)
+	d := dialog.NewCustom("Downloads and File/Dir Copies", "ok", container.NewVScroll(widget.NewRichTextFromMarkdown(sb.String())), ui.Window)
 	d.Resize(fyne.NewSize(600, 600))
 	d.Show()
 }

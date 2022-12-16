@@ -18,6 +18,7 @@ import (
 	config_installer "github.com/kiamev/moogle-mod-manager/ui/config-installer"
 	cw "github.com/kiamev/moogle-mod-manager/ui/custom-widgets"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
+	"github.com/kiamev/moogle-mod-manager/ui/ui"
 	"github.com/kiamev/moogle-mod-manager/ui/util"
 	u "github.com/kiamev/moogle-mod-manager/util"
 	"github.com/ncruces/zenity"
@@ -114,7 +115,7 @@ func (a *ModAuthorer) NewNexusMod() {
 				return
 			}
 			a.updateEntries(m)
-		}, state.Window)
+		}, ui.Window)
 	d.Resize(fyne.NewSize(400, 200))
 	d.Show()
 }
@@ -142,7 +143,7 @@ func (a *ModAuthorer) NewCurseForgeMod() {
 				return
 			}
 			a.updateEntries(m)
-		}, state.Window)
+		}, ui.Window)
 	d.Resize(fyne.NewSize(400, 200))
 	d.Show()
 }
@@ -234,7 +235,7 @@ func (a *ModAuthorer) Draw(w fyne.Window) {
 					if ok {
 						callback()
 					}
-				}, state.Window)
+				}, ui.Window)
 			} else {
 				callback()
 			}
@@ -343,7 +344,7 @@ func (a *ModAuthorer) writeToClipboard(as As) {
 			if ok {
 				callback()
 			}
-		}, state.Window)
+		}, ui.Window)
 	} else {
 		callback()
 	}
@@ -469,7 +470,7 @@ func (a *ModAuthorer) submitForReview() {
 		err error
 	)
 	if !a.validate(mod, false) {
-		dialog.ShowInformation("Invalid Mod Def", "The mod is not valid, please fix it first.", state.Window)
+		dialog.ShowInformation("Invalid Mod Def", "The mod is not valid, please fix it first.", ui.Window)
 	}
 
 	/*if err = repo.NewGetter(repo.Author).Pull(); err != nil {
@@ -486,7 +487,7 @@ func (a *ModAuthorer) submitForReview() {
 	dialog.ShowCustom(
 		"Successfully submitted mod",
 		"ok",
-		container.NewMax(widget.NewHyperlink(pr, prUrl)), state.Window)
+		container.NewMax(widget.NewHyperlink(pr, prUrl)), ui.Window)
 }
 
 func (a *ModAuthorer) saveFile(asJson As) {
@@ -496,7 +497,7 @@ func (a *ModAuthorer) saveFile(asJson As) {
 			if ok {
 				a.save(mod, asJson)
 			}
-		}, state.Window)
+		}, ui.Window)
 	} else {
 		a.save(mod, asJson)
 	}
@@ -536,7 +537,7 @@ func (a *ModAuthorer) save(mod *mods.Mod, json As) {
 	if _, err = os.Stat(file); err == nil {
 		dialog.ShowConfirm("Replace File?", "Replace "+file+"?", func(b bool) {
 			save = b
-		}, state.Window)
+		}, ui.Window)
 	}
 	if save {
 		if err = os.WriteFile(file, b, 0755); err != nil {
@@ -549,9 +550,9 @@ func (a *ModAuthorer) validate(mod *mods.Mod, showMessage bool) bool {
 	s := mod.Validate()
 	if showMessage {
 		if s != "" {
-			dialog.ShowError(errors.New(s), state.Window)
+			dialog.ShowError(errors.New(s), ui.Window)
 		} else {
-			dialog.ShowInformation("", "Mod is valid", state.Window)
+			dialog.ShowInformation("", "Mod is valid", ui.Window)
 		}
 	}
 	return s == ""

@@ -6,7 +6,7 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	"github.com/kiamev/moogle-mod-manager/ui/state"
+	"github.com/kiamev/moogle-mod-manager/ui/ui"
 )
 
 type Callbacks struct {
@@ -81,7 +81,7 @@ func (l *DynamicList) removeItem(item interface{}) {
 			if ok {
 				l.removeFromList(item)
 			}
-		}, state.Window).Show()
+		}, ui.Window).Show()
 	} else {
 		l.removeFromList(item)
 	}

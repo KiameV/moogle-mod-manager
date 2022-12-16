@@ -13,6 +13,7 @@ import (
 	"github.com/kiamev/moogle-mod-manager/mods"
 	cw "github.com/kiamev/moogle-mod-manager/ui/custom-widgets"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
+	"github.com/kiamev/moogle-mod-manager/ui/ui"
 	"github.com/kiamev/moogle-mod-manager/ui/util"
 	"strings"
 )
@@ -143,7 +144,7 @@ func (d *modCompatsDef) createItem(item interface{}, done ...func(interface{})) 
 				done[0](m)
 			}
 		}
-	}, state.Window)
+	}, ui.Window)
 	fd.Resize(fyne.NewSize(400, 400))
 	fd.Show()
 }

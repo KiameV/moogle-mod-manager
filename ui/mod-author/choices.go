@@ -7,7 +7,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	cw "github.com/kiamev/moogle-mod-manager/ui/custom-widgets"
-	"github.com/kiamev/moogle-mod-manager/ui/state"
+	"github.com/kiamev/moogle-mod-manager/ui/ui"
 )
 
 type choicesDef struct {
@@ -110,7 +110,7 @@ func (d *choicesDef) createItem(item interface{}, done ...func(interface{})) {
 			}
 			d.list.Refresh()
 		}
-	}, state.Window)
+	}, ui.Window)
 	fd.Resize(fyne.NewSize(400, 400))
 	fd.Show()
 }

@@ -181,3 +181,13 @@ func (c *Configs) setDefaults() {
 		c.BackupDir = filepath.Join(PWD, "backups")
 	}
 }
+
+func (c *Configs) InitializeGames(games []GameDef) {
+	for _, g := range games {
+		if i := c.GameDirs[string(g.ID())]; i == nil || i.Dir == "" {
+			if s := g.SteamDirFromRegistry(); s != "" {
+				c.GameDirs[string(g.ID())] = &GameDir{Dir: s}
+			}
+		}
+	}
+}

@@ -8,7 +8,7 @@ import (
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	cw "github.com/kiamev/moogle-mod-manager/ui/custom-widgets"
-	"github.com/kiamev/moogle-mod-manager/ui/state"
+	"github.com/kiamev/moogle-mod-manager/ui/ui"
 	"strings"
 )
 
@@ -87,7 +87,7 @@ func (d *gamesDef) createItem(item interface{}, done ...func(interface{})) {
 			}
 			d.list.Refresh()
 		}
-	}, state.Window)
+	}, ui.Window)
 	fd.Resize(fyne.NewSize(400, 400))
 	fd.Show()
 }

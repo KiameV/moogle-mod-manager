@@ -6,16 +6,16 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 	"github.com/atotto/clipboard"
-	"github.com/kiamev/moogle-mod-manager/ui/state"
+	"github.com/kiamev/moogle-mod-manager/ui/ui"
 )
 
-func ShowErrorLong(err error, w ...fyne.Window) {
+func ShowErrorLong(err error) {
 	var (
-		window = state.Window
+		window = ui.Window
 		text   = widget.NewRichTextWithText(err.Error())
 	)
-	if len(w) > 0 && w[0] != nil {
-		window = w[0]
+	if ui.ShowingPopup {
+		window = ui.PopupWindow
 	}
 	text.Wrapping = fyne.TextWrapBreak
 

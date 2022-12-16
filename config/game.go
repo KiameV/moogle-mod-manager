@@ -68,7 +68,7 @@ type (
 		SetLogoPath(path string)
 		Logo() fyne.CanvasObject
 		SetLogo(logo fyne.CanvasObject)
-		getSteamDirFromRegistry() string
+		SteamDirFromRegistry() string
 	}
 )
 
@@ -237,7 +237,7 @@ func Initialize(dirs []string) (err error) {
 	return
 }
 
-func (g *gameDef) getSteamDirFromRegistry() (dir string) {
+func (g *gameDef) SteamDirFromRegistry() (dir string) {
 	//only poke into registry for Windows, there's probably a similar method for Mac/Linux
 	if runtime.GOOS == "windows" {
 		key, err := registry.OpenKey(registry.LOCAL_MACHINE, fmt.Sprintf("%s%s", windowsRegLookup, g.SteamID_), registry.QUERY_VALUE)

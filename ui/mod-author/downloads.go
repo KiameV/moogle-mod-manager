@@ -8,7 +8,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	cw "github.com/kiamev/moogle-mod-manager/ui/custom-widgets"
-	"github.com/kiamev/moogle-mod-manager/ui/state"
+	"github.com/kiamev/moogle-mod-manager/ui/ui"
 	"path/filepath"
 	"strings"
 )
@@ -99,7 +99,7 @@ func (d *downloadsDef) createItem(item interface{}, done ...func(interface{})) {
 		}
 		d.createFormMultiLine("Sources", strings.Join(sources, "\n"))
 	default:
-		dialog.ShowError(fmt.Errorf("unknown mod kind: %s", *d.kind), state.Window)
+		dialog.ShowError(fmt.Errorf("unknown mod kind: %s", *d.kind), ui.Window)
 		for _, dn := range done {
 			dn(nil)
 		}
@@ -154,7 +154,7 @@ func (d *downloadsDef) createItem(item interface{}, done ...func(interface{})) {
 			}
 			d.list.Refresh()
 		}
-	}, state.Window)
+	}, ui.Window)
 	fd.Resize(fyne.NewSize(600, 400))
 	fd.Show()
 }

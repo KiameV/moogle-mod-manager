@@ -99,7 +99,7 @@ func (ui *discoverUI) draw(w fyne.Window, isPopup bool) {
 			}
 		})
 	if err := ui.showSorted(ui.mods); err != nil {
-		util.ShowErrorLong(err, w)
+		util.ShowErrorLong(err)
 		return
 	}
 
@@ -109,7 +109,7 @@ func (ui *discoverUI) draw(w fyne.Window, isPopup bool) {
 	modList.OnSelected = func(id widget.ListItemID) {
 		data, err := ui.data.GetItem(id)
 		if err != nil {
-			util.ShowErrorLong(err, w)
+			util.ShowErrorLong(err)
 			return
 		}
 		if i, ok := cw.GetValueFromDataItem(data); ok {
@@ -121,7 +121,7 @@ func (ui *discoverUI) draw(w fyne.Window, isPopup bool) {
 			container.NewHBox(widget.NewButton("Include Mod", func() {
 				mod := ui.selectedMod
 				if err := managed.AddMod(state.CurrentGame, mods.NewTrackerMod(mod, state.CurrentGame)); err != nil {
-					util.ShowErrorLong(err, w)
+					util.ShowErrorLong(err)
 					return
 				}
 				for i, m := range ui.mods {
@@ -136,7 +136,7 @@ func (ui *discoverUI) draw(w fyne.Window, isPopup bool) {
 					sl[i] = m
 				}
 				if err := ui.data.Set(sl); err != nil {
-					util.ShowErrorLong(err, w)
+					util.ShowErrorLong(err)
 					return
 				}
 				ui.selectedMod = nil
@@ -151,7 +151,7 @@ func (ui *discoverUI) draw(w fyne.Window, isPopup bool) {
 	searchTb := widget.NewEntry()
 	searchTb.OnChanged = func(s string) {
 		if err := ui.search(s); err != nil {
-			util.ShowErrorLong(err, w)
+			util.ShowErrorLong(err)
 		}
 	}
 

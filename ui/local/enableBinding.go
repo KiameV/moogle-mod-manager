@@ -11,6 +11,7 @@ import (
 	"github.com/kiamev/moogle-mod-manager/mods/managed"
 	ci "github.com/kiamev/moogle-mod-manager/ui/config-installer"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
+	"github.com/kiamev/moogle-mod-manager/ui/ui"
 	"path/filepath"
 )
 
@@ -123,7 +124,7 @@ func (b *enableBind) OnConflict(conflicts []*mods.FileConflict, confirmationCall
 			r = mods.Cancel
 		}
 		confirmationCallback(r, conflicts)
-	}, state.Window)
+	}, ui.Window)
 	d.Resize(fyne.NewSize(400, 400))
 	d.Show()
 }

@@ -13,6 +13,7 @@ import (
 	cw "github.com/kiamev/moogle-mod-manager/ui/custom-widgets"
 	mp "github.com/kiamev/moogle-mod-manager/ui/mod-preview"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
+	u "github.com/kiamev/moogle-mod-manager/ui/ui"
 	"github.com/kiamev/moogle-mod-manager/ui/util"
 	"github.com/ncruces/zenity"
 )
@@ -98,7 +99,7 @@ func (ui *localUI) Draw(w fyne.Window) {
 				ui.split.Trailing = container.NewMax()
 				ui.split.Refresh()
 			}
-		}, state.Window).Show()
+		}, u.Window).Show()
 	})
 
 	ui.checkAll = widget.NewButton("Check For Updates", func() {
@@ -111,7 +112,7 @@ func (ui *localUI) Draw(w fyne.Window) {
 			if err != nil {
 				util.ShowErrorLong(err)
 			} else {
-				dialog.ShowInformation("Check for updates", "Done checking for updates.", state.Window)
+				dialog.ShowInformation("Check for updates", "Done checking for updates.", u.Window)
 			}
 		})
 	})
@@ -200,7 +201,7 @@ func (ui *localUI) addFromUrl() {
 					ui.addModToList(tm)
 				}
 			}
-		}, state.Window)
+		}, u.Window)
 }
 
 func (ui *localUI) addModToList(mod mods.TrackedMod) {
@@ -247,7 +248,7 @@ func (ui *localUI) startEnableDisableCallback() bool {
 
 func (ui *localUI) showWorkingDialog() {
 	if ui.workingDialog == nil {
-		ui.workingDialog = dialog.NewInformation("Working", "Working...", state.Window)
+		ui.workingDialog = dialog.NewInformation("Working", "Working...", u.Window)
 		ui.workingDialog.Show()
 	}
 }

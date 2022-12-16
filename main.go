@@ -17,6 +17,7 @@ import (
 	"github.com/kiamev/moogle-mod-manager/ui/menu"
 	mod_author "github.com/kiamev/moogle-mod-manager/ui/mod-author"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
+	"github.com/kiamev/moogle-mod-manager/ui/ui"
 	"github.com/kiamev/moogle-mod-manager/ui/util"
 	"github.com/kiamev/moogle-mod-manager/ui/util/resources"
 	"log"
@@ -41,8 +42,8 @@ func main() {
 		defer pprof.StopCPUProfile()
 	}
 
-	state.App = app.New()
-	state.Window = state.App.NewWindow("Moogle Mod Manager " + browser.Version)
+	ui.App = app.New()
+	ui.Window = ui.App.NewWindow("Moogle Mod Manager " + browser.Version)
 	initialize()
 
 	// Mod versions
@@ -106,7 +107,7 @@ func main() {
 
 	state.ShowScreen(state.None)
 	if config.Get().FirstTime {
-		configure.Show(state.Window)
+		configure.Show(ui.Window)
 	}
 
 	if game, err := config.GameDefFromID(config.GameID(config.Get().DefaultGame)); err == nil {
@@ -114,7 +115,7 @@ func main() {
 		state.ShowScreen(state.LocalMods)
 	}
 
-	state.Window.ShowAndRun()
+	ui.Window.ShowAndRun()
 }
 
 func initialize() {
@@ -130,7 +131,8 @@ func initialize() {
 		util.ShowErrorLong(err)
 	}
 
-	state.Window.Resize(config.Get().Size())
+	ui.Window.Resize(config.Get().Size())
+	ui.Window.SetMaster()
 
 	if configs.Theme == config.LightThemeColor {
 		fyne.CurrentApp().Settings().SetTheme(theme.LightTheme())
@@ -151,8 +153,9 @@ func initialize() {
 		util.ShowErrorLong(err)
 	}
 
+	configs.InitializeGames(config.GameDefs())
 	resources.Initialize(config.GameDefs())
 	if resources.Icon != nil {
-		state.Window.SetIcon(resources.Icon)
+		ui.Window.SetIcon(resources.Icon)
 	}
 }

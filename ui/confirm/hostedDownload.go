@@ -7,7 +7,7 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/mods"
-	"github.com/kiamev/moogle-mod-manager/ui/state"
+	"github.com/kiamev/moogle-mod-manager/ui/ui"
 	"os"
 	"path/filepath"
 	"strings"
@@ -42,7 +42,7 @@ func (_ *hostedConfirmer) ConfirmDownload(enabler *mods.ModEnabler, completeCall
 		if ok {
 			done(enabler, completeCallback, err)
 		}
-	}, state.Window)
+	}, ui.Window)
 	d.Resize(fyne.NewSize(500, 400))
 	d.Show()
 	return

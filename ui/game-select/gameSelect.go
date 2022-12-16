@@ -29,10 +29,14 @@ func (s *GameSelect) Draw(w fyne.Window) {
 		if i > 0 {
 			inputs = append(inputs, widget.NewSeparator())
 		}
-		inputs = append(inputs, container.NewMax(g.Logo(), widget.NewButton("", func() {
-			state.CurrentGame = g
-			state.ShowScreen(state.LocalMods)
-		})))
+		inputs = append(inputs, s.createInput(g))
 	}
 	w.SetContent(container.NewCenter(container.NewVBox(inputs...)))
+}
+
+func (s *GameSelect) createInput(g config.GameDef) *fyne.Container {
+	return container.NewMax(g.Logo(), widget.NewButton("", func() {
+		state.CurrentGame = g
+		state.ShowScreen(state.LocalMods)
+	}))
 }

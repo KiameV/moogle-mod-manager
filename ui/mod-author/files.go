@@ -9,6 +9,7 @@ import (
 	"github.com/kiamev/moogle-mod-manager/mods"
 	cw "github.com/kiamev/moogle-mod-manager/ui/custom-widgets"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
+	"github.com/kiamev/moogle-mod-manager/ui/ui"
 )
 
 type filesDef struct {
@@ -70,7 +71,7 @@ func (d *filesDef) createItem(item interface{}, done ...func(interface{})) {
 			}
 			d.list.Refresh()
 		}
-	}, state.Window)
+	}, ui.Window)
 	fd.Resize(fyne.NewSize(600, 400))
 	fd.Show()
 }
