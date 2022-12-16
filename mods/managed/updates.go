@@ -127,10 +127,7 @@ func isVersionNewer(new string, old string) bool {
 			return true
 		}
 	}
-	if len(newSl) > len(oldSl) {
-		return true
-	}
-	return false
+	return len(newSl) > len(oldSl)
 }
 
 func markForUpdate(tm mods.TrackedMod, mod *mods.Mod) {

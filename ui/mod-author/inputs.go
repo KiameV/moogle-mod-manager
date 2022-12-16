@@ -85,12 +85,12 @@ func (m *entryManager) getFormItem(name string) *widget.FormItem {
 }
 
 func (m *entryManager) getBaseDirFormItem(name string) *widget.FormItem {
-	e, _ := m.entries[baseDirKey]
+	e := m.entries[baseDirKey]
 	return widget.NewFormItem(name, e.(*cw.OpenFileDialogContainer).Container)
 }
 
 func (m *entryManager) getFileDialog(name string) *widget.FormItem {
-	e, _ := m.entries[name]
+	e := m.entries[name]
 	return widget.NewFormItem(name, e.(*cw.OpenFileDialogContainer).Container)
 }
 

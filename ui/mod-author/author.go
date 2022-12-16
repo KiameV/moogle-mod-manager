@@ -170,6 +170,10 @@ func (a *ModAuthorer) LoadModToEdit() (successfullyLoadedMod bool) {
 	} else {
 		err = json.Unmarshal(b, &mod)
 	}
+	if err != nil {
+		util.ShowErrorLong(err)
+		return false
+	}
 	*a.kind = mod.ModKind.Kind
 	a.modID = mod.ModID
 	a.updateEntries(&mod)
@@ -347,19 +351,17 @@ func (a *ModAuthorer) writeToClipboard(as As) {
 
 func (a *ModAuthorer) readFromClipboard(as As) {
 	var (
-		b   []byte
-		mod mods.Mod
-		err error
+		mod    mods.Mod
+		s, err = clipboard.ReadAll()
 	)
-	if err = clipboard.Init(); err != nil {
+	if err != nil {
 		util.ShowErrorLong(err)
 		return
 	}
-	b = clipboard.Read(clipboard.FmtText)
 	if as == asJson {
-		err = json.Unmarshal(b, &mod)
+		err = json.Unmarshal([]byte(s), &mod)
 	} else {
-		err = xml.Unmarshal(b, &mod)
+		err = xml.Unmarshal([]byte(s), &mod)
 	}
 	if err != nil {
 		util.ShowErrorLong(err)

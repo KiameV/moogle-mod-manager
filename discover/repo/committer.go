@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/golang/protobuf/proto"
 	"github.com/google/go-github/v45/github"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
@@ -57,7 +56,8 @@ func (c *repoClient) Submit() (url string, err error) {
 		game config.GameDef
 	)
 	for _, d := range c.mod.Downloadables {
-		d.DownloadedArchiveLocation = proto.String("")
+		s := ""
+		d.DownloadedArchiveLocation = &s
 	}
 	if len(c.mod.Games) == 1 {
 		if game, err = config.GameDefFromID(c.mod.Games[0].ID); err != nil {

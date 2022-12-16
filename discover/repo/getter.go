@@ -136,7 +136,7 @@ func (r *repo) getMods(rd repoDef, game config.GameDef) (mods []string, err erro
 	if err = r.Pull(); err != nil {
 		return
 	}
-	err = filepath.WalkDir(rd.repoGameDir(r.kind, game), func(path string, d os.DirEntry, err error) error {
+	if err = filepath.WalkDir(rd.repoGameDir(r.kind, game), func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -147,7 +147,9 @@ func (r *repo) getMods(rd repoDef, game config.GameDef) (mods []string, err erro
 			mods = append(mods, path)
 		}
 		return nil
-	})
+	}); err != nil {
+		return
+	}
 	err = filepath.WalkDir(rd.repoUtilDir(r.kind), func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			return err

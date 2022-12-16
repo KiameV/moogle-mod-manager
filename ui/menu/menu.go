@@ -66,7 +66,7 @@ func (m *MainMenu) Draw(w fyne.Window) {
 			purl, _ := url.Parse("https://www.patreon.com/kiamev")
 			kurl, _ := url.Parse("https://ko-fi.com/kiamev")
 			dialog.ShowCustom("About", "ok", container.NewBorder(
-				widget.NewRichTextFromMarkdown(fmt.Sprintf(fmt.Sprintf(`
+				widget.NewRichTextFromMarkdown(fmt.Sprintf(`
 ## Moogle Mod Manager %s
 ____________________________
 Written by Kiame Vivacity
@@ -74,7 +74,7 @@ Written by Kiame Vivacity
 Contributors:
 
 - Silvris`,
-					browser.Version))), nil, nil, nil,
+					browser.Version)), nil, nil, nil,
 				container.NewVBox(
 					widget.NewLabel("If you'd like to support the project:"),
 					container.NewHBox(widget.NewLabel("- Patreon"), widget.NewHyperlink("https://www.patreon.com/kiamev", purl)),

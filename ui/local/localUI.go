@@ -215,19 +215,19 @@ func (ui *localUI) removeModFromList(mod mods.TrackedMod) {
 	var item binding.DataItem
 	sl, err := ui.data.Get()
 	if err != nil {
-		// TODO message
+		util.ShowErrorLong(err)
 		return
 	}
 	for i := 0; i < len(sl); i++ {
 		if item, err = ui.data.GetItem(i); err != nil {
-			// TODO message
+			util.ShowErrorLong(err)
 			return
 		}
 		if j, ok := cw.GetValueFromDataItem(item); ok {
 			if j == mod {
 				sl = append(sl[:i], sl[i+1:]...)
 				if err = ui.data.Set(sl); err != nil {
-					// TODO message
+					util.ShowErrorLong(err)
 				}
 				return
 			}
@@ -239,7 +239,6 @@ func (ui *localUI) removeModFromList(mod mods.TrackedMod) {
 			return
 		}
 	}
-	return
 }
 
 func (ui *localUI) startEnableDisableCallback() bool {

@@ -11,7 +11,6 @@ require (
 	github.com/frustra/bbcode v0.0.0-20201127003707-6ef347fbe1c8
 	github.com/gen2brain/go-unarr v0.1.6
 	github.com/go-git/go-git/v5 v5.5.1
-	github.com/golang/protobuf v1.5.2
 	github.com/google/go-github/v45 v45.2.0
 	github.com/mholt/archiver/v4 v4.0.0-alpha.7
 	github.com/ncruces/zenity v0.10.4
@@ -47,6 +46,7 @@ require (
 	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20221017161538-93cebf72946b // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
 	github.com/goki/freetype v0.0.0-20220119013949-7a161fd3728c // indirect
+	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/gopherjs/gopherjs v1.17.2 // indirect
