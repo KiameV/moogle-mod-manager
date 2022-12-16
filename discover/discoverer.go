@@ -1,7 +1,6 @@
 package discover
 
 import (
-	"errors"
 	"fmt"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/discover/remote"
@@ -11,12 +10,27 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-var (
-	utilLookup    = make(map[string]*mods.Mod)
-	gameModLookup = [config.GameCount]map[string]*mods.Mod{}
+type (
+	gameMods struct {
+		lookup map[config.GameID]mods.ModLookup[*mods.Mod]
+	}
 )
 
-func GetMods(game *config.Game) (found []*mods.Mod, lookup map[string]*mods.Mod, err error) {
+func (m gameMods) Get(game config.GameDef) (l mods.ModLookup[*mods.Mod], found bool) {
+	l, found = m.lookup[game.ID()]
+	return
+}
+
+func (m gameMods) Set(game config.GameDef, lookup mods.ModLookup[*mods.Mod]) {
+	m.lookup[game.ID()] = lookup
+}
+
+var (
+	utilLookup    = mods.NewModLookup[*mods.Mod]()
+	gameModLookup = &gameMods{lookup: make(map[config.GameID]mods.ModLookup[*mods.Mod])}
+)
+
+/* TODO REMOVE func GetMods(game config.GameDef) (found []*mods.Mod, lookup mods.ModLookup, err error) {
 	if lookup, err = GetModsAsLookup(game); err != nil {
 		return
 	}
@@ -26,18 +40,9 @@ func GetMods(game *config.Game) (found []*mods.Mod, lookup map[string]*mods.Mod,
 		found = append(found, m)
 	}
 	return
-}
+}*/
 
-func GetModsAsLookup(game *config.Game) (lookup map[string]*mods.Mod, err error) {
-	if game == nil {
-		lookup = utilLookup
-	} else {
-		lookup = gameModLookup[*game]
-	}
-	if len(lookup) > 0 {
-		return
-	}
-
+func GetModsAsLookup(game config.GameDef) (lookup mods.ModLookup[*mods.Mod], err error) {
 	var (
 		remoteMods []*mods.Mod
 		repoMods   []*mods.Mod
@@ -45,51 +50,56 @@ func GetModsAsLookup(game *config.Game) (lookup map[string]*mods.Mod, err error)
 		eg         errgroup.Group
 		ok         bool
 	)
+
 	if game == nil {
-		return nil, errors.New("game is nil")
+		lookup = utilLookup
+	} else {
+		lookup, ok = gameModLookup.Get(game)
 	}
-	if *game <= config.VI {
-		eg.Go(func() (e error) {
-			remoteMods, e = remote.GetMods(*game)
-			return
-		})
+	if ok {
+		return
 	}
+
 	eg.Go(func() (e error) {
-		repoMods, e = repo.NewGetter().GetMods(*state.CurrentGame)
+		remoteMods, e = remote.GetMods(game)
+		return
+	})
+	eg.Go(func() (e error) {
+		repoMods, e = repo.NewGetter(repo.Read).GetMods(state.CurrentGame)
 		return
 	})
 	if err = eg.Wait(); err != nil {
 		return
 	}
 
-	lookup = make(map[string]*mods.Mod)
+	lookup = mods.NewModLookup[*mods.Mod]()
 	for _, m := range repoMods {
-		if _, ok = lookup[m.UniqueModID(*game)]; !ok {
-			lookup[m.UniqueModID(*game)] = m
+		if !lookup.Has(m) {
+			lookup.Set(m)
 		}
 	}
 	for _, m := range remoteMods {
-		if found, ok = lookup[m.UniqueModID(*game)]; !ok {
-			lookup[m.UniqueModID(*game)] = m
+		if found, ok = lookup.Get(m); !ok {
+			lookup.Set(m)
 		} else {
-			found.Merge(*m)
+			found.Mod().Merge(*m)
 		}
 	}
 	if game == nil {
 		utilLookup = lookup
 	} else {
-		gameModLookup[*game] = lookup
+		gameModLookup.Set(game, lookup)
 	}
 	return
 }
 
-func GetDisplayName(game config.Game, modID mods.ModID) (string, error) {
-	lookup, err := GetModsAsLookup(&game)
+func GetDisplayName(game config.GameDef, modID mods.ModID) (string, error) {
+	lookup, err := GetModsAsLookup(game)
 	if err != nil {
 		return "", err
 	}
-	if mod, ok := lookup[mods.UniqueModID(game, modID)]; ok {
-		return mod.Name, nil
+	if mod, ok := lookup.GetByID(modID); ok {
+		return mod.Mod().Name, nil
 	}
-	return "", fmt.Errorf("mod [%v] not found", modID)
+	return "", fmt.Errorf("mod [%s] not found", modID)
 }

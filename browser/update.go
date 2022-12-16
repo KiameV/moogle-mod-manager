@@ -12,22 +12,74 @@ import (
 )
 
 const (
-	Version = "0.5.11"
+	Version = "v0.6.0"
 
 	tagUrl = `https://api.github.com/repos/KiameV/ffprModManager/tags`
 	relUrl = `https://github.com/KiameV/ffprModManager/releases/%s`
 )
 
-type tag struct {
-	Name string `json:"name"`
+type (
+	comparer struct {
+		major, minor, patch uint64
+		pre                 int64
+	}
+	tag struct {
+		Name string `json:"name"`
+	}
+)
+
+func newComparer(v string) *comparer {
+	v = strings.TrimPrefix(v, "v")
+	var (
+		c   = &comparer{}
+		sp  = strings.Split(v, "_pre")
+		err error
+	)
+	if len(sp) > 1 {
+		if c.pre, err = strconv.ParseInt(sp[1], 10, 64); err != nil {
+			c.pre = -1
+		}
+		v = sp[0]
+	}
+	sp = strings.Split(v, ".")
+	if c.major, err = strconv.ParseUint(sp[0], 10, 64); err != nil {
+		return nil
+	}
+	if c.minor, err = strconv.ParseUint(sp[1], 10, 64); err != nil {
+		return nil
+	}
+	if c.patch, err = strconv.ParseUint(sp[2], 10, 64); err != nil {
+		return nil
+	}
+	return c
+}
+
+func (c comparer) isGreaterThan(cv *comparer) bool {
+	if cv == nil {
+		return true
+	}
+	if cv.pre != 0 && c.pre == 0 {
+		return true
+	}
+	if c.pre != 0 {
+		if c.major == cv.major && c.minor == cv.minor && c.patch == cv.patch {
+			if cv.pre == 0 {
+				return false
+			}
+			return c.pre > cv.pre
+		}
+	}
+	return c.major > cv.major ||
+		c.minor > cv.minor ||
+		c.patch > cv.patch
 }
 
 func CheckForUpdate() (hasNewer bool, version string, err error) {
 	var (
-		r    *http.Response
-		b    []byte
-		tags []tag
-		vn   = versionToInt(Version)
+		r              *http.Response
+		b              []byte
+		tags           []tag
+		highestVersion = newComparer(Version)
 	)
 	if r, err = http.Get(tagUrl); err != nil {
 		return
@@ -41,23 +93,15 @@ func CheckForUpdate() (hasNewer bool, version string, err error) {
 
 	for _, t := range tags {
 		if strings.Contains(t.Name, ".") {
-			i := versionToInt(t.Name)
-			if i > vn {
+			i := newComparer(t.Name)
+			if !highestVersion.isGreaterThan(i) {
 				hasNewer = true
 				version = t.Name
-				vn = i
+				highestVersion = i
 			}
 		}
 	}
 	return
-}
-
-func versionToInt(v string) int {
-	if i, err := strconv.ParseInt(strings.ReplaceAll(v, ".", ""), 10, 32); err != nil {
-		return 0
-	} else {
-		return int(i)
-	}
 }
 
 func Update(tag string) (err error) {

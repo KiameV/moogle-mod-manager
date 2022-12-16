@@ -17,7 +17,7 @@ func AddModFiles(enabler *mods.ModEnabler, files []*mods.DownloadFiles, done mod
 		} else if result == mods.Error {
 			done(result, err...)
 		} else {
-			fm := mover.NewFileMover(enabler.Game)
+			fm := mover.NewFileMover(enabler.TrackedMod.Mod(), enabler.Game)
 			if e := fm.AddModFiles(enabler, mmf, files, cr); e != nil {
 				done(mods.Error, e)
 			} else {
@@ -27,13 +27,13 @@ func AddModFiles(enabler *mods.ModEnabler, files []*mods.DownloadFiles, done mod
 	})
 }
 
-func RemoveModFiles(game config.Game, tm *mods.TrackedMod) error {
+func RemoveModFiles(game config.GameDef, tm mods.TrackedMod) error {
 	var (
 		mmf    = managed.GetModsWithManagedFiles(game)
-		mf, ok = mmf.Mods[tm.GetModID()]
+		mf, ok = mmf.Mods[tm.ID()]
 	)
 	if !ok {
-		return fmt.Errorf("%s is not enabled", tm.Mod.Name)
+		return fmt.Errorf("%s is not enabled", tm.DisplayName())
 	}
-	return mover.NewFileMover(game).RemoveModFiles(mf, mmf, tm)
+	return mover.NewFileMover(tm.Mod(), game).RemoveModFiles(mf, mmf, tm)
 }

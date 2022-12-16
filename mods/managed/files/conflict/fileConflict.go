@@ -24,7 +24,8 @@ func ResolveConflicts(enabler *mods.ModEnabler, managedFiles map[mods.ModID]*man
 	fileToMod := make(map[string]mods.ModID)
 	for modID, mf := range managedFiles {
 		for _, f := range mf.MovedFiles {
-			fileToMod[c.RemoveGameDir(enabler.Game, f.To)] = modID
+			s, _ := c.RemoveGameDir(enabler.Game, f.To)
+			fileToMod[s] = modID
 		}
 	}
 	toInstall, err := compileFilesToMove(enabler.Game, enabler.TrackedMod, modFiles)
@@ -34,10 +35,9 @@ func ResolveConflicts(enabler *mods.ModEnabler, managedFiles map[mods.ModID]*man
 	}
 
 	detectCollisions(enabler, toInstall, fileToMod, done)
-	return
 }
 
-func compileFilesToMove(game config.Game, mod *mods.TrackedMod, modFiles []*mods.DownloadFiles) (toInstall []string, err error) {
+func compileFilesToMove(game config.GameDef, mod mods.TrackedMod, modFiles []*mods.DownloadFiles) (toInstall []string, err error) {
 	var (
 		dir string
 		f   string
@@ -54,7 +54,7 @@ func compileFilesToMove(game config.Game, mod *mods.TrackedMod, modFiles []*mods
 			if dir, err = config.Get().GetDir(game, config.ModsDirKind); err != nil {
 				return
 			}
-			dir = filepath.Join(dir, mod.GetDirSuffix(), mf.DownloadName, d.From)
+			dir = filepath.Join(dir, mod.DirSuffix(), mf.DownloadName, d.From)
 			if d.Recursive {
 				if err = filepath.WalkDir(dir, func(path string, de fs.DirEntry, err error) error {
 					if err != nil {
@@ -97,7 +97,7 @@ func compileFilesToMove(game config.Game, mod *mods.TrackedMod, modFiles []*mods
 
 func detectCollisions(enabler *mods.ModEnabler, toInstall []string, installedFiles map[string]mods.ModID, done DoneCallback) {
 	var (
-		newModID   = enabler.TrackedMod.GetModID()
+		newModID   = enabler.TrackedMod.ID()
 		collisions []*mods.FileConflict
 		id         mods.ModID
 		found      bool
@@ -126,7 +126,7 @@ func detectCollisions(enabler *mods.ModEnabler, toInstall []string, installedFil
 				return
 			}
 			for _, c := range choices {
-				if c.ChoiceName != enabler.TrackedMod.DisplayName {
+				if c.ChoiceName != enabler.TrackedMod.DisplayName() {
 					cr.Skip[c.File] = true
 				} else {
 					cr.Replace[c.File] = true

@@ -75,7 +75,7 @@ func (d *downloadsDef) createItem(item interface{}, done ...func(interface{})) {
 	d.createFormItem("Name", m.Name)
 	d.createFormItem("Version", m.Version)
 	d.createFormItem("File Name", "")
-	d.createFormItem("File ID", "")
+	d.createFormItem("File ModID", "")
 	d.createFormItem("Url", "")
 	//d.createFormSelect("Install Type", mods.InstallTypes, string(m.InstallType))
 	switch k {
@@ -107,9 +107,9 @@ func (d *downloadsDef) createItem(item interface{}, done ...func(interface{})) {
 
 	if k == mods.Nexus || k == mods.CurseForge {
 		d.createFormItem("File Name", fileName)
-		d.createFormItem("File ID", fileID)
+		d.createFormItem("File ModID", fileID)
 		items = append(items, d.getFormItem("File Name"))
-		items = append(items, d.getFormItem("File ID"))
+		items = append(items, d.getFormItem("File ModID"))
 		if k == mods.CurseForge {
 			d.createFormItem("Url", url)
 			items = append(items, d.getFormItem("Url"))
@@ -126,14 +126,14 @@ func (d *downloadsDef) createItem(item interface{}, done ...func(interface{})) {
 					m.Nexus = &mods.RemoteDownloadable{}
 				}
 				m.Nexus.FileName = d.getString("File Name")
-				m.Nexus.FileID = d.getInt("File ID")
+				m.Nexus.FileID = d.getInt("File ModID")
 				m.Name = filepath.Base(m.Nexus.FileName)
 			} else if k == mods.CurseForge {
 				if m.CurseForge == nil {
 					m.CurseForge = &mods.CurseForgeDownloadable{}
 				}
 				m.CurseForge.FileName = d.getString("File Name")
-				m.CurseForge.FileID = d.getInt("File ID")
+				m.CurseForge.FileID = d.getInt("File ModID")
 				m.CurseForge.Url = d.getString("Url")
 				m.Name = filepath.Base(m.CurseForge.FileName)
 			} else if k == mods.Hosted {

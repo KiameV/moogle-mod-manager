@@ -58,9 +58,7 @@ func (ui *configInstallerUI) Setup(mod *mods.Mod, baseDir string, done func([]*m
 	ui.done = done
 	ui.toInstall = make([]*mods.DownloadFiles, 0)
 	ui.choiceContainer.RemoveAll()
-	for _, dl := range mod.AlwaysDownload {
-		ui.toInstall = append(ui.toInstall, dl)
-	}
+	ui.toInstall = append(ui.toInstall, mod.AlwaysDownload...)
 	return nil
 }
 

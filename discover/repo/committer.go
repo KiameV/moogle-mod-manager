@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/golang/protobuf/proto"
 	"github.com/google/go-github/v45/github"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/util"
 	"golang.org/x/oauth2"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -20,6 +21,10 @@ var (
 	author      = "moogle-modder"
 	authorName  = "Moogle Modder"
 	authorEmail = "moogle-modder@hotmail.com"
+
+	hostedPrefix     = strings.ToLower(string(mods.Hosted + "."))
+	nexusPrefix      = strings.ToLower(string(mods.Nexus + "."))
+	curseforgePrefix = strings.ToLower(string(mods.CurseForge + "."))
 )
 
 type Committer interface {
@@ -49,29 +54,24 @@ func (c *repoClient) Submit() (url string, err error) {
 		ref  *github.Reference
 		tree *github.Tree
 		file string
+		game config.GameDef
 	)
-
-	if err = NewGetter().pull(rd); err != nil {
-		return
+	for _, d := range c.mod.Downloadables {
+		d.DownloadedArchiveLocation = proto.String("")
 	}
-
 	if len(c.mod.Games) == 1 {
-		switch c.mod.ModKind.Kind {
-		case mods.Hosted:
-			file = filepath.Join(rd.repoGameDir(config.NameToGame(c.mod.Games[0].Name)), c.mod.DirectoryName())
-		case mods.Nexus:
-			file = rd.repoNexusIDDir(config.NameToGame(c.mod.Games[0].Name), c.mod.ID)
-		case mods.CurseForge:
-			file = rd.repoCfIDDir(config.NameToGame(c.mod.Games[0].Name), c.mod.ID)
-		default:
-			err = fmt.Errorf("unknown mod kind: %v", c.mod.ModKind.Kind)
+		if game, err = config.GameDefFromID(c.mod.Games[0].ID); err != nil {
+			return
 		}
+		file = rd.repoGameModDir(Author, game, c.mod.ModKind.Kind, mods.ModID(c.removeFilePrefixes(string(c.mod.ModID))))
 	} else if len(c.mod.Games) > 1 {
 		if c.mod.ModKind.Kind != mods.Hosted {
 			err = errors.New("multi-game mods must be hosted")
 			return
 		}
-		file = filepath.Join(rd.repoDir(), "utilities", util.CreateFileName(string(c.mod.ID)))
+		file = util.CreateFileName(string(c.mod.ModID))
+		file = c.removeFilePrefixes(file)
+		file = filepath.Join(rd.repoDir(Author), "utilities", file)
 	} else {
 		err = errors.New("no games specified")
 		return
@@ -83,7 +83,7 @@ func (c *repoClient) Submit() (url string, err error) {
 	}
 	file = filepath.Join(file, "mod.json")
 
-	if err = util.SaveToFile(file, c.mod, '\n'); err != nil {
+	if err = c.mod.Save(file); err != nil {
 		return
 	}
 
@@ -156,10 +156,10 @@ func (c *repoClient) getTree(rd repoDef, ref *github.Reference, file string) (tr
 
 	// Load each file into the tree.
 	var b []byte
-	if b, err = ioutil.ReadFile(file); err != nil {
+	if b, err = os.ReadFile(file); err != nil {
 		return nil, err
 	}
-	file = strings.TrimPrefix(strings.TrimPrefix(strings.TrimPrefix(file, rd.repoDir()), "\\"), "/")
+	file = strings.TrimPrefix(strings.TrimPrefix(strings.TrimPrefix(file, rd.repoDir(Author)), "\\"), "/")
 	file = strings.ReplaceAll(file, "\\", "/")
 	entries = append(entries, &github.TreeEntry{Path: github.String(file), Type: github.String("blob"), Content: github.String(string(b)), Mode: github.String("100644")})
 
@@ -233,6 +233,13 @@ func (c *repoClient) createPR(rd repoDef, commitBranch string) (url string, err 
 		url = pr.GetHTMLURL()
 	}
 	return
+}
+
+func (c *repoClient) removeFilePrefixes(s string) string {
+	s = strings.TrimPrefix(s, hostedPrefix)
+	s = strings.TrimPrefix(s, nexusPrefix)
+	s = strings.TrimPrefix(s, curseforgePrefix)
+	return s
 }
 
 const pat = "4IYjtV7j9BWmyiSJ1GRz8e"

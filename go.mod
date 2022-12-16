@@ -6,14 +6,15 @@ require (
 	fyne.io/fyne/v2 v2.2.4
 	fyne.io/x/fyne v0.0.0-20221121180555-92e65f302337
 	github.com/JohannesKaufmann/html-to-markdown v1.3.6
+	github.com/atotto/clipboard v0.1.4
 	github.com/carwale/golibraries v1.5.0
 	github.com/frustra/bbcode v0.0.0-20201127003707-6ef347fbe1c8
 	github.com/gen2brain/go-unarr v0.1.6
-	github.com/go-git/go-git/v5 v5.5.0
+	github.com/go-git/go-git/v5 v5.5.1
+	github.com/golang/protobuf v1.5.2
 	github.com/google/go-github/v45 v45.2.0
 	github.com/mholt/archiver/v4 v4.0.0-alpha.7
-	github.com/ncruces/zenity v0.10.1
-	golang.design/x/clipboard v0.6.3
+	github.com/ncruces/zenity v0.10.4
 	golang.org/x/oauth2 v0.3.0
 	golang.org/x/sync v0.1.0
 	golang.org/x/sys v0.3.0
@@ -46,7 +47,6 @@ require (
 	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20221017161538-93cebf72946b // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
 	github.com/goki/freetype v0.0.0-20220119013949-7a161fd3728c // indirect
-	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/gopherjs/gopherjs v1.17.2 // indirect
@@ -55,10 +55,9 @@ require (
 	github.com/josephspurrier/goversioninfo v1.4.0 // indirect
 	github.com/jsummers/gobmp v0.0.0-20151104160322-e2ba15ffa76e // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
-	github.com/klauspost/compress v1.15.12 // indirect
+	github.com/klauspost/compress v1.15.13 // indirect
 	github.com/klauspost/pgzip v1.2.5 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
-	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646 // indirect
 	github.com/nwaples/rardecode/v2 v2.0.0-beta.2 // indirect
 	github.com/pierrec/lz4/v4 v4.1.17 // indirect
@@ -66,7 +65,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/client_golang v1.14.0 // indirect
 	github.com/prometheus/client_model v0.3.0 // indirect
-	github.com/prometheus/common v0.38.0 // indirect
+	github.com/prometheus/common v0.39.0 // indirect
 	github.com/prometheus/procfs v0.8.0 // indirect
 	github.com/randall77/makefat v0.0.0-20210315173500-7ddd0e42c844 // indirect
 	github.com/sergi/go-diff v1.2.0 // indirect
@@ -76,12 +75,10 @@ require (
 	github.com/stretchr/testify v1.8.1 // indirect
 	github.com/tevino/abool v1.2.0 // indirect
 	github.com/therootcompany/xz v1.0.1 // indirect
-	github.com/ulikunitz/xz v0.5.10 // indirect
+	github.com/ulikunitz/xz v0.5.11 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	github.com/yuin/goldmark v1.5.3 // indirect
 	golang.org/x/crypto v0.4.0 // indirect
-	golang.org/x/exp v0.0.0-20200224162631-6cc2880d07d6 // indirect
-	golang.org/x/exp/shiny v0.0.0-20221208152030-732eee02a75a // indirect
 	golang.org/x/image v0.2.0 // indirect
 	golang.org/x/mobile v0.0.0-20221110043201-43a038452099 // indirect
 	golang.org/x/mod v0.7.0 // indirect

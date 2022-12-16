@@ -1,150 +1,265 @@
 package config
 
-const GameCount = 9
-
-type GameName string
-
-const (
-	FfPrI           GameName = "FF PR I"
-	FfPrII          GameName = "FF PR II"
-	FfPrIII         GameName = "FF PR III"
-	FfPrIV          GameName = "FF PR IV"
-	FfPrV           GameName = "FF PR V"
-	FfPrVI          GameName = "FF PR VI"
-	ChronoCrossName          = "Chrono Cross"
-	BofIIIName      GameName = "BoF III"
-	BofIVName       GameName = "BoF IV"
+import (
+	"fmt"
+	"fyne.io/fyne/v2"
+	"github.com/kiamev/moogle-mod-manager/util"
+	"golang.org/x/sys/windows/registry"
+	"os"
+	"path/filepath"
+	"runtime"
+	"strings"
 )
 
-type Game int
+var gameDefs []GameDef
 
-const (
-	I Game = iota
-	II
-	III
-	IV
-	V
-	VI
-	Utility
-	ChronoCross
-	BofIII
-	BofIV
+type (
+	InstallType string
+	GameID      string
+	GameName    string
+	SteamID     string
+	BaseDir     string
+	NexusGameID int
+	NexusPath   string
+	CfGameID    int
+	CfPath      string
+	VersionID   string
+	Nexus       struct {
+		ID   NexusGameID `json:"id"`
+		Path NexusPath   `json:"path"`
+	}
+	CurseForge struct {
+		ID   CfGameID `json:"id"`
+		Path CfPath   `json:"path"`
+	}
+	Remote struct {
+		Nexus      Nexus      `json:"nexus"`
+		CurseForge CurseForge `json:"curseforge"`
+	}
+	SteamVersion struct {
+		Build    uint   `json:"build"`
+		Manifest uint64 `json:"manifest"`
+	}
+	Version struct {
+		Version VersionID     `json:"version"`
+		Steam   *SteamVersion `json:"steam,omitempty"`
+	}
+	gameDef struct {
+		ID_                 GameID            `json:"id"`
+		Name_               GameName          `json:"name"`
+		SteamID_            SteamID           `json:"steamID"`
+		Versions_           []Version         `json:"versions"`
+		BaseDir_            BaseDir           `json:"baseDir"`
+		Remote_             Remote            `json:"remote"`
+		DefaultInstallType_ InstallType       `json:"defaultInstallType"`
+		LogoPath_           string            `json:"-"`
+		Logo_               fyne.CanvasObject `json:"-"`
+		InstallDir_         string            `json:"-"`
+	}
+	GameDef interface {
+		ID() GameID
+		Name() GameName
+		SteamID() SteamID
+		Versions() []Version
+		BaseDir() BaseDir
+		Remote() Remote
+		DefaultInstallType() InstallType
+		LogoPath() string
+		SetLogoPath(path string)
+		Logo() fyne.CanvasObject
+		SetLogo(logo fyne.CanvasObject)
+		getSteamDirFromRegistry() string
+	}
 )
 
-var GameNames = []string{
-	GameNameString(I),
-	GameNameString(II),
-	GameNameString(III),
-	GameNameString(IV),
-	GameNameString(V),
-	GameNameString(VI),
-	GameNameString(ChronoCross),
-	// TODO BOF
-	//GameNameString(BofIII),
-	//GameNameString(BofIV),
+func (g *gameDef) ID() GameID {
+	return g.ID_
 }
 
-func String(game Game) string {
-	switch game {
-	case I:
-		return "I"
-	case II:
-		return "II"
-	case III:
-		return "III"
-	case IV:
-		return "IV"
-	case V:
-		return "V"
-	case VI:
-		return "VI"
-	case ChronoCross:
-		return "Chrono Cross"
-	case BofIII:
-		return "BoF III"
-	case BofIV:
-		return "BoF IV"
-	}
-	panic("invalid game " + string(game))
+func (g *gameDef) Name() GameName {
+	return g.Name_
 }
 
-func GameNameString(game Game) string {
-	if game <= VI {
-		return "Final Fantasy " + String(game)
-	} else if game == ChronoCross {
-		return "Chrono Cross"
-	}
-	return "Breath of Fire " + String(game)
+func (g *gameDef) SteamID() SteamID {
+	return g.SteamID_
 }
 
-func FromString(s string) (game Game) {
-	switch s {
-	case "Final Fantasy I":
-		return I
-	case "Final Fantasy II":
-		return II
-	case "Final Fantasy III":
-		return III
-	case "Final Fantasy IV":
-		return IV
-	case "Final Fantasy V":
-		return V
-	case "Final Fantasy VI":
-		return VI
-	case "Chrono Cross":
-		return ChronoCross
-	case "Breath of Fire III":
-		return BofIII
-	case "Breath of Fire IV":
-		return BofIV
-	}
-	panic("invalid game name " + s)
+func (g *gameDef) Versions() []Version {
+	return g.Versions_
 }
 
-func NameToGame(n GameName) Game {
-	switch n {
-	case FfPrI:
-		return I
-	case FfPrII:
-		return II
-	case FfPrIII:
-		return III
-	case FfPrIV:
-		return IV
-	case FfPrV:
-		return V
-	case FfPrVI:
-		return VI
-	case ChronoCrossName:
-		return ChronoCross
-	case BofIIIName:
-		return BofIII
-	case BofIVName:
-		return BofIV
-	}
-	return I
+func (g *gameDef) BaseDir() BaseDir {
+	return g.BaseDir_
 }
 
-func GameToName(game Game) GameName {
-	switch game {
-	case I:
-		return FfPrI
-	case II:
-		return FfPrII
-	case III:
-		return FfPrIII
-	case IV:
-		return FfPrIV
-	case V:
-		return FfPrV
-	case VI:
-		return FfPrVI
-	case ChronoCross:
-		return ChronoCrossName
-	case BofIII:
-		return BofIIIName
-	case BofIV:
-		return BofIVName
+func (g *gameDef) Remote() Remote {
+	return g.Remote_
+}
+
+func (g *gameDef) DefaultInstallType() InstallType {
+	return g.DefaultInstallType_
+}
+
+func (g *gameDef) LogoPath() string {
+	return g.LogoPath_
+}
+
+func (g *gameDef) SetLogoPath(path string) {
+	g.LogoPath_ = path
+}
+
+func (g *gameDef) Logo() fyne.CanvasObject {
+	return g.Logo_
+}
+
+func (g *gameDef) InstallDir() string {
+	return g.InstallDir_
+}
+
+func (g *gameDef) InstallDirPtr() *string {
+	return &g.InstallDir_
+}
+
+func (g *gameDef) SetInstallDir(dir string) {
+	g.InstallDir_ = dir
+}
+
+const (
+	StreamingAssetsDir = "StreamingAssets"
+
+	//Bundles  InstallType = "Bundles"
+	// DLL Patcher https://discord.com/channels/371784427162042368/518331294858608650/863930606446182420
+	//DllPatch   InstallType = "DllPatch"
+	Archive InstallType = "Archive"
+	Move    InstallType = "Move"
+)
+
+func GameDefs() []GameDef {
+	return gameDefs
+}
+
+func GameDefFromID(id GameID) (GameDef, error) {
+	for _, g := range gameDefs {
+		if g.ID() == id {
+			return g, nil
+		}
 	}
-	panic("invalid game " + string(game))
+	return nil, fmt.Errorf("game with ModID [%s] not found", id)
+}
+
+func GameDefFromNexusID(id NexusGameID) (GameDef, error) {
+	for _, g := range gameDefs {
+		if g.Remote().Nexus.ID == id {
+			return g, nil
+		}
+	}
+	return nil, fmt.Errorf("game with Nexus ModID [%d] not found", id)
+}
+
+func GameDefFromNexusPath(path NexusPath) (GameDef, error) {
+	for _, g := range gameDefs {
+		if g.Remote().Nexus.Path == path {
+			return g, nil
+		}
+	}
+	return nil, fmt.Errorf("game with Nexus Path [%s] not found", path)
+}
+
+func GameDefFromCfID(id CfGameID) (GameDef, error) {
+	for _, g := range gameDefs {
+		if g.Remote().CurseForge.ID == id {
+			return g, nil
+		}
+	}
+	return nil, fmt.Errorf("game with CurseForge ModID [%d] not found", id)
+}
+
+func GameDefFromCfPath(path CfPath) (GameDef, error) {
+	for _, g := range gameDefs {
+		if g.Remote().CurseForge.Path == path {
+			return g, nil
+		}
+	}
+	return nil, fmt.Errorf("game with CurseForge path [%s] not found", path)
+}
+
+func GameDefFromName(name GameName) (GameDef, error) {
+	for _, g := range gameDefs {
+		if g.Name() == name {
+			return g, nil
+		}
+	}
+	return nil, fmt.Errorf("game with name [%s] not found", name)
+}
+
+func Initialize(dirs []string) (err error) {
+	var des []os.DirEntry
+	for _, dir := range dirs {
+		if err = filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
+			if d.IsDir() {
+				if err != nil {
+					return err
+				}
+				if strings.Contains(path, ".git") {
+					return nil
+				}
+				if des, err = os.ReadDir(path); err != nil {
+					return err
+				}
+				var (
+					logo string
+					def  string
+				)
+				for _, de := range des {
+					if de.Name() == "game.json" {
+						def = filepath.Join(path, de.Name())
+					} else if strings.HasPrefix(de.Name(), "logo.") {
+						logo = filepath.Join(path, de.Name())
+					}
+					if def != "" && logo != "" {
+						break
+					}
+				}
+				if def != "" {
+					var game gameDef
+					if err = util.LoadFromFile(def, &game); err != nil {
+						return err
+					}
+					game.LogoPath_ = logo
+					gameDefs = append(gameDefs, &game)
+				}
+			}
+			return nil
+		}); err != nil {
+			return
+		}
+	}
+	return
+}
+
+func (g *gameDef) getSteamDirFromRegistry() (dir string) {
+	//only poke into registry for Windows, there's probably a similar method for Mac/Linux
+	if runtime.GOOS == "windows" {
+		key, err := registry.OpenKey(registry.LOCAL_MACHINE, fmt.Sprintf("%s%s", windowsRegLookup, g.SteamID_), registry.QUERY_VALUE)
+		if err != nil {
+			return
+		}
+		if dir, _, err = key.GetStringValue("InstallLocation"); err != nil {
+			dir = ""
+		}
+	}
+	return
+}
+
+func (g *gameDef) SetLogo(logo fyne.CanvasObject) {
+	g.Logo_ = logo
+}
+
+func GameIDs() []string {
+	names := make([]string, len(gameDefs)+1)
+	names[0] = ""
+	for i, g := range gameDefs {
+		names[i+1] = string(g.ID())
+	}
+	return names
 }

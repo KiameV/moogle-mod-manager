@@ -9,6 +9,7 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
+	"github.com/atotto/clipboard"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/discover/remote"
 	"github.com/kiamev/moogle-mod-manager/discover/repo"
@@ -20,8 +21,6 @@ import (
 	"github.com/kiamev/moogle-mod-manager/ui/util"
 	u "github.com/kiamev/moogle-mod-manager/util"
 	"github.com/ncruces/zenity"
-	"golang.design/x/clipboard"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"path"
@@ -83,24 +82,24 @@ func (a *ModAuthorer) OnClose() {
 
 func (a *ModAuthorer) NewHostedMod() {
 	a.modID = ""
-	a.updateEntries(&mods.Mod{
+	a.updateEntries(mods.NewMod(&mods.ModDef{
 		ModKind: mods.ModKind{
 			Kind: mods.Hosted,
 		},
 		ReleaseDate:         time.Now().Format("Jan 02 2006"),
 		ConfigSelectionType: mods.Auto,
-	})
+	}))
 }
 
 func (a *ModAuthorer) NewNexusMod() {
 	a.modID = ""
-	a.updateEntries(&mods.Mod{
+	a.updateEntries(mods.NewMod(&mods.ModDef{
 		ModKind: mods.ModKind{
 			Kind: mods.Nexus,
 		},
 		ReleaseDate:         time.Now().Format("Jan 02 2006"),
 		ConfigSelectionType: mods.Auto,
-	})
+	}))
 
 	e := widget.NewEntry()
 	d := dialog.NewForm("", "Ok", "Cancel", []*widget.FormItem{widget.NewFormItem("Link", e)},
@@ -122,13 +121,13 @@ func (a *ModAuthorer) NewNexusMod() {
 
 func (a *ModAuthorer) NewCurseForgeMod() {
 	a.modID = ""
-	a.updateEntries(&mods.Mod{
+	a.updateEntries(mods.NewMod(&mods.ModDef{
 		ModKind: mods.ModKind{
 			Kind: mods.CurseForge,
 		},
 		ReleaseDate:         time.Now().Format("Jan 02 2006"),
 		ConfigSelectionType: mods.Auto,
-	})
+	}))
 
 	e := widget.NewEntry()
 	d := dialog.NewForm("", "Ok", "Cancel", []*widget.FormItem{widget.NewFormItem("Link", e)},
@@ -162,7 +161,7 @@ func (a *ModAuthorer) LoadModToEdit() (successfullyLoadedMod bool) {
 	if err != nil {
 		return false
 	}
-	if b, err = ioutil.ReadFile(file); err != nil {
+	if b, err = os.ReadFile(file); err != nil {
 		util.ShowErrorLong(err)
 		return false
 	}
@@ -172,13 +171,13 @@ func (a *ModAuthorer) LoadModToEdit() (successfullyLoadedMod bool) {
 		err = json.Unmarshal(b, &mod)
 	}
 	*a.kind = mod.ModKind.Kind
-	a.modID = mod.ID
+	a.modID = mod.ModID
 	a.updateEntries(&mod)
 	return true
 }
 
 func (a *ModAuthorer) EditMod(mod *mods.Mod, editCallback func(*mods.Mod)) {
-	a.modID = mod.ID
+	a.modID = mod.ModID
 	*a.kind = mod.ModKind.Kind
 	a.editCallback = editCallback
 	a.updateEntries(mod)
@@ -287,7 +286,7 @@ func (a *ModAuthorer) Draw(w fyne.Window) {
 func (a *ModAuthorer) updateEntries(mod *mods.Mod) {
 	*a.kind = mod.ModKind.Kind
 	a.createBaseDir(state.GetBaseDirBinding())
-	a.modID = mod.ID
+	a.modID = mod.ModID
 	a.createFormItem("Name", mod.Name)
 	a.createFormItem("Author", mod.Author)
 	a.createFormItem("Release Date", mod.ReleaseDate)
@@ -300,7 +299,7 @@ func (a *ModAuthorer) updateEntries(mod *mods.Mod) {
 	//a.createFormSelect("Select Type", mods.SelectTypes, string(mod.ConfigSelectionType))
 
 	a.createFormItem("Working Dir", config.PWD)
-	if dir, ok := authored.GetDir(mod.ID); ok && dir != "" {
+	if dir, ok := authored.GetDir(mod.ModID); ok && dir != "" {
 		a.createFormItem("Working Dir", dir)
 	}
 
@@ -327,17 +326,13 @@ func (a *ModAuthorer) writeToClipboard(as As) {
 		b   []byte
 		err error
 	)
-	if err = clipboard.Init(); err != nil {
-		util.ShowErrorLong(err)
-		return
-	}
 	mod := a.compileMod()
 	callback := func() {
 		if b, err = a.Marshal(mod, asJson); err != nil {
 			util.ShowErrorLong(err)
 			return
 		}
-		clipboard.Write(clipboard.FmtText, b)
+		_ = clipboard.WriteAll(string(b))
 	}
 	if !a.validate(mod, false) {
 		dialog.ShowConfirm("Continue?", "The mod is not valid, continue anyway?", func(ok bool) {
@@ -383,7 +378,7 @@ func (a *ModAuthorer) Marshal(mod *mods.Mod, as As) (b []byte, err error) {
 }
 
 func (a *ModAuthorer) compileMod() (m *mods.Mod) {
-	m = &mods.Mod{
+	m = mods.NewMod(&mods.ModDef{
 		Name:         a.getString("Name"),
 		Author:       a.getString("Author"),
 		ReleaseDate:  a.getString("Release Date"),
@@ -404,19 +399,19 @@ func (a *ModAuthorer) compileMod() (m *mods.Mod) {
 		DonationLinks:       a.donationsDef.compile(),
 		Games:               a.gamesDef.compile(),
 		IsManuallyCreated:   true,
-	}
+	})
 
 	switch *a.kind {
 	case mods.Hosted:
 		name := u.CreateFileName(m.Name)
 		author := u.CreateFileName(m.Author)
 		if name != "" && author != "" {
-			m.ID = mods.ModID(strings.ToLower(fmt.Sprintf("%s.%s", name, author)))
+			m.ModID = mods.ModID(strings.ToLower(fmt.Sprintf("%s.%s", name, author)))
 		}
 	case mods.Nexus:
-		m.ID = mods.NewModID(mods.Nexus, string(a.modID))
+		m.ModID = mods.NewModID(mods.Nexus, string(a.modID))
 	case mods.CurseForge:
-		m.ID = mods.NewModID(mods.CurseForge, string(a.modID))
+		m.ModID = mods.NewModID(mods.CurseForge, string(a.modID))
 	default:
 		panic("invalid mod kind")
 	}
@@ -455,7 +450,7 @@ func (a *ModAuthorer) compileMod() (m *mods.Mod) {
 		}
 	}
 
-	authored.SetDir(m.ID, state.GetBaseDir())
+	_ = authored.SetDir(m.ModID, state.GetBaseDir())
 	return m
 }
 
@@ -466,20 +461,30 @@ func trimNewLine(s string) string {
 }
 
 func (a *ModAuthorer) submitForReview() {
-	mod := a.compileMod()
+	var (
+		mod = a.compileMod()
+		pr  string
+		err error
+	)
 	if !a.validate(mod, false) {
 		dialog.ShowInformation("Invalid Mod Def", "The mod is not valid, please fix it first.", state.Window)
 	}
-	ur, err := repo.NewCommitter(mod).Submit()
-	if err != nil {
+
+	/*if err = repo.NewGetter(repo.Author).Pull(); err != nil {
 		util.ShowErrorLong(err)
-	} else {
-		u, _ := url.Parse(ur)
-		dialog.ShowCustom(
-			"Successfully submitted mod",
-			"ok",
-			container.NewMax(widget.NewHyperlink(ur, u)), state.Window)
+		return
+	}*/
+
+	if pr, err = repo.NewCommitter(mod).Submit(); err != nil {
+		util.ShowErrorLong(err)
+		return
 	}
+
+	prUrl, _ := url.Parse(pr)
+	dialog.ShowCustom(
+		"Successfully submitted mod",
+		"ok",
+		container.NewMax(widget.NewHyperlink(pr, prUrl)), state.Window)
 }
 
 func (a *ModAuthorer) saveFile(asJson As) {
@@ -495,7 +500,7 @@ func (a *ModAuthorer) saveFile(asJson As) {
 	}
 }
 
-func (a *ModAuthorer) save(mod *mods.Mod, asJson As) {
+func (a *ModAuthorer) save(mod *mods.Mod, json As) {
 	var (
 		b    []byte
 		ext  string
@@ -508,7 +513,7 @@ func (a *ModAuthorer) save(mod *mods.Mod, asJson As) {
 		return
 	}
 
-	if asJson == asJson {
+	if json == asJson {
 		ext = ".json"
 	} else {
 		ext = ".xml"
@@ -523,7 +528,7 @@ func (a *ModAuthorer) save(mod *mods.Mod, asJson As) {
 		}); err != nil {
 		return
 	}
-	if strings.Index(file, ext) == -1 {
+	if !strings.Contains(file, ext) {
 		file = file + ext
 	}
 	if _, err = os.Stat(file); err == nil {
@@ -532,7 +537,7 @@ func (a *ModAuthorer) save(mod *mods.Mod, asJson As) {
 		}, state.Window)
 	}
 	if save {
-		if err = ioutil.WriteFile(file, b, 0755); err != nil {
+		if err = os.WriteFile(file, b, 0755); err != nil {
 			util.ShowErrorLong(err)
 		}
 	}

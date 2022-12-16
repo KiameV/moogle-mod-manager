@@ -13,7 +13,7 @@ import (
 	"sync"
 )
 
-func CheckForUpdates(game config.Game, result func(err error)) {
+func CheckForUpdates(game config.GameDef, result func(err error)) {
 	var (
 		dispatcher = workerpool.NewDispatcher(
 			fmt.Sprintf("Checker%d", game),
@@ -22,13 +22,13 @@ func CheckForUpdates(game config.Game, result func(err error)) {
 		ucs []updateChecker
 	)
 
-	if err := repo.NewGetter().Pull(); err != nil {
+	if err := repo.NewGetter(repo.Read).Pull(); err != nil {
 		result(err)
 		return
 	}
 
-	for _, tm := range lookup[game].Mods {
-		switch tm.Mod.ModKind.Kind {
+	for _, tm := range lookup.GetMods(game) {
+		switch tm.Kind() {
 		case mods.Hosted:
 			wg.Add(1)
 			h := &hostedUpdateChecker{tm: tm, wg: &wg}
@@ -36,16 +36,16 @@ func CheckForUpdates(game config.Game, result func(err error)) {
 			dispatcher.JobQueue <- h
 		case mods.Nexus:
 			wg.Add(1)
-			n := &nexusUpdateChecker{tm: tm, wg: &wg, client: remote.NewNexusClient()}
+			n := &remoteUpdateChecker{tm: tm, wg: &wg, client: remote.NewNexusClient()}
 			ucs = append(ucs, n)
 			dispatcher.JobQueue <- n
 		case mods.CurseForge:
 			wg.Add(1)
-			n := &nexusUpdateChecker{tm: tm, wg: &wg, client: remote.NewCurseForgeClient()}
+			n := &remoteUpdateChecker{tm: tm, wg: &wg, client: remote.NewCurseForgeClient()}
 			ucs = append(ucs, n)
 			dispatcher.JobQueue <- n
 		default:
-			result(fmt.Errorf("unknown mod kind %s", tm.Mod.ModKind.Kind))
+			result(fmt.Errorf("unknown mod kind %s", tm.Kind()))
 			return
 		}
 	}
@@ -64,7 +64,7 @@ type updateChecker interface {
 }
 
 type hostedUpdateChecker struct {
-	tm  *mods.TrackedMod
+	tm  mods.TrackedMod
 	wg  *sync.WaitGroup
 	err error
 }
@@ -72,17 +72,17 @@ type hostedUpdateChecker struct {
 func (c *hostedUpdateChecker) Process() error {
 	defer c.wg.Done()
 
-	remoteMod, err := repo.NewGetter().GetMod(c.tm.Mod)
+	remoteMod, err := repo.NewGetter(repo.Read).GetMod(c.tm.Mod())
 	if err != nil {
 		util.ShowErrorLong(err)
 		return nil
 	}
 
-	if remoteMod.ID != c.tm.Mod.ID {
-		util.ShowErrorLong(errors.New("Could not download remote version for " + c.tm.Mod.Name))
+	if remoteMod.ID() != c.tm.ID() {
+		util.ShowErrorLong(errors.New("Could not download remote version for " + c.tm.DisplayName()))
 		return nil
 	}
-	if isVersionNewer(c.tm.Mod.Version, remoteMod.Version) {
+	if isVersionNewer(c.tm.Mod().Version, remoteMod.Version) {
 		markForUpdate(c.tm, remoteMod)
 	}
 	return nil
@@ -92,27 +92,27 @@ func (c *hostedUpdateChecker) getError() error {
 	return c.err
 }
 
-type nexusUpdateChecker struct {
-	tm     *mods.TrackedMod
+type remoteUpdateChecker struct {
+	tm     mods.TrackedMod
 	wg     *sync.WaitGroup
 	client remote.Client
 	err    error
 }
 
-func (c *nexusUpdateChecker) Process() error {
+func (c *remoteUpdateChecker) Process() error {
 	defer c.wg.Done()
-	_, mod, err := c.client.GetFromMod(c.tm.Mod)
+	_, mod, err := c.client.GetFromMod(c.tm.Mod())
 	if err != nil {
 		c.err = err
 		return nil
 	}
-	if isVersionNewer(mod.Version, c.tm.Mod.Version) {
+	if isVersionNewer(mod.Version, c.tm.Mod().Version) {
 		markForUpdate(c.tm, mod)
 	}
 	return nil
 }
 
-func (c *nexusUpdateChecker) getError() error {
+func (c *remoteUpdateChecker) getError() error {
 	return c.err
 }
 
@@ -133,6 +133,6 @@ func isVersionNewer(new string, old string) bool {
 	return false
 }
 
-func markForUpdate(tm *mods.TrackedMod, mod *mods.Mod) {
-	tm.UpdatedMod = mods.NewModForVersion(tm.Mod, mod)
+func markForUpdate(tm mods.TrackedMod, mod *mods.Mod) {
+	tm.SetUpdatedMod(mods.NewModForVersion(tm.Mod(), mod))
 }

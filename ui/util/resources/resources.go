@@ -6,6 +6,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods/managed/cache"
+	"github.com/kiamev/moogle-mod-manager/util"
 	"path/filepath"
 )
 
@@ -15,40 +16,23 @@ const (
 )
 
 var (
-	LogoI   fyne.CanvasObject
-	LogoII  fyne.CanvasObject
-	LogoIII fyne.CanvasObject
-	LogoIV  fyne.CanvasObject
-	LogoV   fyne.CanvasObject
-	LogoVI  fyne.CanvasObject
-
-	LogoChronoCross fyne.CanvasObject
-
-	LogoBofIII fyne.CanvasObject
-	LogoBofIV  fyne.CanvasObject
-
 	Icon fyne.Resource
 )
 
-func Initialize() {
-	LogoI = loadLogo(config.I, "1.png")
-	LogoII = loadLogo(config.II, "2.png")
-	LogoIII = loadLogo(config.III, "3.png")
-	LogoIV = loadLogo(config.IV, "4.png")
-	LogoV = loadLogo(config.V, "5.png")
-	LogoVI = loadLogo(config.VI, "6.png")
-	LogoChronoCross = loadLogo(config.ChronoCross, "chronocross.png")
-	LogoBofIII = loadLogo(config.BofIII, "bof3.png")
-	LogoBofIV = loadLogo(config.BofIV, "bof4.png")
+func Initialize(games []config.GameDef) {
+	for _, g := range games {
+		if g.LogoPath() != "" {
+			g.SetLogo(loadLogo(g))
+		}
+	}
 	Icon, _ = loadImage("icon16.png")
 }
 
-func loadLogo(game config.Game, f string) fyne.CanvasObject {
+func loadLogo(game config.GameDef) fyne.CanvasObject {
 	var (
-		r, err = loadImage(f)
+		r, err = loadImage(game.LogoPath())
 		img    *canvas.Image
 	)
-
 	if err != nil {
 		return createTextLogo(game)
 	}
@@ -62,10 +46,12 @@ func loadLogo(game config.Game, f string) fyne.CanvasObject {
 }
 
 func loadImage(f string) (fyne.Resource, error) {
-	dir := filepath.Join(config.PWD, resourcesDir)
-	return cache.GetImage(mmmRepoResources+f, dir)
+	if util.FileExists(f) {
+		return fyne.LoadResourceFromPath(f)
+	}
+	return cache.GetImage(mmmRepoResources+f, filepath.Join(config.PWD, resourcesDir))
 }
 
-func createTextLogo(game config.Game) fyne.CanvasObject {
-	return widget.NewLabel(config.GameNameString(game))
+func createTextLogo(game config.GameDef) fyne.CanvasObject {
+	return widget.NewLabel(string(game.Name()))
 }

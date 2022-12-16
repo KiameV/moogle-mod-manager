@@ -38,15 +38,19 @@ func (d *gamesDef) compile() (games []*mods.Game) {
 }
 
 func (d *gamesDef) getItemKey(item interface{}) string {
-	return string(item.(*mods.Game).Name)
+	return string(item.(*mods.Game).ID)
 }
 
 func (d *gamesDef) getItemFields(item interface{}) []string {
-	v := item.(*mods.Game).Versions
-	if len(v) == 0 {
+	versions := item.(*mods.Game).Versions
+	if len(versions) == 0 {
 		return nil
 	}
-	return []string{strings.Join(v, ", ")}
+	result := make([]string, len(versions))
+	for i, v := range versions {
+		result[i] = string(v.Version)
+	}
+	return []string{strings.Join(result, ", ")}
 }
 
 func (d *gamesDef) editItem(item interface{}) {
@@ -54,12 +58,16 @@ func (d *gamesDef) editItem(item interface{}) {
 }
 
 func (d *gamesDef) createItem(item interface{}, done ...func(interface{})) {
-	m := item.(*mods.Game)
-	d.createFormSelect("Games", config.GameNames, config.String(config.NameToGame(m.Name)))
+	g := item.(*mods.Game)
+	d.createFormSelect("Games", config.GameIDs(), string(g.ID))
+	versions := g.Versions
 	var v string
-	versions := m.Versions
 	if versions != nil {
-		v = strings.Join(versions, ", ")
+		s := make([]string, len(versions))
+		for i, ver := range versions {
+			s[i] = string(ver.Version)
+		}
+		v = strings.Join(s, ", ")
 	}
 	d.createFormItem("Versions", v)
 
@@ -68,10 +76,14 @@ func (d *gamesDef) createItem(item interface{}, done ...func(interface{})) {
 		d.getFormItem("Versions"),
 	}, func(ok bool) {
 		if ok {
-			m.Name = config.GameToName(config.FromString(d.getString("Games")))
-			m.Versions = d.getStrings("Versions", ",")
+			g.ID = config.GameID(d.getString("Games"))
+			selected := d.getStrings("Versions", ",")
+			g.Versions = make([]config.Version, len(selected))
+			for i, s := range selected {
+				g.Versions[i] = config.Version{Version: config.VersionID(s)}
+			}
 			if len(done) > 0 {
-				done[0](m)
+				done[0](g)
 			}
 			d.list.Refresh()
 		}

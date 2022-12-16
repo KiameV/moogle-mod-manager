@@ -2,6 +2,7 @@ package curseforge
 
 import (
 	"fmt"
+	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"time"
 )
@@ -11,18 +12,18 @@ type cfMods struct {
 }
 
 type cfMod struct {
-	ModID        int          `json:"id"`
-	Name         string       `json:"name"`
-	Summary      string       `json:"summary"`
-	Category     []category   `json:"categories"`
-	Links        links        `json:"links"`
-	Author       []author     `json:"authors"`
-	Logo         logo         `json:"logo"`
-	Screenshots  []screenshot `json:"screenshots"`
-	CreatedTime  time.Time    `json:"dateCreated"`
-	UpdatedTime  time.Time    `json:"dateModified"`
-	GameVersions []string     `json:"gameVersions"`
-	Game         CfGameID     `json:"gameId"`
+	ModID        int             `json:"id"`
+	Name         string          `json:"name"`
+	Summary      string          `json:"summary"`
+	Category     []category      `json:"categories"`
+	Links        links           `json:"links"`
+	Author       []author        `json:"authors"`
+	Logo         logo            `json:"logo"`
+	Screenshots  []screenshot    `json:"screenshots"`
+	CreatedTime  time.Time       `json:"dateCreated"`
+	UpdatedTime  time.Time       `json:"dateModified"`
+	GameVersions []string        `json:"gameVersions"`
+	Game         config.CfGameID `json:"gameId"`
 }
 
 func (m *cfMod) Version() string {

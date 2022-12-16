@@ -41,13 +41,13 @@ func NewToInstallForMod(kind Kind, mod *Mod, downloadFiles []*DownloadFiles) (re
 		i.Dirs = append(i.Dirs, df.Dirs...)
 	}
 	for n, df := range dfLookup {
-		dl, _ := mLookup[n]
+		dl := mLookup[n]
 		result = append(result, NewToInstall(kind, dl, df))
 	}
 	return
 }
 
-func (ti *ToInstall) GetDownloadLocation(game config.Game, tm *TrackedMod) (string, error) {
+func (ti *ToInstall) GetDownloadLocation(game config.GameDef, tm TrackedMod) (string, error) {
 	switch ti.kind {
 	case Hosted:
 		return ti.getHostedDownloadLocation(game, tm)
@@ -57,18 +57,21 @@ func (ti *ToInstall) GetDownloadLocation(game config.Game, tm *TrackedMod) (stri
 	panic(fmt.Sprintf("unknown kind %v", ti.kind))
 }
 
-func (ti *ToInstall) getHostedDownloadLocation(game config.Game, tm *TrackedMod) (string, error) {
+func (ti *ToInstall) getHostedDownloadLocation(game config.GameDef, tm TrackedMod) (string, error) {
 	if ti.downloadDir == "" {
-		v := ti.Download.Version
+		var (
+			v = ti.Download.Version
+			m = tm.Mod()
+		)
 		if v == "" {
 			v = "nv"
 		}
-		if len(tm.Mod.Games) > 0 && tm.Mod.Category == Utility {
+		if len(m.Games) > 0 && m.Category == Utility {
 			ti.downloadDir = config.Get().GetDownloadFullPathForUtility()
 		} else {
 			ti.downloadDir = config.Get().GetDownloadFullPathForGame(game)
 		}
-		ti.downloadDir = filepath.Join(ti.downloadDir, tm.GetDirSuffix(), util.CreateFileName(v))
+		ti.downloadDir = filepath.Join(ti.downloadDir, tm.DirSuffix(), util.CreateFileName(v))
 		if err := createPath(ti.downloadDir); err != nil {
 			return "", err
 		}
@@ -76,9 +79,9 @@ func (ti *ToInstall) getHostedDownloadLocation(game config.Game, tm *TrackedMod)
 	return ti.downloadDir, nil
 }
 
-func (ti *ToInstall) getRemoteDownloadLocation(game config.Game, tm *TrackedMod) (string, error) {
+func (ti *ToInstall) getRemoteDownloadLocation(game config.GameDef, tm TrackedMod) (string, error) {
 	if ti.downloadDir == "" {
-		ti.downloadDir = filepath.Join(config.Get().GetDownloadFullPathForGame(game), tm.GetDirSuffix(), util.CreateFileName(ti.Download.Version))
+		ti.downloadDir = filepath.Join(config.Get().GetDownloadFullPathForGame(game), tm.DirSuffix(), util.CreateFileName(ti.Download.Version))
 		if err := createPath(ti.downloadDir); err != nil {
 			return "", err
 		}

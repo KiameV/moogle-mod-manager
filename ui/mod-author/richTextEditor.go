@@ -43,7 +43,7 @@ func (e *richTextEditor) DataChanged() {
 }
 
 func (e *richTextEditor) SetText(s string) {
-	e.input.Set(strings.ReplaceAll(s, "\r", ""))
+	_ = e.input.Set(strings.ReplaceAll(s, "\r", ""))
 }
 
 func (e *richTextEditor) String() string {

@@ -55,7 +55,7 @@ func (m *MainMenu) Draw(w fyne.Window) {
 					"Update Available",
 					fmt.Sprintf("Version %s is available.\nWould you like to update?", newerVersion),
 					func(ok bool) {
-						browser.Update(newerVersion)
+						_ = browser.Update(newerVersion)
 					}, w)
 			} else {
 				dialog.ShowInformation("No Updates Available", "You are running the latest version.", w)
@@ -110,8 +110,8 @@ Contributors:
 			fyne.NewMenuItem("Edit Current Mod", func() {
 				if state.GetCurrentGUI() == state.LocalMods {
 					if tm := state.GetScreen(state.LocalMods).(local.LocalUI).GetSelected(); tm != nil {
-						state.GetScreen(state.ModAuthor).(*a.ModAuthorer).EditMod(tm.Mod, func(mod *mods.Mod) {
-							tm.Mod = mod
+						state.GetScreen(state.ModAuthor).(*a.ModAuthorer).EditMod(tm.Mod(), func(mod *mods.Mod) {
+							tm.SetMod(mod)
 							if err := tm.Save(); err != nil {
 								util.ShowErrorLong(err)
 							}

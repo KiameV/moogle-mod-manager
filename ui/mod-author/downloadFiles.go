@@ -1,8 +1,6 @@
 package mod_author
 
 import (
-	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/mods"
 )
@@ -32,7 +30,7 @@ func (d *downloadFilesDef) compile() *mods.DownloadFiles {
 	}
 }
 
-func (d *downloadFilesDef) draw() fyne.CanvasObject {
+/*func (d *downloadFilesDef) draw() fyne.CanvasObject {
 	var possible []string
 	for _, dl := range d.downloads.compile() {
 		possible = append(possible, dl.Name)
@@ -45,7 +43,7 @@ func (d *downloadFilesDef) draw() fyne.CanvasObject {
 		d.files.draw(true),
 		d.dirs.draw(true),
 	)
-}
+}*/
 
 func (d *downloadFilesDef) getFormItems() []*widget.FormItem {
 	var possible []string
@@ -78,7 +76,7 @@ func (d *downloadFilesDef) populate(dlf *mods.DownloadFiles) {
 	}
 }
 
-func (d *downloadFilesDef) set(df *mods.DownloadFiles) {
+/*func (d *downloadFilesDef) set(df *mods.DownloadFiles) {
 	d.dlName = ""
 	d.files.clear()
 	d.dirs.clear()
@@ -87,4 +85,4 @@ func (d *downloadFilesDef) set(df *mods.DownloadFiles) {
 		d.files.populate(df.Files)
 		d.dirs.populate(df.Dirs)
 	}
-}
+}*/
