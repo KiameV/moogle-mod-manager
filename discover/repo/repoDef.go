@@ -11,36 +11,51 @@ import (
 )
 
 const (
+	authorDir       = "author"
+	repoDir         = "repo"
 	defaultRepoName = "mmmm"
 	defaultRepoUrl  = "https://github.com/KiameV/moogle-mod-manager-mods"
 )
 
 var repoDefs []repoDef
 
-type repoDef struct {
-	Name string `json:"name"`
-	Url  string `json:"url"`
-}
+type (
+	UseKind byte
+	repoDef struct {
+		Name string `json:"name"`
+		Url  string `json:"url"`
+	}
+)
+
+const (
+	_ UseKind = iota
+	Author
+	Read
+)
 
 func (d repoDef) Source() string {
 	sp := strings.Split(d.Url, "/")
 	return sp[len(sp)-1]
 }
 
-func (d repoDef) repoDir() string {
-	return filepath.Join(config.PWD, "repo", d.Name)
+func (d repoDef) repoDir(k UseKind) string {
+	dir := repoDir
+	if k == Author {
+		dir = authorDir
+	}
+	return filepath.Join(config.PWD, dir, d.Name)
 }
 
-func (d repoDef) repoUtilDir() string {
-	return filepath.Join(d.repoDir(), "utilities")
+func (d repoDef) repoUtilDir(k UseKind) string {
+	return filepath.Join(d.repoDir(k), "utilities")
 }
 
-func (d repoDef) repoGameDir(game config.GameDef) string {
-	return filepath.Join(d.repoDir(), string(game.ID()))
+func (d repoDef) repoGameDir(k UseKind, game config.GameDef) string {
+	return filepath.Join(d.repoDir(k), string(game.ID()))
 }
 
-func (d repoDef) repoGameModDir(game config.GameDef, kind mods.Kind, id mods.ModID) string {
-	return filepath.Join(d.repoGameDir(game), string(kind), string(id))
+func (d repoDef) repoGameModDir(k UseKind, game config.GameDef, kind mods.Kind, id mods.ModID) string {
+	return filepath.Join(d.repoGameDir(k, game), strings.ToLower(string(kind)), strings.ToLower(string(id)))
 }
 
 func Initialize() (err error) {
@@ -64,10 +79,10 @@ func Initialize() (err error) {
 	return
 }
 
-func Dirs() (dirs []string) {
+func Dirs(k UseKind) (dirs []string) {
 	dirs = make([]string, len(repoDefs))
 	for i, rd := range repoDefs {
-		dirs[i] = rd.repoDir()
+		dirs[i] = rd.repoDir(k)
 	}
 	return
 }

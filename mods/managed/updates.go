@@ -22,7 +22,7 @@ func CheckForUpdates(game config.GameDef, result func(err error)) {
 		ucs []updateChecker
 	)
 
-	if err := repo.NewGetter().Pull(); err != nil {
+	if err := repo.NewGetter(repo.Read).Pull(); err != nil {
 		result(err)
 		return
 	}
@@ -72,7 +72,7 @@ type hostedUpdateChecker struct {
 func (c *hostedUpdateChecker) Process() error {
 	defer c.wg.Done()
 
-	remoteMod, err := repo.NewGetter().GetMod(c.tm.Mod())
+	remoteMod, err := repo.NewGetter(repo.Read).GetMod(c.tm.Mod())
 	if err != nil {
 		util.ShowErrorLong(err)
 		return nil

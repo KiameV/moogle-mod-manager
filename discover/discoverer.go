@@ -65,7 +65,7 @@ func GetModsAsLookup(game config.GameDef) (lookup mods.ModLookup[*mods.Mod], err
 		return
 	})
 	eg.Go(func() (e error) {
-		repoMods, e = repo.NewGetter().GetMods(state.CurrentGame)
+		repoMods, e = repo.NewGetter(repo.Read).GetMods(state.CurrentGame)
 		return
 	})
 	if err = eg.Wait(); err != nil {

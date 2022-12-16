@@ -19,7 +19,10 @@ import (
 	"github.com/kiamev/moogle-mod-manager/ui/state"
 	"github.com/kiamev/moogle-mod-manager/ui/util"
 	"github.com/kiamev/moogle-mod-manager/ui/util/resources"
+	"log"
 	"os"
+	"path/filepath"
+	"runtime/pprof"
 )
 
 func main() {
@@ -28,6 +31,15 @@ func main() {
 			_ = os.WriteFile("log.txt", []byte(err.(string)), 0644)
 		}
 	}()
+
+	if os.Getenv("profile") == "true" {
+		f, err := os.Create(filepath.Join(config.PWD, "cpuprofile"))
+		if err != nil {
+			log.Fatal(err)
+		}
+		_ = pprof.StartCPUProfile(f)
+		defer pprof.StopCPUProfile()
+	}
 
 	state.App = app.New()
 	state.Window = state.App.NewWindow("Moogle Mod Manager " + browser.Version)
@@ -124,11 +136,11 @@ func initialize() {
 		fyne.CurrentApp().Settings().SetTheme(theme.LightTheme())
 	}
 
-	if err = repo.NewGetter().Pull(); err != nil {
+	if err = repo.NewGetter(repo.Read).Pull(); err != nil {
 		util.ShowErrorLong(err)
 	}
 
-	if err = config.Initialize(repo.Dirs()); err != nil {
+	if err = config.Initialize(repo.Dirs(repo.Read)); err != nil {
 		util.ShowErrorLong(err)
 	}
 

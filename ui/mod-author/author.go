@@ -9,6 +9,7 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
+	"github.com/atotto/clipboard"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/discover/remote"
 	"github.com/kiamev/moogle-mod-manager/discover/repo"
@@ -20,7 +21,6 @@ import (
 	"github.com/kiamev/moogle-mod-manager/ui/util"
 	u "github.com/kiamev/moogle-mod-manager/util"
 	"github.com/ncruces/zenity"
-	"golang.design/x/clipboard"
 	"net/url"
 	"os"
 	"path"
@@ -326,17 +326,13 @@ func (a *ModAuthorer) writeToClipboard(as As) {
 		b   []byte
 		err error
 	)
-	if err = clipboard.Init(); err != nil {
-		util.ShowErrorLong(err)
-		return
-	}
 	mod := a.compileMod()
 	callback := func() {
 		if b, err = a.Marshal(mod, asJson); err != nil {
 			util.ShowErrorLong(err)
 			return
 		}
-		clipboard.Write(clipboard.FmtText, b)
+		_ = clipboard.WriteAll(string(b))
 	}
 	if !a.validate(mod, false) {
 		dialog.ShowConfirm("Continue?", "The mod is not valid, continue anyway?", func(ok bool) {
@@ -465,20 +461,30 @@ func trimNewLine(s string) string {
 }
 
 func (a *ModAuthorer) submitForReview() {
-	mod := a.compileMod()
+	var (
+		mod = a.compileMod()
+		pr  string
+		err error
+	)
 	if !a.validate(mod, false) {
 		dialog.ShowInformation("Invalid Mod Def", "The mod is not valid, please fix it first.", state.Window)
 	}
-	ur, err := repo.NewCommitter(mod).Submit()
-	if err != nil {
+
+	/*if err = repo.NewGetter(repo.Author).Pull(); err != nil {
 		util.ShowErrorLong(err)
-	} else {
-		u, _ := url.Parse(ur)
-		dialog.ShowCustom(
-			"Successfully submitted mod",
-			"ok",
-			container.NewMax(widget.NewHyperlink(ur, u)), state.Window)
+		return
+	}*/
+
+	if pr, err = repo.NewCommitter(mod).Submit(); err != nil {
+		util.ShowErrorLong(err)
+		return
 	}
+
+	prUrl, _ := url.Parse(pr)
+	dialog.ShowCustom(
+		"Successfully submitted mod",
+		"ok",
+		container.NewMax(widget.NewHyperlink(pr, prUrl)), state.Window)
 }
 
 func (a *ModAuthorer) saveFile(asJson As) {

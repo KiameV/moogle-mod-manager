@@ -19,10 +19,14 @@ type Getter interface {
 	pull(rd repoDef) error
 }
 
-type repo struct{}
+type repo struct {
+	kind UseKind
+}
 
-func NewGetter() Getter {
-	return &repo{}
+func NewGetter(kind UseKind) Getter {
+	return &repo{
+		kind: kind,
+	}
 }
 
 func (r *repo) clone() (err error) {
@@ -35,7 +39,7 @@ func (r *repo) clone() (err error) {
 }
 
 func (r *repo) cloneRepo(rd repoDef) (err error) {
-	dir := rd.repoDir()
+	dir := rd.repoDir(r.kind)
 	if _, err = os.Stat(filepath.Join(dir, ".git")); err != nil {
 		if err = os.MkdirAll(dir, 0755); err != nil {
 			return
@@ -52,7 +56,7 @@ func (r *repo) cloneRepo(rd repoDef) (err error) {
 
 func (r *repo) Pull() (err error) {
 	for _, rd := range repoDefs {
-		if _, err = os.Stat(rd.repoDir()); err != nil {
+		if _, err = os.Stat(rd.repoDir(r.kind)); err != nil {
 			if err = r.clone(); err != nil {
 				return
 			}
@@ -84,12 +88,12 @@ func (r *repo) GetMod(toGet *mods.Mod) (mod *mods.Mod, err error) {
 	)
 	for _, rd := range repoDefs {
 		if toGet.Category == mods.Utility {
-			dir = filepath.Join(rd.repoUtilDir(), toGet.DirectoryName())
+			dir = filepath.Join(rd.repoUtilDir(r.kind), toGet.DirectoryName())
 		} else if len(toGet.Games) == 1 {
 			if game, err = config.GameDefFromID(toGet.Games[0].ID); err != nil {
 				return
 			}
-			dir = filepath.Join(rd.repoGameDir(game), toGet.DirectoryName())
+			dir = filepath.Join(rd.repoGameDir(r.kind, game), toGet.DirectoryName())
 		} else if len(toGet.Games) > 1 {
 			return nil, errors.New(toGet.Name + " has multiple games and is not a Utility category")
 		} else {
@@ -132,7 +136,7 @@ func (r *repo) getMods(rd repoDef, game config.GameDef) (mods []string, err erro
 	if err = r.Pull(); err != nil {
 		return
 	}
-	err = filepath.WalkDir(rd.repoGameDir(game), func(path string, d os.DirEntry, err error) error {
+	err = filepath.WalkDir(rd.repoGameDir(r.kind, game), func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -144,7 +148,7 @@ func (r *repo) getMods(rd repoDef, game config.GameDef) (mods []string, err erro
 		}
 		return nil
 	})
-	err = filepath.WalkDir(rd.repoUtilDir(), func(path string, d os.DirEntry, err error) error {
+	err = filepath.WalkDir(rd.repoUtilDir(r.kind), func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -160,7 +164,7 @@ func (r *repo) getMods(rd repoDef, game config.GameDef) (mods []string, err erro
 }
 
 func (r *repo) getWorkTree(rd repoDef) (repo *git.Repository, w *git.Worktree, err error) {
-	if repo, err = git.PlainOpen(rd.repoDir()); err != nil {
+	if repo, err = git.PlainOpen(rd.repoDir(r.kind)); err != nil {
 		return
 	}
 	w, err = r.getWorkTreeFromRepo(repo)
