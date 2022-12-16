@@ -11,7 +11,7 @@ import (
 	"github.com/kiamev/moogle-mod-manager/mods/managed"
 	ci "github.com/kiamev/moogle-mod-manager/ui/config-installer"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
-	"github.com/kiamev/moogle-mod-manager/ui/ui"
+	"github.com/kiamev/moogle-mod-manager/ui/state/ui"
 	"path/filepath"
 )
 

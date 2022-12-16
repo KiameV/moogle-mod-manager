@@ -18,7 +18,7 @@ import (
 	config_installer "github.com/kiamev/moogle-mod-manager/ui/config-installer"
 	cw "github.com/kiamev/moogle-mod-manager/ui/custom-widgets"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
-	"github.com/kiamev/moogle-mod-manager/ui/ui"
+	"github.com/kiamev/moogle-mod-manager/ui/state/ui"
 	"github.com/kiamev/moogle-mod-manager/ui/util"
 	u "github.com/kiamev/moogle-mod-manager/util"
 	"github.com/ncruces/zenity"

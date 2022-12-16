@@ -7,8 +7,12 @@ import (
 	"time"
 )
 
-type cfMods struct {
+type cfModsResponse struct {
 	Data []cfMod `json:"data"`
+}
+
+type cfModResponse struct {
+	Data cfMod `json:"data"`
 }
 
 type cfMod struct {

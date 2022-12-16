@@ -6,7 +6,7 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 	"github.com/atotto/clipboard"
-	"github.com/kiamev/moogle-mod-manager/ui/ui"
+	"github.com/kiamev/moogle-mod-manager/ui/state/ui"
 )
 
 func ShowErrorLong(err error) {

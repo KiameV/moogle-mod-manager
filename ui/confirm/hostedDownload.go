@@ -7,7 +7,7 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/mods"
-	"github.com/kiamev/moogle-mod-manager/ui/ui"
+	"github.com/kiamev/moogle-mod-manager/ui/state/ui"
 	"os"
 	"path/filepath"
 	"strings"

@@ -28,6 +28,7 @@ type discoverUI struct {
 	mods        []*mods.Mod
 	localMods   map[mods.ModID]bool
 	prevSearch  string
+	modList     *widget.List
 }
 
 func (ui *discoverUI) OnClose() {}
@@ -40,6 +41,8 @@ func (ui *discoverUI) PreDraw(w fyne.Window, args ...interface{}) (err error) {
 	)
 	defer d.Hide()
 	d.Show()
+
+	ui.prevSearch = ""
 
 	ui.localMods = make(map[mods.ModID]bool)
 	for _, tm := range args[0].([]interface{})[0].([]mods.TrackedMod) {
@@ -85,7 +88,7 @@ func (ui *discoverUI) draw(w fyne.Window, isPopup bool) {
 		return
 	}
 	ui.data = binding.NewUntypedList()
-	modList := widget.NewListWithData(
+	ui.modList = widget.NewListWithData(
 		ui.data,
 		func() fyne.CanvasObject {
 			return widget.NewLabel("")
@@ -103,10 +106,10 @@ func (ui *discoverUI) draw(w fyne.Window, isPopup bool) {
 		return
 	}
 
-	ui.split = container.NewHSplit(modList, container.NewMax())
+	ui.split = container.NewHSplit(ui.modList, container.NewMax())
 	ui.split.SetOffset(0.25)
 
-	modList.OnSelected = func(id widget.ListItemID) {
+	ui.modList.OnSelected = func(id widget.ListItemID) {
 		data, err := ui.data.GetItem(id)
 		if err != nil {
 			util.ShowErrorLong(err)
@@ -140,6 +143,7 @@ func (ui *discoverUI) draw(w fyne.Window, isPopup bool) {
 					return
 				}
 				ui.selectedMod = nil
+				ui.modList.UnselectAll()
 				ui.split.Trailing = container.NewMax()
 				ui.split.Refresh()
 				state.UpdateCurrentScreen()

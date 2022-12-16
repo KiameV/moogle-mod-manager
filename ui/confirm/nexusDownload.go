@@ -8,7 +8,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/discover/remote/nexus"
 	"github.com/kiamev/moogle-mod-manager/mods"
-	"github.com/kiamev/moogle-mod-manager/ui/ui"
+	"github.com/kiamev/moogle-mod-manager/ui/state/ui"
 	"net/url"
 	"os"
 	"path/filepath"

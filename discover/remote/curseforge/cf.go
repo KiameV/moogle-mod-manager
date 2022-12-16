@@ -75,7 +75,7 @@ func (c *client) GetFromUrl(url string) (found bool, mod *mods.Mod, err error) {
 func (c *client) get(url string) (found bool, mod *mods.Mod, err error) {
 	var (
 		b      []byte
-		result cfMods
+		result cfModResponse
 		desc   string
 		dls    fileParent
 	)
@@ -85,20 +85,16 @@ func (c *client) get(url string) (found bool, mod *mods.Mod, err error) {
 	if err = json.Unmarshal(b, &result); err != nil {
 		return
 	}
-	if len(result.Data) == 0 {
-		err = errors.New("no mod found for at " + url)
+
+	if dls, err = getDownloads(result.Data); err != nil {
 		return
 	}
 
-	if dls, err = getDownloads(result.Data[0]); err != nil {
+	if desc, err = getDescription(result.Data); err != nil {
 		return
 	}
 
-	if desc, err = getDescription(result.Data[0]); err != nil {
-		return
-	}
-
-	return toMod(result.Data[0], desc, dls.Files)
+	return toMod(result.Data, desc, dls.Files)
 }
 
 func (c *client) GetNewestMods(game config.GameDef, lastID int) (result []*mods.Mod, err error) {

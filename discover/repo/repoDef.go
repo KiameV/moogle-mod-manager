@@ -51,6 +51,9 @@ func (d repoDef) repoUtilDir(k UseKind) string {
 }
 
 func (d repoDef) repoGameDir(k UseKind, game config.GameDef) string {
+	if game == nil {
+		return ""
+	}
 	return filepath.Join(d.repoDir(k), string(game.ID()))
 }
 

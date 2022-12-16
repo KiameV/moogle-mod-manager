@@ -39,6 +39,14 @@ func GetClients() []Client {
 		NewNexusClient(),
 		NewCurseForgeClient(),
 	}
+	/*var c []Client
+	if config.GetSecrets().NexusApiKey != "" {
+		c = append(c, NewNexusClient())
+	}
+	if config.GetSecrets().CfApiKey != "" {
+		NewCurseForgeClient()
+	}
+	return c*/
 }
 
 func getMods(game config.GameDef, c Client, eg *errgroup.Group, m *sync.Mutex, result *[]*mods.Mod) {

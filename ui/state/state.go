@@ -5,7 +5,7 @@ import (
 	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/dialog"
 	"github.com/kiamev/moogle-mod-manager/config"
-	"github.com/kiamev/moogle-mod-manager/ui/ui"
+	"github.com/kiamev/moogle-mod-manager/ui/state/ui"
 )
 
 type GUI byte
@@ -63,12 +63,12 @@ func ShowScreen(gui GUI, args ...interface{}) {
 			ui.PopupWindow = ui.App.NewWindow("Finder")
 			ui.PopupWindow.Resize(config.Get().Size())
 			ui.PopupWindow.SetOnClosed(func() { ui.PopupWindow = nil })
-			ui.PopupWindow.Show()
-			ui.ShowingPopup = true
 			if err := screens[gui].PreDraw(ui.PopupWindow, args); err != nil {
 				dialog.ShowError(err, ui.Window)
 				return
 			}
+			ui.PopupWindow.Show()
+			ui.ShowingPopup = true
 			screens[gui].DrawAsDialog(ui.PopupWindow)
 		}
 		return

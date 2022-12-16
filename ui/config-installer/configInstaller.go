@@ -90,7 +90,7 @@ func (ui *configInstallerUI) Draw(w fyne.Window) {
 					state.ShowPreviousScreen()
 					return
 				}
-				state.ShowPreviousScreen()
+				//state.ShowPreviousScreen()
 				if err = ui.done(tis); err != nil {
 					util.ShowErrorLong(err)
 					state.ShowPreviousScreen()

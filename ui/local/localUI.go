@@ -13,7 +13,7 @@ import (
 	cw "github.com/kiamev/moogle-mod-manager/ui/custom-widgets"
 	mp "github.com/kiamev/moogle-mod-manager/ui/mod-preview"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
-	u "github.com/kiamev/moogle-mod-manager/ui/ui"
+	u "github.com/kiamev/moogle-mod-manager/ui/state/ui"
 	"github.com/kiamev/moogle-mod-manager/ui/util"
 	"github.com/ncruces/zenity"
 )

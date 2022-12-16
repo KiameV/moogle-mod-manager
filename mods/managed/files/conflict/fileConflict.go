@@ -69,7 +69,10 @@ func compileFilesToMove(game config.GameDef, mod mods.TrackedMod, modFiles []*mo
 					f = strings.ReplaceAll(path, "\\", "/")
 					i := strings.Index(f, d.To)
 					if i == -1 {
-						return fmt.Errorf("failed to find `To` dir in `From` file. To: [%s] From: [%s]", d.To, f)
+						i = strings.Index(f, d.From)
+						if i == -1 {
+							return fmt.Errorf("failed to find `To` dir in `From` file. To: [%s] From: [%s]", d.To, f)
+						}
 					}
 					toInstall = append(toInstall, f[i:])
 					return nil
