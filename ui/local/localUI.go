@@ -66,7 +66,7 @@ func (ui *localUI) Draw(w fyne.Window) {
 					c := co.(*fyne.Container)
 					c.Objects[0].(*UpdateButton).SetTrackedMod(tm)
 					c.Objects[1].(*widget.Label).Bind(binding.BindString(tm.DisplayNamePtr()))
-					c.Objects[2].(*widget.Check).Bind(newEnableBind(tm, ui.startEnableDisableCallback, ui.showWorkingDialog))
+					c.Objects[2].(*widget.Check).Bind(newEnableBind(tm, ui.startEnableDisableCallback, ui.showWorkingDialog, ui.hideDialog))
 				}
 			}
 		})
@@ -254,6 +254,13 @@ func (ui *localUI) showWorkingDialog() {
 	}
 }
 
+func (ui *localUI) hideDialog() {
+	if ui.workingDialog != nil {
+		ui.workingDialog.Hide()
+		ui.workingDialog = nil
+	}
+}
+
 func (ui *localUI) endEnableDisableCallback(result mods.Result, err ...error) {
 	if ui.workingDialog != nil {
 		ui.workingDialog.Hide()
@@ -270,7 +277,14 @@ func (ui *localUI) endEnableDisableCallback(result mods.Result, err ...error) {
 }
 
 func (ui *localUI) updateMod(tm mods.TrackedMod) {
-	if action, err := actions.New(actions.Update, state.CurrentGame, tm); err != nil {
+	if action, err := actions.New(actions.Update, actions.Params{
+		Game: state.CurrentGame,
+		Mod:  tm,
+		WorkingDialog: actions.WorkingDialog{
+			Show: ui.showWorkingDialog,
+			Hide: ui.hideDialog,
+		},
+	}); err != nil {
 		util.ShowErrorLong(err)
 	} else if err = action.Run(); err != nil {
 		util.ShowErrorLong(err)

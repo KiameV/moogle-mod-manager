@@ -13,15 +13,17 @@ type enableBind struct {
 	tm          mods.TrackedMod
 	start       func() bool
 	showWorking func()
+	hideWorking func()
 	//done        mods.DoneCallback
 }
 
-func newEnableBind(tm mods.TrackedMod, start func() bool, showWorking func() /*, done mods.DoneCallback*/) *enableBind {
+func newEnableBind(tm mods.TrackedMod, start func() bool, showWorking func(), hideWorking func() /*, done mods.DoneCallback*/) *enableBind {
 	b := &enableBind{
 		Bool:        binding.NewBool(),
 		tm:          tm,
 		start:       start,
 		showWorking: showWorking,
+		hideWorking: hideWorking,
 		//done:        done,
 	}
 	_ = b.Set(tm.Enabled())
@@ -32,16 +34,18 @@ func newEnableBind(tm mods.TrackedMod, start func() bool, showWorking func() /*,
 func (b *enableBind) DataChanged() {
 	var (
 		isChecked, _ = b.Get()
+		tmEnabled    = b.tm.Enabled()
 		action       actions.Action
 		err          error
 	)
-	if isChecked != b.tm.Enabled() {
+	if isChecked != tmEnabled {
 		if isChecked {
+			// Enable
 			if !b.start() {
 				_ = b.Set(false)
 				return
 			}
-			if action, err = actions.New(actions.Install, state.CurrentGame, b.tm); err != nil {
+			if action, err = actions.New(actions.Install, b.newActionParams()); err != nil {
 				util.ShowErrorLong(err)
 				_ = b.Set(false)
 				return
@@ -52,11 +56,12 @@ func (b *enableBind) DataChanged() {
 				return
 			}
 		} else {
+			// Disable
 			if !b.start() {
 				_ = b.Set(false)
 				return
 			}
-			if action, err = actions.New(actions.Uninstall, state.CurrentGame, b.tm); err != nil {
+			if action, err = actions.New(actions.Uninstall, b.newActionParams()); err != nil {
 				util.ShowErrorLong(err)
 				_ = b.Set(true)
 				return
@@ -70,66 +75,13 @@ func (b *enableBind) DataChanged() {
 	}
 }
 
-/*func (b *enableBind) EnableMod() (err error) {
-	var (
-		tm  = b.tm
-		tis []*mods.ToInstall
-	)
-
-	if len(b.tm.Mod().Configurations) > 0 {
-		err = b.enableModWithConfig()
-	} else {
-		tis, err = mods.NewToInstallForMod(tm.Kind(), tm.Mod(), tm.Mod().AlwaysDownload)
-		if err == nil {
-			// Success
-			err = b.enableMod(tis)
-		}
+func (b *enableBind) newActionParams() actions.Params {
+	return actions.Params{
+		Game: state.CurrentGame,
+		Mod:  b.tm,
+		WorkingDialog: actions.WorkingDialog{
+			Show: b.showWorking,
+			Hide: b.hideWorking,
+		},
 	}
-	return
 }
-
-func (b *enableBind) enableModWithConfig() (err error) {
-	modPath := filepath.Join(config.Get().GetModsFullPath(state.CurrentGame), b.tm.ID().AsDir())
-	if err = state.GetScreen(state.ConfigInstaller).(ci.ConfigInstaller).Setup(b.tm.Mod(), modPath, b.enableMod); err != nil {
-		// Failed to set up config installer screen
-		return
-	}
-	state.ShowScreen(state.ConfigInstaller)
-	return
-}
-
-func (b *enableBind) enableMod(toInstall []*mods.ToInstall) (err error) {
-	return managed.EnableMod(mods.NewModEnabler(state.CurrentGame, b.tm, toInstall, b.OnConflict, b.showWorking, func(result mods.Result, err ...error) {
-		_ = b.Set(b.tm.Enabled())
-		b.done(result, err...)
-	}))
-}
-
-func (b *enableBind) DisableMod() error {
-	return managed.DisableMod(state.CurrentGame, b.tm)
-}
-
-func (b *enableBind) OnConflict(conflicts []*mods.FileConflict, confirmationCallback mods.ConflictChoiceCallback) {
-	f := widget.NewForm()
-	for _, c := range conflicts {
-		var name string
-		if m, ok := managed.TryGetMod(state.CurrentGame, c.CurrentModID); !ok {
-			name = string(c.CurrentModID)
-		} else {
-			name = m.DisplayName()
-		}
-		f.Items = append(f.Items, widget.NewFormItem(
-			filepath.Base(c.File),
-			widget.NewSelect([]string{name, string(b.tm.Mod().Name)}, c.OnChange)))
-	}
-	d := dialog.NewCustomConfirm("Conflicts", "ok", "cancel", container.NewVScroll(f), func(ok bool) {
-		r := mods.Ok
-		if !ok {
-			r = mods.Cancel
-		}
-		confirmationCallback(r, conflicts)
-	}, ui.Window)
-	d.Resize(fyne.NewSize(400, 400))
-	d.Show()
-}
-*/

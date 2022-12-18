@@ -6,6 +6,8 @@ import (
 	"github.com/kiamev/moogle-mod-manager/actions/steps"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
+	"github.com/kiamev/moogle-mod-manager/ui/util"
+	"sync"
 )
 
 type (
@@ -13,8 +15,18 @@ type (
 		Run() error
 	}
 	action struct {
-		state *steps.State
-		steps []steps.Step
+		state         *steps.State
+		steps         []steps.Step
+		workingDialog WorkingDialog
+	}
+	WorkingDialog struct {
+		Show func()
+		Hide func()
+	}
+	Params struct {
+		Game          config.GameDef
+		Mod           mods.TrackedMod
+		WorkingDialog WorkingDialog
 	}
 	ActionKind byte
 )
@@ -38,6 +50,8 @@ var (
 	uninstallMoveSteps = []steps.Step{
 		steps.VerifyDisable,
 		steps.UninstallMove,
+		steps.RestoreBackups,
+		steps.DisableMod,
 	}
 	installImmediateDecompressSteps = []steps.Step{
 		steps.VerifyEnable,
@@ -48,26 +62,37 @@ var (
 	updateSteps = []steps.Step{
 		steps.VerifyEnable,
 		steps.DisableMod,
+		steps.UninstallMove,
+		steps.RestoreBackups,
 		steps.InstallMod,
 	}
+	running = false
+	mutex   = sync.Mutex{}
 )
 
-func New(kind ActionKind, game config.GameDef, tm mods.TrackedMod) (Action, error) {
+func New(kind ActionKind, params Params) (Action, error) {
+	mutex.Lock()
+	defer mutex.Unlock()
+	if running {
+		return nil, errors.New("another action is running")
+	}
+
 	var (
 		s   []steps.Step
 		err error
 	)
 	switch kind {
 	case Install:
-		s, err = createInstallSteps(game, tm)
+		s, err = createInstallSteps(params.Game, params.Mod)
 	case Uninstall:
-		s, err = createUninstallSteps(game, tm)
+		s, err = createUninstallSteps(params.Game, params.Mod)
 	case Update:
-		s, err = createUpdateSteps(game, tm)
+		s, err = createUpdateSteps(params.Game, params.Mod)
 	}
 	return &action{
-		state: steps.NewState(game, tm),
-		steps: s,
+		state:         steps.NewState(params.Game, params.Mod),
+		steps:         s,
+		workingDialog: params.WorkingDialog,
 	}, err
 }
 
@@ -109,124 +134,40 @@ func createUpdateSteps(game config.GameDef, tm mods.TrackedMod) (s []steps.Step,
 	return
 }
 
-func (a action) Run() error {
+func (a action) Run() (err error) {
+	mutex.Lock()
+	if running {
+		err = errors.New("another action is running")
+	} else {
+		running = true
+	}
+	mutex.Unlock()
+	if err != nil {
+		return
+	}
+	a.workingDialog.Show()
+
+	go func() {
+		a.run()
+	}()
+	return
+}
+
+func (a action) run() {
+	defer func() {
+		a.workingDialog.Hide()
+		mutex.Lock()
+		running = false
+		mutex.Unlock()
+	}()
+	var err error
 	for _, step := range a.steps {
-		if err := step(a.state); err != nil {
-			return err
+		if err = step(a.state); err != nil {
+			util.ShowErrorLong(err)
+			return
 		}
 	}
-	return nil
 }
 
 // TODO Update
 // TODO Remove
-
-/*
-func enableMod(enabler *mods.ModEnabler, err error) {
-	var (
-		game       = enabler.Game
-		tm         = enabler.TrackedMod
-		tis        = enabler.ToInstall
-		to         string
-		kind       mods.Kind
-		movedFiles []string
-		modPath    = filepath.Join(config.Get().GetModsFullPath(game), tm.ID().AsDir())
-	)
-	if err != nil {
-		tm.Disable()
-		enabler.DoneCallback(mods.Error, err)
-		return
-	}
-	enabler.ShowWorking()
-
-	for _, ti := range tis {
-		if tm.Mod().InstallType(enabler.Game) {
-			if to, err = config.Get().GetDir(game, config.GameDirKind); err != nil {
-				tm.Disable()
-				enabler.DoneCallback(mods.Error, err)
-				return
-			}
-			to = filepath.Join(to, enabler.TrackedMod.Mod().AlwaysDownload[0].Dirs[0].To)
-			if movedFiles, err = decompress(*ti.Download.DownloadedArchiveLocation, to, true); err != nil {
-				tm.Disable()
-				enabler.DoneCallback(mods.Error, err)
-				return
-			}
-			for i, f := range movedFiles {
-				movedFiles[i] = filepath.Join(to, f)
-			}
-			managed.GetManagedFiles(game, tm.ID())
-			tm.Enabled()
-			enabler.DoneCallback(mods.Ok, nil)
-		} else {
-			to = filepath.Join(modPath, ti.Download.Name)
-			if _, err = decompress(*ti.Download.DownloadedArchiveLocation, to, false); err != nil {
-				tm.Disable()
-				enabler.DoneCallback(mods.Error, err)
-				return
-			}
-		}
-
-		kind = tm.Kind()
-		if kind == mods.Nexus || kind == mods.CurseForge {
-			var fi os.FileInfo
-			sa := filepath.Join(to, "StreamingAssets")
-			if fi, err = os.Stat(sa); err == nil && fi.IsDir() {
-				newTo := filepath.Join(to, string(game.BaseDir()))
-				_ = os.MkdirAll(newTo, 0777)
-				_ = os.Rename(sa, filepath.Join(newTo, "StreamingAssets"))
-			} else if !tm.Mod().IsManuallyCreated {
-				dir := filepath.Join(to, string(game.BaseDir()))
-				if _, err = os.Stat(dir); err != nil {
-					tm.Disable()
-					enabler.DoneCallback(mods.Error, errors.New("unsupported nexus mod"))
-					return
-				}
-			}
-		}
-	}
-
-	for _, ti := range tis {
-		files.AddModFiles(enabler, ti.DownloadFiles, func(result mods.Result, err ...error) {
-			if result == mods.Error || result == mods.Cancel {
-				tm.Disable()
-			} else {
-				tm.Enable()
-				// Find any mods that are now disabled because all the files have been replaced by other mods
-				for _, mod := range GetEnabledMods(enabler.Game) {
-					if !managed.HasManagedFiles(enabler.Game, mod.ID()) {
-						mod.Disable()
-					}
-				}
-				_ = saveToJson()
-			}
-			enabler.DoneCallback(result, err...)
-		})
-	}
-}
-*/
-/*
-	func UpdateMod(game config.GameDef, tm mods.TrackedMod) (err error) {
-		if tm.UpdatedMod() == nil {
-			return errors.New("no update available")
-		}
-
-		if err = tm.Mod().Supports(game); err != nil {
-			return
-		}
-
-		if tm.Enabled() {
-			if err = DisableMod(game, tm); err != nil {
-				return
-			}
-		}
-
-		tm.SetMod(tm.UpdatedMod())
-		if err = saveMoogle(tm); err != nil {
-			return
-		}
-
-		tm.SetUpdatedMod(nil)
-		return saveToJson()
-	}
-*/
