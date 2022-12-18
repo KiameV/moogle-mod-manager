@@ -292,7 +292,7 @@ func (a *ModAuthorer) updateEntries(mod *mods.Mod) {
 	*a.kind = mod.ModKind.Kind
 	a.createBaseDir(state.GetBaseDirBinding())
 	a.modID = mod.ModID
-	a.createFormItem("Name", mod.Name)
+	a.createFormItem("Name", string(mod.Name))
 	a.createFormItem("Author", mod.Author)
 	a.createFormItem("Release Date", mod.ReleaseDate)
 	a.categorySelect.Selected = string(mod.Category)
@@ -382,7 +382,7 @@ func (a *ModAuthorer) Marshal(mod *mods.Mod, as As) (b []byte, err error) {
 
 func (a *ModAuthorer) compileMod() (m *mods.Mod) {
 	m = mods.NewMod(&mods.ModDef{
-		Name:         a.getString("Name"),
+		Name:         mods.ModName(a.getString("Name")),
 		Author:       a.getString("Author"),
 		ReleaseDate:  a.getString("Release Date"),
 		Category:     mods.Category(a.categorySelect.Selected),
@@ -406,7 +406,7 @@ func (a *ModAuthorer) compileMod() (m *mods.Mod) {
 
 	switch *a.kind {
 	case mods.Hosted:
-		name := u.CreateFileName(m.Name)
+		name := u.CreateFileName(string(m.Name))
 		author := u.CreateFileName(m.Author)
 		if name != "" && author != "" {
 			m.ModID = mods.ModID(strings.ToLower(fmt.Sprintf("%s.%s", name, author)))

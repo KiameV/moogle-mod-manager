@@ -1,18 +1,11 @@
 package local
 
 import (
-	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
-	"fyne.io/fyne/v2/dialog"
-	"fyne.io/fyne/v2/widget"
-	"github.com/kiamev/moogle-mod-manager/config"
+	"github.com/kiamev/moogle-mod-manager/actions"
 	"github.com/kiamev/moogle-mod-manager/mods"
-	"github.com/kiamev/moogle-mod-manager/mods/managed"
-	ci "github.com/kiamev/moogle-mod-manager/ui/config-installer"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
-	"github.com/kiamev/moogle-mod-manager/ui/state/ui"
-	"path/filepath"
+	"github.com/kiamev/moogle-mod-manager/ui/util"
 )
 
 type enableBind struct {
@@ -20,16 +13,16 @@ type enableBind struct {
 	tm          mods.TrackedMod
 	start       func() bool
 	showWorking func()
-	done        mods.DoneCallback
+	//done        mods.DoneCallback
 }
 
-func newEnableBind(tm mods.TrackedMod, start func() bool, showWorking func(), done mods.DoneCallback) *enableBind {
+func newEnableBind(tm mods.TrackedMod, start func() bool, showWorking func() /*, done mods.DoneCallback*/) *enableBind {
 	b := &enableBind{
 		Bool:        binding.NewBool(),
 		tm:          tm,
 		start:       start,
 		showWorking: showWorking,
-		done:        done,
+		//done:        done,
 	}
 	_ = b.Set(tm.Enabled())
 	b.AddListener(b)
@@ -37,36 +30,47 @@ func newEnableBind(tm mods.TrackedMod, start func() bool, showWorking func(), do
 }
 
 func (b *enableBind) DataChanged() {
-	isChecked, _ := b.Get()
+	var (
+		isChecked, _ = b.Get()
+		action       actions.Action
+		err          error
+	)
 	if isChecked != b.tm.Enabled() {
 		if isChecked {
 			if !b.start() {
 				_ = b.Set(false)
 				return
 			}
-			if err := b.EnableMod(); err != nil {
-				if err != nil {
-					_ = b.Set(false)
-					b.done(mods.Error, err)
-				}
+			if action, err = actions.New(actions.Install, state.CurrentGame, b.tm); err != nil {
+				util.ShowErrorLong(err)
+				_ = b.Set(false)
+				return
+			}
+			if err = action.Run(); err != nil {
+				util.ShowErrorLong(err)
+				_ = b.Set(false)
+				return
 			}
 		} else {
 			if !b.start() {
 				_ = b.Set(false)
 				return
 			}
-			err := b.DisableMod()
-			_ = b.Set(false)
-			if err != nil {
-				b.done(mods.Error, err)
-			} else {
-				b.done(mods.Ok)
+			if action, err = actions.New(actions.Uninstall, state.CurrentGame, b.tm); err != nil {
+				util.ShowErrorLong(err)
+				_ = b.Set(true)
+				return
+			}
+			if err = action.Run(); err != nil {
+				util.ShowErrorLong(err)
+				_ = b.Set(true)
+				return
 			}
 		}
 	}
 }
 
-func (b *enableBind) EnableMod() (err error) {
+/*func (b *enableBind) EnableMod() (err error) {
 	var (
 		tm  = b.tm
 		tis []*mods.ToInstall
@@ -116,7 +120,7 @@ func (b *enableBind) OnConflict(conflicts []*mods.FileConflict, confirmationCall
 		}
 		f.Items = append(f.Items, widget.NewFormItem(
 			filepath.Base(c.File),
-			widget.NewSelect([]string{name, b.tm.Mod().Name}, c.OnChange)))
+			widget.NewSelect([]string{name, string(b.tm.Mod().Name)}, c.OnChange)))
 	}
 	d := dialog.NewCustomConfirm("Conflicts", "ok", "cancel", container.NewVScroll(f), func(ok bool) {
 		r := mods.Ok
@@ -128,3 +132,4 @@ func (b *enableBind) OnConflict(conflicts []*mods.FileConflict, confirmationCall
 	d.Resize(fyne.NewSize(400, 400))
 	d.Show()
 }
+*/

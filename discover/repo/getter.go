@@ -2,7 +2,7 @@ package repo
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"github.com/go-git/go-git/v5"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
@@ -95,9 +95,9 @@ func (r *repo) GetMod(toGet *mods.Mod) (mod *mods.Mod, err error) {
 			}
 			dir = filepath.Join(rd.repoGameDir(r.kind, game), toGet.DirectoryName())
 		} else if len(toGet.Games) > 1 {
-			return nil, errors.New(toGet.Name + " has multiple games and is not a Utility category")
+			return nil, fmt.Errorf("%s has multiple games and is not a Utility category", toGet.Name)
 		} else {
-			return nil, errors.New(toGet.Name + " has no games")
+			return nil, fmt.Errorf("%s has no games", toGet.Name)
 		}
 
 		if err = util.LoadFromFile(filepath.Join(dir, "mod.json"), &mod); err == nil {
@@ -107,7 +107,7 @@ func (r *repo) GetMod(toGet *mods.Mod) (mod *mods.Mod, err error) {
 			return
 		}
 	}
-	return nil, errors.New("unable to find repo file for " + toGet.Name)
+	return nil, fmt.Errorf("unable to find repo file for %s", toGet.Name)
 }
 
 func (r *repo) GetMods(game config.GameDef) (result []*mods.Mod, err error) {

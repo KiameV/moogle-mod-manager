@@ -97,7 +97,7 @@ func (ui *discoverUI) draw(w fyne.Window, isPopup bool) {
 			var m *mods.Mod
 			if i, ok := cw.GetValueFromDataItem(item); ok {
 				if m, ok = i.(*mods.Mod); ok {
-					co.(*widget.Label).SetText(m.Name)
+					co.(*widget.Label).SetText(string(m.Name))
 				}
 			}
 		})
@@ -224,7 +224,7 @@ func (ui *discoverUI) applySearch(s string, orig []*mods.Mod) (result []*mods.Mo
 	ui.prevSearch = s
 
 	for _, m := range orig {
-		if strings.Contains(strings.ToLower(m.Name), s) ||
+		if strings.Contains(strings.ToLower(string(m.Name)), s) ||
 			strings.Contains(strings.ToLower(string(m.Category)), s) ||
 			strings.Contains(strings.ToLower(m.Description), s) ||
 			strings.Contains(strings.ToLower(m.Author), s) {

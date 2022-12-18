@@ -24,7 +24,7 @@ func CreatePreview(mod *mods.Mod, options ...ModPreviewOptions) fyne.CanvasObjec
 			options[0].UpdateCallback(options[0].TrackedMod)
 		}))
 	}
-	c.Add(createField("Name", mod.Name))
+	c.Add(createField("Name", string(mod.Name)))
 	c.Add(createLink("Link", mod.Link))
 	c.Add(createField("Author", mod.Author))
 	c.Add(createField("Version", mod.Version))

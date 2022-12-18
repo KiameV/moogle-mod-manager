@@ -7,6 +7,7 @@ import (
 	"github.com/kiamev/moogle-mod-manager/browser"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/discover/repo"
+	"github.com/kiamev/moogle-mod-manager/files"
 	"github.com/kiamev/moogle-mod-manager/mods/managed"
 	"github.com/kiamev/moogle-mod-manager/mods/managed/authored"
 	config_installer "github.com/kiamev/moogle-mod-manager/ui/config-installer"
@@ -143,6 +144,10 @@ func initialize() {
 	}
 
 	if err = config.Initialize(repo.Dirs(repo.Read)); err != nil {
+		util.ShowErrorLong(err)
+	}
+
+	if err = files.Initialize(); err != nil {
 		util.ShowErrorLong(err)
 	}
 

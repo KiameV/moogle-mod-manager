@@ -40,7 +40,7 @@ func IsCurseforge(url string) bool {
 
 func (c *client) GetFromMod(in *mods.Mod) (found bool, mod *mods.Mod, err error) {
 	if len(in.Games) == 0 {
-		err = errors.New("no games found for mod " + in.Name)
+		err = fmt.Errorf("no games found for mod $s", in.Name)
 		return
 	}
 	var id uint64
@@ -221,7 +221,7 @@ func toMod(m cfMod, desc string, dls []CfFile) (include bool, mod *mods.Mod, err
 	}
 	mod = mods.NewMod(&mods.ModDef{
 		ModID:        mods.NewModID(mods.CurseForge, modID),
-		Name:         m.Name,
+		Name:         mods.ModName(m.Name),
 		Version:      m.Version(),
 		Description:  desc,
 		ReleaseDate:  m.CreatedTime.Format("Jan 2, 2006"),
