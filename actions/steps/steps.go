@@ -37,7 +37,7 @@ func NewState(game config.GameDef, mod mods.TrackedMod) *State {
 	}
 }
 
-func VerifyEnable(state *State) (result mods.Result, err error) {
+func VerifyEnable(state *State) (mods.Result, error) {
 	var (
 		tm      = state.Mod
 		c       = tm.Mod().ModCompatibility
@@ -65,10 +65,10 @@ func VerifyEnable(state *State) (result mods.Result, err error) {
 			}
 		}
 	}
-	return
+	return mods.Ok, nil
 }
 
-func VerifyDisable(state *State) (result mods.Result, err error) {
+func VerifyDisable(state *State) (mods.Result, error) {
 	var (
 		tm  = state.Mod
 		mod = tm.Mod()
@@ -98,7 +98,7 @@ func PreDownload(state *State) (result mods.Result, err error) {
 		wg  sync.WaitGroup
 	)
 	if state.ToInstall, err = mods.NewToInstallForMod(mod.Kind(), mod, mod.AlwaysDownload); err != nil {
-		return
+		return mods.Error, err
 	}
 	// Handle any mod configurations
 	if len(mod.Configurations) > 0 {
@@ -113,7 +113,7 @@ func PreDownload(state *State) (result mods.Result, err error) {
 			return nil
 		}); err != nil {
 			// Failed to set up config installer screen
-			return
+			return mods.Error, err
 		}
 		ui.ShowScreen(ui.ConfigInstaller)
 		wg.Wait()
@@ -127,14 +127,18 @@ func PreDownload(state *State) (result mods.Result, err error) {
 
 	wg.Add(1)
 	// Confirm Download
-	if err = confirm.NewConfirmer(confirm.NewParams(state.Game, state.Mod, state.ToInstall)).Downloads(func(r mods.Result) {
+	confirmer := confirm.NewConfirmer(confirm.NewParams(state.Game, state.Mod, state.ToInstall))
+	if err = confirmer.Downloads(func(r mods.Result) {
 		result = r
 		wg.Done()
 	}); err == nil {
 		wg.Wait()
 		time.Sleep(100 * time.Millisecond)
 	}
-	return
+	if err != nil {
+		return mods.Error, err
+	}
+	return result, nil
 }
 
 func Download(state *State) (result mods.Result, err error) {
@@ -146,23 +150,24 @@ func Download(state *State) (result mods.Result, err error) {
 	return
 }
 
-func Extract(state *State) (result mods.Result, err error) {
+func Extract(state *State) (mods.Result, error) {
 	var (
 		to       string
 		override bool
 		ef       []archive.ExtractedFile
+		err      error
 	)
 	for _, ti := range state.ToInstall {
 		if state.Mod.InstallType(state.Game) == config.ImmediateDecompress {
 			if to, err = config.Get().GetDir(state.Game, config.GameDirKind); err != nil {
-				return
+				return mods.Error, err
 			}
 		} else {
 			to = ti.Download.DownloadedArchiveLocation.ExtractDir()
 		}
 		if state.Mod.InstallType(state.Game) == config.ImmediateDecompress {
 			if to, err = config.Get().GetDir(state.Game, config.GameDirKind); err != nil {
-				return
+				return mods.Error, err
 			}
 			override = true
 		} else {
@@ -171,7 +176,7 @@ func Extract(state *State) (result mods.Result, err error) {
 		}
 
 		if ef, err = archive.Decompress(string(*ti.Download.DownloadedArchiveLocation), to, override); err != nil {
-			return
+			return mods.Error, err
 		}
 
 		if state.Mod.InstallType(state.Game) == config.ImmediateDecompress {
@@ -186,7 +191,7 @@ func Extract(state *State) (result mods.Result, err error) {
 				Files:     ef,
 			}
 			if err = e.Compile(state.Game, to); err != nil {
-				return
+				return mods.Error, err
 			}
 			state.ExtractedFiles = append(state.ExtractedFiles, e)
 		}
@@ -234,13 +239,19 @@ func Conflicts(state *State) (result mods.Result, err error) {
 		})
 		wg.Wait()
 	}
-	return
+	if err != nil {
+		return mods.Error, err
+	}
+	return result, nil
 }
 
-func Install(state *State) (result mods.Result, err error) {
-	var backupDir string
+func Install(state *State) (mods.Result, error) {
+	var (
+		backupDir string
+		err       error
+	)
 	if backupDir, err = config.Get().GetDir(state.Game, config.BackupDirKind); err != nil {
-		return
+		return mods.Error, err
 	}
 	switch state.Mod.InstallType(state.Game) {
 	case config.Move:
@@ -254,7 +265,7 @@ func Install(state *State) (result mods.Result, err error) {
 				if _, err = os.Stat(dir); err != nil {
 					// Create the directory structure
 					if err = os.MkdirAll(dir, 0755); err != nil {
-						return
+						return mods.Error, err
 					}
 				} else if _, err = os.Stat(ti.AbsoluteTo); err == nil {
 					// File Exists
@@ -263,22 +274,22 @@ func Install(state *State) (result mods.Result, err error) {
 					if _, err = os.Stat(absBackup); err == nil {
 						// Backup Exists
 						if err = os.Remove(ti.AbsoluteTo); err != nil {
-							return
+							return mods.Error, err
 						}
 					} else {
 						// No Backup
 						if err = os.MkdirAll(filepath.Dir(absBackup), 0755); err != nil {
-							return
+							return mods.Error, err
 						}
 						if err = os.Rename(ti.AbsoluteTo, absBackup); err != nil {
-							return
+							return mods.Error, err
 						}
 					}
 				}
 
 				// Install the file
 				if err = os.Rename(ti.AbsoluteFrom, ti.AbsoluteTo); err != nil {
-					return
+					return mods.Error, err
 				}
 				files.SetFiles(state.Game, state.Mod.ID(), ti.AbsoluteTo)
 			}
@@ -287,7 +298,7 @@ func Install(state *State) (result mods.Result, err error) {
 		// TODO
 		panic("not implemented")
 	default:
-		err = fmt.Errorf("unknown install type: %s", state.Mod.InstallType(state.Game))
+		return mods.Error, fmt.Errorf("unknown install type: %v", state.Mod.InstallType(state.Game))
 	}
 
 	return mods.Ok, nil
@@ -327,10 +338,6 @@ func UninstallMove(state *State) (mods.Result, error) {
 	return mods.Ok, nil
 }
 
-func RestoreBackups(state *State) (result mods.Result, err error) {
-	return mods.Error, nil
-}
-
 func EnableMod(state *State) (result mods.Result, err error) {
 	state.Mod.Enable()
 	result = mods.Ok
@@ -349,11 +356,11 @@ func DisableMod(state *State) (result mods.Result, err error) {
 	return
 }
 
-func ShowWorkingDialog(_ *State) (result mods.Result, err error) {
+func ShowWorkingDialog(_ *State) (mods.Result, error) {
 	return mods.Working, nil
 }
 
-func PostInstall(state *State) (result mods.Result, err error) {
+func PostInstall(state *State) (mods.Result, error) {
 	for _, id := range files.EmptyMods(state.Game) {
 		if m, found := managed.TryGetMod(state.Game, id); m != nil && found {
 			m.Disable()
@@ -368,7 +375,7 @@ func PostInstall(state *State) (result mods.Result, err error) {
 			}
 		}
 	}
-	return
+	return mods.Ok, nil
 }
 
 /*

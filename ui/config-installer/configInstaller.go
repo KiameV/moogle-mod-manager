@@ -94,8 +94,6 @@ func (ui *configInstallerUI) Draw(w fyne.Window) {
 				if err = ui.done(mods.Ok, tis); err != nil {
 					util.ShowErrorLong(err)
 					return
-				} else {
-
 				}
 			} else {
 				for _, ui.currentConfig = range ui.mod.Configurations {

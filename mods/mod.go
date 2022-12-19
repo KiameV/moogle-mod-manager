@@ -423,10 +423,6 @@ func NewModForVersion(manual *Mod, remote *Mod) *Mod {
 	return &m
 }
 
-func (m *Mod) DirectoryName() string {
-	return util.CreateFileName(string(m.ModID))
-}
-
 func (m *Mod) Mod() *Mod {
 	return m
 }

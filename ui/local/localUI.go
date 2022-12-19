@@ -1,8 +1,6 @@
 package local
 
 import (
-	"errors"
-	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
@@ -261,7 +259,7 @@ func (ui *localUI) hideDialog() {
 	}
 }
 
-func (ui *localUI) endEnableDisableCallback(result mods.Result, err ...error) {
+/*func (ui *localUI) endEnableDisableCallback(result mods.Result, err ...error) {
 	if ui.workingDialog != nil {
 		ui.workingDialog.Hide()
 		ui.workingDialog = nil
@@ -274,7 +272,7 @@ func (ui *localUI) endEnableDisableCallback(result mods.Result, err ...error) {
 		util.ShowErrorLong(err[0])
 	}
 	ui.split.Leading.Refresh()
-}
+}*/
 
 func (ui *localUI) updateMod(tm mods.TrackedMod) {
 	if action, err := actions.New(actions.Update, actions.Params{

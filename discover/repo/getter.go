@@ -87,13 +87,13 @@ func (r *repo) GetMod(toGet *mods.Mod) (mod *mods.Mod, err error) {
 		game config.GameDef
 	)
 	for _, rd := range repoDefs {
-		if toGet.Category == mods.Utility {
-			dir = filepath.Join(rd.repoUtilDir(r.kind), toGet.DirectoryName())
+		if toGet.Category == mods.Utility && len(toGet.Games) > 1 {
+			dir = filepath.Join(rd.repoUtilDir(r.kind), toGet.ID().AsDir())
 		} else if len(toGet.Games) == 1 {
 			if game, err = config.GameDefFromID(toGet.Games[0].ID); err != nil {
 				return
 			}
-			dir = filepath.Join(rd.repoGameDir(r.kind, game), toGet.DirectoryName())
+			dir = filepath.Join(rd.repoGameModDir(r.kind, game, toGet))
 		} else if len(toGet.Games) > 1 {
 			return nil, fmt.Errorf("%s has multiple games and is not a Utility category", toGet.Name)
 		} else {
@@ -101,9 +101,11 @@ func (r *repo) GetMod(toGet *mods.Mod) (mod *mods.Mod, err error) {
 		}
 
 		if err = util.LoadFromFile(filepath.Join(dir, "mod.json"), &mod); err == nil {
+			// Success
 			return
 		}
 		if err = util.LoadFromFile(filepath.Join(dir, "mod.xml"), &mod); err == nil {
+			// Success
 			return
 		}
 	}

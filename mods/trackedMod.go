@@ -84,8 +84,7 @@ func NewTrackerMod(mod *Mod, game config.GameDef) TrackedMod {
 }
 
 func (id ModID) AsDir() string {
-	sp := strings.Split(string(id), ".")
-	return filepath.Join(sp...)
+	return strings.ReplaceAll(string(id), ".", "_")
 }
 
 func (m *TrackedModConc) ID() ModID {

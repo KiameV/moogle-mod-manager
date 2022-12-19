@@ -53,7 +53,6 @@ var (
 		steps.VerifyDisable,
 		steps.ShowWorkingDialog,
 		steps.UninstallMove,
-		steps.RestoreBackups,
 		steps.PostInstall,
 	}
 	installImmediateDecompressSteps = []steps.Step{
@@ -70,7 +69,6 @@ var (
 		steps.ShowWorkingDialog,
 		steps.DisableMod,
 		steps.UninstallMove,
-		steps.RestoreBackups,
 		steps.Install,
 		steps.PostInstall,
 	}

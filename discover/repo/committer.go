@@ -63,14 +63,14 @@ func (c *repoClient) Submit() (url string, err error) {
 		if game, err = config.GameDefFromID(c.mod.Games[0].ID); err != nil {
 			return
 		}
-		file = rd.repoGameModDir(Author, game, c.mod.ModKind.Kind, mods.ModID(c.removeFilePrefixes(string(c.mod.ModID))))
+		file = rd.repoGameModDir(Author, game, c.mod)
 	} else if len(c.mod.Games) > 1 {
 		if c.mod.ModKind.Kind != mods.Hosted {
 			err = errors.New("multi-game mods must be hosted")
 			return
 		}
 		file = util.CreateFileName(string(c.mod.ModID))
-		file = c.removeFilePrefixes(file)
+		file = rd.removeFilePrefixes(file)
 		file = filepath.Join(rd.repoDir(Author), "utilities", file)
 	} else {
 		err = errors.New("no games specified")
@@ -233,13 +233,6 @@ func (c *repoClient) createPR(rd repoDef, commitBranch string) (url string, err 
 		url = pr.GetHTMLURL()
 	}
 	return
-}
-
-func (c *repoClient) removeFilePrefixes(s string) string {
-	s = strings.TrimPrefix(s, hostedPrefix)
-	s = strings.TrimPrefix(s, nexusPrefix)
-	s = strings.TrimPrefix(s, curseforgePrefix)
-	return s
 }
 
 const pat = "4IYjtV7j9BWmyiSJ1GRz8e"

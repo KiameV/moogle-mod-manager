@@ -40,7 +40,7 @@ func IsCurseforge(url string) bool {
 
 func (c *client) GetFromMod(in *mods.Mod) (found bool, mod *mods.Mod, err error) {
 	if len(in.Games) == 0 {
-		err = fmt.Errorf("no games found for mod $s", in.Name)
+		err = fmt.Errorf("no games found for mod %s", in.Name)
 		return
 	}
 	var id uint64

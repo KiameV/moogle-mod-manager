@@ -1,7 +1,6 @@
 package confirm
 
 import (
-	"fmt"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
 )
@@ -29,10 +28,8 @@ func NewConfirmer(params Params) Confirmer {
 	switch params.Mod.Kind() {
 	case mods.Nexus:
 		return newNexusConfirmer(params)
-	case mods.CurseForge:
-		return newCfConfirmer(params)
 	case mods.Hosted:
 		return newHostedConfirmer(params)
 	}
-	panic(fmt.Sprintf("unknown kind %v", params.Mod.Kind()))
+	return newBypassConfirmer(params)
 }
