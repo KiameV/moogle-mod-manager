@@ -44,24 +44,26 @@ var (
 		steps.ShowWorkingDialog,
 		steps.Download,
 		steps.Extract,
-		steps.PreInstall,
 		steps.Conflicts,
 		steps.Install,
 		steps.EnableMod,
+		steps.PostInstall,
 	}
 	uninstallMoveSteps = []steps.Step{
 		steps.VerifyDisable,
 		steps.ShowWorkingDialog,
 		steps.UninstallMove,
 		steps.RestoreBackups,
-		steps.DisableMod,
+		steps.PostInstall,
 	}
 	installImmediateDecompressSteps = []steps.Step{
 		steps.VerifyEnable,
+		steps.PreDownload,
 		steps.ShowWorkingDialog,
 		steps.Download,
 		steps.Extract,
 		steps.EnableMod,
+		steps.PostInstall,
 	}
 	updateSteps = []steps.Step{
 		steps.VerifyEnable,
@@ -69,7 +71,8 @@ var (
 		steps.DisableMod,
 		steps.UninstallMove,
 		steps.RestoreBackups,
-		steps.InstallMod,
+		steps.Install,
+		steps.PostInstall,
 	}
 	running = false
 	mutex   = sync.Mutex{}
@@ -170,6 +173,7 @@ func (a action) run() {
 	)
 	for _, step := range a.steps {
 		if result, err = step(a.state); err != nil {
+			a.workingDialog.Hide()
 			util.ShowErrorLong(err)
 			return
 		} else if result == mods.Cancel {

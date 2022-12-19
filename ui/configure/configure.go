@@ -16,6 +16,7 @@ func Show(w fyne.Window) {
 	configs := *config.Get()
 	items := []*widget.FormItem{
 		createSelectRow("Default GameDef", &configs.DefaultGame, config.GameIDs()...),
+		createCheckboxRow("Delete Downloads After Install", &configs.DeleteDownloadAfterInstall),
 	}
 	for _, g := range config.GameDefs() {
 		var (
@@ -69,6 +70,10 @@ func createSelectRow(label string, value *string, options ...string) *widget.For
 	})
 	sel.SetSelected(*value)
 	return widget.NewFormItem(label, sel)
+}
+
+func createCheckboxRow(label string, value *bool, options ...string) *widget.FormItem {
+	return widget.NewFormItem(label, widget.NewCheckWithData("", binding.BindBool(value)))
 }
 
 func createDirRow(label string, value *string) *widget.FormItem {

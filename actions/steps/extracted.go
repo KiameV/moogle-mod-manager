@@ -23,44 +23,52 @@ type (
 	}
 )
 
-func newFileToInstallFromFile(fromToExtracted map[string]archive.ExtractedFile, f *mods.ModFile, installDir string) (*FileToInstall, error) {
-	af, found := fromToExtracted[f.From]
+func newFileToInstallFromFile(relToExtracted map[string]archive.ExtractedFile, f *mods.ModFile, installDir string) (*FileToInstall, error) {
+	af, found := relToExtracted[f.From]
 	if !found {
 		return nil, fmt.Errorf("file %v not found in extracted files", f)
 	}
 	return &FileToInstall{
 		Relative:     f.To,
-		AbsoluteFrom: af.File,
+		AbsoluteFrom: af.From,
 		AbsoluteTo:   filepath.Join(installDir, f.To),
 		Skip:         false,
 	}, nil
 }
 
-func newFileToInstallFromDir(fromToExtracted map[string]archive.ExtractedFile, d *mods.ModDir, installDir string) (*FileToInstall, error) {
-	af, found := fromToExtracted[d.From]
+func newFileToInstallFromDir(relToExtracted map[string]archive.ExtractedFile, path string, rel string, d *mods.ModDir, installDir string) (*FileToInstall, error) {
+	var (
+		af, found = relToExtracted[rel]
+		r, err    = filepath.Rel(d.From, rel)
+	)
 	if !found {
-		return nil, fmt.Errorf("file %v not found in extracted files", f)
+		return nil, fmt.Errorf("dir %v not found in extracted files", d.From)
 	}
-	if path, err = filepath.Rel(d.From, path); err != nil {
-		return err
+	if err != nil {
+		return nil, err
 	}
 	return &FileToInstall{
-		Relative:     d.To,
-		AbsoluteFrom: af.File,
-		AbsoluteTo:   filepath.Join(installDir, d.To),
+		Relative:     r,
+		AbsoluteFrom: af.From,
+		AbsoluteTo:   filepath.Join(installDir, d.To, r),
 		Skip:         false,
 	}, nil
 }
 
-func (e *Extracted) FilesRelative(game config.GameDef) (result []*FileToInstall, err error) {
+func (e *Extracted) FilesToInstall() []*FileToInstall {
+	return e.filesToInstall
+}
+
+func (e *Extracted) Compile(game config.GameDef, extractedDir string) (err error) {
 	if len(e.filesToInstall) > 0 {
-		return e.filesToInstall, nil
+		return
 	}
 
 	var (
 		fromToExtracted = make(map[string]archive.ExtractedFile)
 		installDir      string
 		fti             *FileToInstall
+		rel             string
 	)
 	if installDir, err = config.Get().GetDir(game, config.GameDirKind); err != nil {
 		return
@@ -74,7 +82,7 @@ func (e *Extracted) FilesRelative(game config.GameDef) (result []*FileToInstall,
 			if fti, err = newFileToInstallFromFile(fromToExtracted, f, installDir); err != nil {
 				return
 			}
-			result = append(result, fti)
+			e.filesToInstall = append(e.filesToInstall, fti)
 			/*ex, found := fromToExtracted[f.From]
 			if !found {
 				return nil, fmt.Errorf("file %v not found", f.From)
@@ -88,21 +96,23 @@ func (e *Extracted) FilesRelative(game config.GameDef) (result []*FileToInstall,
 			}*/
 		}
 		for _, d := range df.Dirs {
-			if err = filepath.WalkDir(d.From, func(path string, de fs.DirEntry, err error) error {
+			if err = filepath.WalkDir(filepath.Join(extractedDir, d.From), func(path string, de fs.DirEntry, err error) error {
 				if err != nil {
 					return err
 				}
 				if de.IsDir() {
 					return nil
 				}
-				if fti, err = newFileToInstallFromDir(fromToExtracted, dir, installDir); err != nil {
+				if rel, err = filepath.Rel(extractedDir, path); err != nil {
 					return err
 				}
-				result = append(result, fti)
+				if fti, err = newFileToInstallFromDir(fromToExtracted, path, rel, d, installDir); err != nil {
+					return err
+				}
+				e.filesToInstall = append(e.filesToInstall, fti)
 				return nil
 			}); err != nil {
-				result = nil
-				break
+				return
 			}
 		}
 	}

@@ -38,7 +38,7 @@ func hosted(game config.GameDef, mod mods.TrackedMod, toInstall []*mods.ToInstal
 			}
 			if f, err = browser.Download(source, f); err == nil {
 				// success
-				ti.Download.DownloadedArchiveLocation = &f
+				ti.Download.DownloadedArchiveLocation = (*mods.ArchiveLocation)(&f)
 				break
 			}
 		}
@@ -77,7 +77,7 @@ func nexus(game config.GameDef, mod mods.TrackedMod, toInstall []*mods.ToInstall
 		for _, f := range dir {
 			if name == f.Name() {
 				s := filepath.Join(path, f.Name())
-				ti.Download.DownloadedArchiveLocation = &s
+				ti.Download.DownloadedArchiveLocation = (*mods.ArchiveLocation)(&s)
 				break
 			}
 		}
@@ -100,7 +100,7 @@ func curseForge(game config.GameDef, mod mods.TrackedMod, toInstall []*mods.ToIn
 			}
 			if f, err = browser.Download(i.Download.CurseForge.Url, f); err == nil {
 				// success
-				ti.Download.DownloadedArchiveLocation = &f
+				ti.Download.DownloadedArchiveLocation = (*mods.ArchiveLocation)(&f)
 				break
 			}
 		}

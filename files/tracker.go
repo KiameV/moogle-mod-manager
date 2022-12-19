@@ -20,10 +20,10 @@ type (
 	}
 	modTracker struct {
 		Mods map[mods.ModID]*fileTracker `json:"mods"`
+		//Backups collections.Set[string]     `json:"backup"`
 	}
 	fileTracker struct {
-		Files  collections.Set[string] `json:"files"`
-		Backup collections.Set[string] `json:"backup"`
+		Files collections.Set[string] `json:"files"`
 	}
 )
 
@@ -41,7 +41,10 @@ func Initialize() error {
 func ModTracker(game config.GameDef) *modTracker {
 	mt, ok := tracker.Games[game.ID()]
 	if !ok {
-		mt = &modTracker{Mods: make(map[mods.ModID]*fileTracker)}
+		mt = &modTracker{
+			Mods: make(map[mods.ModID]*fileTracker),
+			//Backups: collections.NewSet[string](),
+		}
 		tracker.Games[game.ID()] = mt
 	}
 	return mt
@@ -54,8 +57,7 @@ func modFiles(game config.GameDef, modID mods.ModID) *fileTracker {
 	)
 	if !ok {
 		ft = &fileTracker{
-			Files:  collections.NewSet[string](),
-			Backup: collections.NewSet[string](),
+			Files: collections.NewSet[string](),
 		}
 		mt.Mods[modID] = ft
 	}
@@ -66,19 +68,32 @@ func Files(game config.GameDef, modID mods.ModID) collections.Set[string] {
 	return modFiles(game, modID).Files
 }
 
-func Backups(game config.GameDef, modID mods.ModID) collections.Set[string] {
-	return modFiles(game, modID).Backup
+func EmptyMods(game config.GameDef) (result []mods.ModID) {
+	for id, ft := range ModTracker(game).Mods {
+		if ft.Files.Len() == 0 {
+			result = append(result, id)
+		}
+	}
+	return
 }
 
-func HasBackup(game config.GameDef, file string) (modID mods.ModID, found bool) {
+//func Backups(game config.GameDef) collections.Set[string] {
+//	return ModTracker(game).Backups
+//}
+
+func HasFile(game config.GameDef, file string) (modID mods.ModID, found bool) {
 	var ft *fileTracker
 	for modID, ft = range ModTracker(game).Mods {
-		if ft.Backup.Contains(file) {
+		if ft.Files.Contains(file) {
 			return modID, true
 		}
 	}
 	return
 }
+
+//func HasBackup(game config.GameDef, file string) bool {
+//	return ModTracker(game).Backups.Contains(file)
+//}
 
 func SetFiles(game config.GameDef, modID mods.ModID, files ...string) {
 	var (
@@ -87,31 +102,34 @@ func SetFiles(game config.GameDef, modID mods.ModID, files ...string) {
 	for _, f := range files {
 		ft.Files.Set(f)
 	}
-	save()
+	tracker.save()
 }
 
-func SetBackups(game config.GameDef, modID mods.ModID, backups ...string) {
-	var (
-		ft = modFiles(game, modID)
-	)
+/*func SetBackups(game config.GameDef, backups ...string) {
+	mt := ModTracker(game)
 	for _, f := range backups {
-		ft.Backup.Set(f)
+		mt.Backups.Set(f)
 	}
 	save()
-}
+}*/
 
-func RemoveBackups(game config.GameDef, modID mods.ModID, backups ...string) {
-	var (
-		ft = modFiles(game, modID)
-	)
+/*func RemoveBackups(game config.GameDef, backups ...string) {
+	mt := ModTracker(game)
 	for _, bu := range backups {
-		ft.Backup.Remove(bu)
+		mt.Backups.Remove(bu)
 	}
 	save()
+}*/
+
+func RemoveFiles(game config.GameDef, modID mods.ModID, files ...string) {
+	for _, f := range files {
+		modFiles(game, modID).Files.Remove(f)
+	}
+	tracker.save()
 }
 
-func save() {
-	if err := util.SaveToFile(filepath.Join(config.PWD, file), tracker); err != nil {
+func (t *gameTracker) save() {
+	if err := util.SaveToFile(filepath.Join(config.PWD, file), t); err != nil {
 		uu.ShowErrorLong(fmt.Errorf("failed to save file tracker: %v", err))
 	}
 }

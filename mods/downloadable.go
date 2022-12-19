@@ -2,19 +2,24 @@ package mods
 
 import (
 	"fmt"
+	"github.com/kiamev/moogle-mod-manager/config"
+	"path/filepath"
 )
 
-type Download struct {
-	Name    string `json:"Name" xml:"Name"`
-	Version string `json:"Version" xml:"Version"`
+type (
+	ArchiveLocation string
+	Download        struct {
+		Name    string `json:"Name" xml:"Name"`
+		Version string `json:"Version" xml:"Version"`
 
-	Hosted     *HostedDownloadable     `json:"Hosted,omitempty" xml:"Hosted,omitempty"`
-	Nexus      *RemoteDownloadable     `json:"Nexus,omitempty" xml:"Nexus,omitempty"`
-	CurseForge *CurseForgeDownloadable `json:"CurseForge,omitempty" xml:"CurseForge,omitempty"`
+		Hosted     *HostedDownloadable     `json:"Hosted,omitempty" xml:"Hosted,omitempty"`
+		Nexus      *RemoteDownloadable     `json:"Nexus,omitempty" xml:"Nexus,omitempty"`
+		CurseForge *CurseForgeDownloadable `json:"CurseForge,omitempty" xml:"CurseForge,omitempty"`
 
-	DownloadedArchiveLocation *string `json:"DownloadedLoc,omitempty" xml:"DownloadedLoc,omitempty"`
-	//InstallType   InstallType `json:"InstallType" xml:"InstallType"`
-}
+		DownloadedArchiveLocation *ArchiveLocation `json:"DownloadedLoc,omitempty" xml:"DownloadedLoc,omitempty"`
+		//InstallType   InstallType `json:"InstallType" xml:"InstallType"`
+	}
+)
 
 func (d Download) FileName() (string, error) {
 	if d.Nexus != nil {
@@ -37,4 +42,12 @@ type RemoteDownloadable struct {
 type CurseForgeDownloadable struct {
 	RemoteDownloadable
 	Url string `json:"Url"`
+}
+
+func (l *ArchiveLocation) ExtractDir() string {
+	s := config.PWD
+	if l != nil {
+		s = filepath.Dir(string(*l))
+	}
+	return filepath.Join(s, "extracted")
 }

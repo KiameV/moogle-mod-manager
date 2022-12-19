@@ -1,7 +1,6 @@
 package confirm
 
 import (
-	"errors"
 	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -48,7 +47,8 @@ func (c *nexusConfirmer) Downloads(done func(mods.Result)) (err error) {
 	}
 
 	if len(toDl) == 0 {
-		return errors.New("no files to download")
+		done(mods.Ok)
+		return nil
 	}
 
 	return c.showDialog(toDl, done)

@@ -11,8 +11,8 @@ import (
 	"github.com/kiamev/moogle-mod-manager/mods/managed"
 	ci "github.com/kiamev/moogle-mod-manager/ui/config-installer"
 	"github.com/kiamev/moogle-mod-manager/ui/confirm"
+	uic "github.com/kiamev/moogle-mod-manager/ui/conflicts"
 	ui "github.com/kiamev/moogle-mod-manager/ui/state"
-	uiu "github.com/kiamev/moogle-mod-manager/ui/util"
 	"os"
 	"path/filepath"
 	"sync"
@@ -98,7 +98,6 @@ func PreDownload(state *State) (result mods.Result, err error) {
 		wg  sync.WaitGroup
 	)
 	if state.ToInstall, err = mods.NewToInstallForMod(mod.Kind(), mod, mod.AlwaysDownload); err != nil {
-		uiu.ShowErrorLong(err)
 		return
 	}
 	// Handle any mod configurations
@@ -112,13 +111,14 @@ func PreDownload(state *State) (result mods.Result, err error) {
 			}
 			wg.Done()
 			return nil
-		}); err == nil {
-			ui.ShowScreen(ui.ConfigInstaller)
-			wg.Wait()
-			time.Sleep(100 * time.Millisecond)
+		}); err != nil {
+			// Failed to set up config installer screen
+			return
 		}
-		// Failed to set up config installer screen
-		return
+		ui.ShowScreen(ui.ConfigInstaller)
+		wg.Wait()
+		time.Sleep(100 * time.Millisecond)
+
 	}
 
 	if len(state.ToInstall) == 0 {
@@ -153,10 +153,13 @@ func Extract(state *State) (result mods.Result, err error) {
 		ef       []archive.ExtractedFile
 	)
 	for _, ti := range state.ToInstall {
-		if to, err = filepath.Abs(*ti.Download.DownloadedArchiveLocation); err != nil {
-			return
+		if state.Mod.InstallType(state.Game) == config.ImmediateDecompress {
+			if to, err = config.Get().GetDir(state.Game, config.GameDirKind); err != nil {
+				return
+			}
+		} else {
+			to = ti.Download.DownloadedArchiveLocation.ExtractDir()
 		}
-
 		if state.Mod.InstallType(state.Game) == config.ImmediateDecompress {
 			if to, err = config.Get().GetDir(state.Game, config.GameDirKind); err != nil {
 				return
@@ -167,57 +170,161 @@ func Extract(state *State) (result mods.Result, err error) {
 			override = true
 		}
 
-		if ef, err = archive.Decompress(*ti.Download.DownloadedArchiveLocation, to, override); err != nil {
+		if ef, err = archive.Decompress(string(*ti.Download.DownloadedArchiveLocation), to, override); err != nil {
 			return
 		}
 
 		if state.Mod.InstallType(state.Game) == config.ImmediateDecompress {
 			installed := make([]string, len(ef))
 			for i, f := range ef {
-				installed[i] = f.File
+				installed[i] = f.From
 			}
 			files.SetFiles(state.Game, state.Mod.ID(), installed...)
 		} else {
-			state.ExtractedFiles = append(state.ExtractedFiles, Extracted{ti, files})
+			e := Extracted{
+				ToInstall: ti,
+				Files:     ef,
+			}
+			if err = e.Compile(state.Game, to); err != nil {
+				return
+			}
+			state.ExtractedFiles = append(state.ExtractedFiles, e)
 		}
 	}
-	return mods.Error, nil
+	return mods.Ok, nil
 }
 
 func Conflicts(state *State) (result mods.Result, err error) {
 	var (
-		backupDir string
-		rels      []string
+		mod            = state.Mod.Mod()
+		tos            []string
+		tosToToInstall = make(map[string]*FileToInstall)
+		wg             sync.WaitGroup
+		ti             *FileToInstall
+		found          bool
 	)
-	if backupDir, err = config.Get().GetDir(state.Game, config.BackupDirKind); err != nil {
-		return
+	for _, e := range state.ExtractedFiles {
+		for _, ti = range e.FilesToInstall() {
+			tos = append(tos, ti.AbsoluteTo)
+			tosToToInstall[ti.AbsoluteTo] = ti
+		}
 	}
-	for _, ef := range state.ExtractedFiles {
-		if rels, err = ef.FilesRelative(); err != nil {
 
-		}
+	conflicts := files.FindConflicts(state.Game, tos)
+
+	result = mods.Ok
+	if len(conflicts) > 0 {
+		wg.Add(1)
+		uic.ShowConflicts(state.Mod.Mod(), conflicts, func(r mods.Result) {
+			result = r
+			if result == mods.Ok {
+				for _, c := range conflicts {
+					if c.Selection != mod {
+						// Use other mod
+						if ti, found = tosToToInstall[c.Path]; found {
+							ti.Skip = true
+						}
+					} else {
+						// Use this mod
+						files.RemoveFiles(state.Game, c.Owner.ID(), c.Path)
+					}
+				}
+			}
+			wg.Done()
+		})
+		wg.Wait()
 	}
-	for _, ti := range state.ToInstall {
-		if ti.Conflicts, err = files.FindConflicts(state.Game); err != nil {
-			return
-		}
-	}
+	return
 }
 
 func Install(state *State) (result mods.Result, err error) {
-	return mods.Error, nil
-}
+	var backupDir string
+	if backupDir, err = config.Get().GetDir(state.Game, config.BackupDirKind); err != nil {
+		return
+	}
+	switch state.Mod.InstallType(state.Game) {
+	case config.Move:
+		for _, e := range state.ExtractedFiles {
+			for _, ti := range e.FilesToInstall() {
+				if ti.Skip {
+					continue
+				}
 
-func InstallMod(state *State) (result mods.Result, err error) {
-	return mods.Error, nil
+				dir := filepath.Dir(ti.AbsoluteTo)
+				if _, err = os.Stat(dir); err != nil {
+					// Create the directory structure
+					if err = os.MkdirAll(dir, 0755); err != nil {
+						return
+					}
+				} else if _, err = os.Stat(ti.AbsoluteTo); err == nil {
+					// File Exists
+					// See if there's a file backup
+					absBackup := filepath.Join(backupDir, ti.Relative)
+					if _, err = os.Stat(absBackup); err == nil {
+						// Backup Exists
+						if err = os.Remove(ti.AbsoluteTo); err != nil {
+							return
+						}
+					} else {
+						// No Backup
+						if err = os.MkdirAll(filepath.Dir(absBackup), 0755); err != nil {
+							return
+						}
+						if err = os.Rename(ti.AbsoluteTo, absBackup); err != nil {
+							return
+						}
+					}
+				}
+
+				// Install the file
+				if err = os.Rename(ti.AbsoluteFrom, ti.AbsoluteTo); err != nil {
+					return
+				}
+				files.SetFiles(state.Game, state.Mod.ID(), ti.AbsoluteTo)
+			}
+		}
+	case config.MoveToArchive:
+		// TODO
+		panic("not implemented")
+	default:
+		err = fmt.Errorf("unknown install type: %s", state.Mod.InstallType(state.Game))
+	}
+
+	return mods.Ok, nil
 }
 
 func UninstallMove(state *State) (mods.Result, error) {
-	i := files.Files(state.Game, state.Mod.ID())
-	for _, f := range i.Keys() {
-		_ = os.Remove(f)
+	var (
+		i         = files.Files(state.Game, state.Mod.ID())
+		gameDir   string
+		backupDir string
+		rel       string
+		err       error
+	)
+	if gameDir, err = config.Get().GetDir(state.Game, config.GameDirKind); err != nil {
+		return mods.Error, err
 	}
-	return mods.Error, nil
+	if backupDir, err = config.Get().GetDir(state.Game, config.BackupDirKind); err != nil {
+		return mods.Error, err
+	}
+	for _, f := range i.Keys() {
+		if err = os.Remove(f); err != nil {
+			return mods.Error, err
+		}
+		files.RemoveFiles(state.Game, state.Mod.ID(), f)
+
+		if rel, err = filepath.Rel(gameDir, f); err != nil {
+			return mods.Error, err
+		}
+
+		absBackup := filepath.Join(backupDir, rel)
+		if _, err = os.Stat(absBackup); err == nil {
+			if err = os.Rename(absBackup, f); err != nil {
+				return mods.Error, err
+			}
+		}
+	}
+	return mods.Ok, nil
 }
 
 func RestoreBackups(state *State) (result mods.Result, err error) {
@@ -244,6 +351,24 @@ func DisableMod(state *State) (result mods.Result, err error) {
 
 func ShowWorkingDialog(_ *State) (result mods.Result, err error) {
 	return mods.Working, nil
+}
+
+func PostInstall(state *State) (result mods.Result, err error) {
+	for _, id := range files.EmptyMods(state.Game) {
+		if m, found := managed.TryGetMod(state.Game, id); m != nil && found {
+			m.Disable()
+		}
+	}
+	for _, ti := range state.ToInstall {
+		l := ti.Download.DownloadedArchiveLocation
+		if l != nil {
+			_ = os.RemoveAll(ti.Download.DownloadedArchiveLocation.ExtractDir())
+			if config.Get().DeleteDownloadAfterInstall {
+				_ = os.Remove(string(*l))
+			}
+		}
+	}
+	return
 }
 
 /*
