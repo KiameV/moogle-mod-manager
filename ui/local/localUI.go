@@ -31,7 +31,7 @@ type localUI struct {
 	data          binding.UntypedList
 	split         *container.Split
 	checkAll      *widget.Button
-	modList       *widget.List
+	ModList       *widget.List
 	workingDialog dialog.Dialog
 	mods          []mods.TrackedMod
 }
@@ -49,7 +49,7 @@ func (ui *localUI) DrawAsDialog(fyne.Window) {}
 func (ui *localUI) Draw(w fyne.Window) {
 	ui.data = binding.NewUntypedList()
 	ui.mods = make([]mods.TrackedMod, 0)
-	ui.modList = widget.NewListWithData(
+	ui.ModList = widget.NewListWithData(
 		ui.data,
 		func() fyne.CanvasObject {
 			return container.NewBorder(nil, nil, widget.NewLabel(""), widget.NewCheck("", func(b bool) {}), NewUpdateButton(ui.updateMod))
@@ -64,7 +64,7 @@ func (ui *localUI) Draw(w fyne.Window) {
 					c := co.(*fyne.Container)
 					c.Objects[0].(*UpdateButton).SetTrackedMod(tm)
 					c.Objects[1].(*widget.Label).Bind(binding.BindString(tm.DisplayNamePtr()))
-					c.Objects[2].(*widget.Check).Bind(newEnableBind(tm, ui.startEnableDisableCallback, ui.showWorkingDialog, ui.hideDialog))
+					c.Objects[2].(*widget.Check).Bind(newEnableBind(ui, tm, ui.startEnableDisableCallback, ui.showWorkingDialog, ui.hideDialog))
 				}
 			}
 		})
@@ -94,7 +94,7 @@ func (ui *localUI) Draw(w fyne.Window) {
 				}
 				ui.removeModFromList(ui.selectedMod)
 				ui.selectedMod = nil
-				ui.modList.UnselectAll()
+				ui.ModList.UnselectAll()
 				ui.split.Trailing = container.NewMax()
 				ui.split.Refresh()
 			}
@@ -121,7 +121,7 @@ func (ui *localUI) Draw(w fyne.Window) {
 	}
 
 	removeButton.Disable()
-	ui.modList.OnSelected = func(id widget.ListItemID) {
+	ui.ModList.OnSelected = func(id widget.ListItemID) {
 		data, err := ui.data.GetItem(id)
 		if err != nil {
 			return
@@ -149,7 +149,7 @@ func (ui *localUI) Draw(w fyne.Window) {
 			ui.split.Refresh()
 		}
 	}
-	ui.modList.OnUnselected = func(id widget.ListItemID) {
+	ui.ModList.OnUnselected = func(id widget.ListItemID) {
 		ui.selectedMod = nil
 		removeButton.Disable()
 		ui.split.Trailing = container.NewMax()
@@ -157,7 +157,7 @@ func (ui *localUI) Draw(w fyne.Window) {
 
 	buttons := container.NewHBox(findButton, addButton, removeButton, ui.checkAll)
 	ui.split = container.NewHSplit(
-		ui.modList,
+		ui.ModList,
 		container.NewMax())
 	ui.split.SetOffset(0.25)
 
@@ -282,7 +282,7 @@ func (ui *localUI) updateMod(tm mods.TrackedMod) {
 			Show: ui.showWorkingDialog,
 			Hide: ui.hideDialog,
 		},
-	}); err != nil {
+	}, nil); err != nil {
 		util.ShowErrorLong(err)
 	} else if err = action.Run(); err != nil {
 		util.ShowErrorLong(err)

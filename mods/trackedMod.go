@@ -16,8 +16,8 @@ type (
 		SetMod(m *Mod)
 		Enable()
 		Enabled() bool
+		EnabledPtr() *bool
 		Disable()
-		Toggle() bool
 		Save() error
 		DisplayName() string
 		DisplayNamePtr() *string
@@ -68,6 +68,10 @@ func (m *TrackedModConc) DisplayName() string {
 
 func (m *TrackedModConc) Enable() {
 	m.IsEnabled = true
+}
+
+func (m *TrackedModConc) EnabledPtr() *bool {
+	return &m.IsEnabled
 }
 
 func (m *TrackedModConc) Disable() {

@@ -8,13 +8,16 @@ import (
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/ui/util"
 	"sync"
+	"time"
 )
 
 type (
+	Done   func()
 	Action interface {
 		Run() error
 	}
 	action struct {
+		done          Done
 		state         *steps.State
 		steps         []steps.Step
 		workingDialog WorkingDialog
@@ -76,7 +79,7 @@ var (
 	mutex   = sync.Mutex{}
 )
 
-func New(kind ActionKind, params Params) (Action, error) {
+func New(kind ActionKind, params Params, done Done) (Action, error) {
 	mutex.Lock()
 	defer mutex.Unlock()
 	if running {
@@ -96,6 +99,7 @@ func New(kind ActionKind, params Params) (Action, error) {
 		s, err = createUpdateSteps(params.Game, params.Mod)
 	}
 	return &action{
+		done:          done,
 		state:         steps.NewState(params.Game, params.Mod),
 		steps:         s,
 		workingDialog: params.WorkingDialog,
@@ -164,6 +168,12 @@ func (a action) run() {
 		mutex.Lock()
 		running = false
 		mutex.Unlock()
+		if a.done != nil {
+			go func() {
+				time.Sleep(100 * time.Millisecond)
+				a.done()
+			}()
+		}
 	}()
 	var (
 		result mods.Result

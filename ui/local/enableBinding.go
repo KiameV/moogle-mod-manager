@@ -8,30 +8,38 @@ import (
 	"github.com/kiamev/moogle-mod-manager/ui/util"
 )
 
-type enableBind struct {
-	binding.Bool
-	tm          mods.TrackedMod
-	start       func() bool
-	showWorking func()
-	hideWorking func()
-	//done        mods.DoneCallback
-}
-
-func newEnableBind(tm mods.TrackedMod, start func() bool, showWorking func(), hideWorking func() /*, done mods.DoneCallback*/) *enableBind {
-	b := &enableBind{
-		Bool:        binding.NewBool(),
-		tm:          tm,
-		start:       start,
-		showWorking: showWorking,
-		hideWorking: hideWorking,
-		//done:        done,
+type (
+	enableBind struct {
+		binding.Bool
+		parent      *localUI
+		tm          mods.TrackedMod
+		start       func() bool
+		showWorking func()
+		hideWorking func()
+		//done        mods.DoneCallback
 	}
+)
+
+func newEnableBind(parent *localUI, tm mods.TrackedMod, start func() bool, showWorking func(), hideWorking func() /*, done mods.DoneCallback*/) *enableBind {
+	var (
+		b = &enableBind{
+			parent:      parent,
+			Bool:        binding.NewBool(),
+			tm:          tm,
+			start:       start,
+			showWorking: showWorking,
+			hideWorking: hideWorking,
+		}
+	)
 	_ = b.Set(tm.Enabled())
 	b.AddListener(b)
 	return b
 }
 
 func (b *enableBind) DataChanged() {
+	if !b.start() {
+		return
+	}
 	var (
 		isChecked, _ = b.Get()
 		tmEnabled    = b.tm.Enabled()
@@ -41,35 +49,21 @@ func (b *enableBind) DataChanged() {
 	if isChecked != tmEnabled {
 		if isChecked {
 			// Enable
-			if !b.start() {
-				_ = b.Set(false)
-				return
-			}
-			if action, err = actions.New(actions.Install, b.newActionParams()); err != nil {
+			if action, err = actions.New(actions.Install, b.newActionParams(), b.ActionDone); err != nil {
 				util.ShowErrorLong(err)
 				_ = b.Set(false)
-				return
-			}
-			if err = action.Run(); err != nil {
+			} else if err = action.Run(); err != nil {
 				util.ShowErrorLong(err)
 				_ = b.Set(false)
-				return
 			}
 		} else {
 			// Disable
-			if !b.start() {
-				_ = b.Set(false)
-				return
-			}
-			if action, err = actions.New(actions.Uninstall, b.newActionParams()); err != nil {
+			if action, err = actions.New(actions.Uninstall, b.newActionParams(), b.ActionDone); err != nil {
 				util.ShowErrorLong(err)
 				_ = b.Set(true)
-				return
-			}
-			if err = action.Run(); err != nil {
+			} else if err = action.Run(); err != nil {
 				util.ShowErrorLong(err)
 				_ = b.Set(true)
-				return
 			}
 		}
 	}
@@ -84,4 +78,8 @@ func (b *enableBind) newActionParams() actions.Params {
 			Hide: b.hideWorking,
 		},
 	}
+}
+
+func (b *enableBind) ActionDone() {
+	b.parent.ModList.Refresh()
 }
