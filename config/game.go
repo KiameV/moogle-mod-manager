@@ -130,8 +130,9 @@ const (
 	//Bundles  InstallType = "Bundles"
 	// DLL Patcher https://discord.com/channels/371784427162042368/518331294858608650/863930606446182420
 	//DllPatch   InstallType = "DllPatch"
-	Archive InstallType = "Archive"
-	Move    InstallType = "Move"
+	MoveToArchive       InstallType = "MoveToArchive"
+	Move                InstallType = "Move"
+	ImmediateDecompress InstallType = "ImmediateDecompress"
 )
 
 func GameDefs() []GameDef {
@@ -262,4 +263,8 @@ func GameIDs() []string {
 		names[i+1] = string(g.ID())
 	}
 	return names
+}
+
+func (t *InstallType) Is(i InstallType) bool {
+	return t != nil && *t == i
 }

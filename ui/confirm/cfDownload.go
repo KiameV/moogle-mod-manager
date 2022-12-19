@@ -6,7 +6,9 @@ import (
 
 type cfConfirmer struct{}
 
-func (_ *cfConfirmer) ConfirmDownload(enabler *mods.ModEnabler, competeCallback DownloadCompleteCallback, done DownloadCallback) (err error) {
-	done(enabler, competeCallback, err)
-	return
+func newCfConfirmer(_ Params) Confirmer { return nil }
+
+func (_ *cfConfirmer) ConfirmDownload(done func(result mods.Result)) error {
+	done(mods.Ok)
+	return nil
 }

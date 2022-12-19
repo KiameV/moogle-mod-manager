@@ -50,16 +50,17 @@ type (
 		Dir string `json:"dir"`
 	}
 	Configs struct {
-		FirstTime   bool                `json:"firstTime"`
-		WindowX     int                 `json:"width"`
-		WindowY     int                 `json:"height"`
-		ModsDir     string              `json:"modDir"`
-		ImgCacheDir string              `json:"imgCacheDir"`
-		DownloadDir string              `json:"downloadDir"`
-		BackupDir   string              `json:"backupDir"`
-		Theme       ThemeColor          `json:"theme"`
-		DefaultGame string              `json:"openTo"`
-		GameDirs    map[string]*GameDir `json:"gameDirs"`
+		FirstTime                  bool                `json:"firstTime"`
+		WindowX                    int                 `json:"width"`
+		WindowY                    int                 `json:"height"`
+		ModsDir                    string              `json:"modDir"`
+		ImgCacheDir                string              `json:"imgCacheDir"`
+		DownloadDir                string              `json:"downloadDir"`
+		BackupDir                  string              `json:"backupDir"`
+		Theme                      ThemeColor          `json:"theme"`
+		DefaultGame                string              `json:"openTo"`
+		GameDirs                   map[string]*GameDir `json:"gameDirs"`
+		DeleteDownloadAfterInstall bool                `json:"deleteDownloadAfterInstall"`
 	}
 )
 

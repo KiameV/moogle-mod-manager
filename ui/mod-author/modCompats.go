@@ -94,8 +94,8 @@ func (d *modCompatsDef) createItem(item interface{}, done ...func(interface{})) 
 		s = strings.ToLower(s)
 		var results []string
 		for _, mod := range modLookup.All() {
-			if strings.Contains(strings.ToLower(string(mod.ID())), s) || strings.Contains(strings.ToLower(mod.Name), s) {
-				results = append(results, mod.Name)
+			if strings.Contains(strings.ToLower(string(mod.ID())), s) || strings.Contains(strings.ToLower(string(mod.Name)), s) {
+				results = append(results, string(mod.Name))
 			}
 		}
 		search.SetOptions(results)
@@ -111,7 +111,7 @@ func (d *modCompatsDef) createItem(item interface{}, done ...func(interface{})) 
 			m.Nexus = nil
 			if search.Text != "" {
 				for _, mod := range modLookup.All() {
-					if mod.Name == search.Text {
+					if mod.Name.Contains(search.Text) {
 						selected = mod
 						break
 					}

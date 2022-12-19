@@ -46,7 +46,7 @@ func IsNexus(url string) bool {
 
 func (c *client) GetFromMod(in *mods.Mod) (found bool, mod *mods.Mod, err error) {
 	if len(in.Games) == 0 {
-		err = errors.New("no games found for mod " + in.Name)
+		err = fmt.Errorf("no games found for mod %s", in.Name)
 		return
 	}
 	var (
@@ -195,7 +195,7 @@ func toMod(n nexusMod, dls []NexusFile) (include bool, mod *mods.Mod, err error)
 	}
 	mod = mods.NewMod(&mods.ModDef{
 		ModID:        mods.NewModID(mods.Nexus, modID),
-		Name:         n.Name,
+		Name:         mods.ModName(n.Name),
 		Version:      n.Version,
 		Author:       n.Author,
 		AuthorLink:   n.AuthorLink,

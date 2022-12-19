@@ -57,7 +57,7 @@ func (c *repoClient) Submit() (url string, err error) {
 	)
 	for _, d := range c.mod.Downloadables {
 		s := ""
-		d.DownloadedArchiveLocation = &s
+		d.DownloadedArchiveLocation = (*mods.ArchiveLocation)(&s)
 	}
 	if len(c.mod.Games) == 1 {
 		if game, err = config.GameDefFromID(c.mod.Games[0].ID); err != nil {

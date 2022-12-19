@@ -25,6 +25,7 @@ type (
 		UpdatedMod() *Mod
 		SetUpdatedMod(m *Mod)
 		MoogleModFile() string
+		InstallType(game config.GameDef) config.InstallType
 	}
 	// TrackedModConc is public for serialization purposes
 	TrackedModConc struct {
@@ -36,6 +37,10 @@ type (
 		DisplayName_ string `json:"-"`
 	}
 )
+
+func (m *TrackedModConc) InstallType(game config.GameDef) config.InstallType {
+	return m.Mod().InstallType(game)
+}
 
 func (m *TrackedModConc) DisplayNamePtr() *string {
 	return &m.DisplayName_

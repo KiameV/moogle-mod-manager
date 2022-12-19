@@ -99,7 +99,7 @@ func GetDisplayName(game config.GameDef, modID mods.ModID) (string, error) {
 		return "", err
 	}
 	if mod, ok := lookup.GetByID(modID); ok {
-		return mod.Mod().Name, nil
+		return string(mod.Mod().Name), nil
 	}
 	return "", fmt.Errorf("mod [%s] not found", modID)
 }

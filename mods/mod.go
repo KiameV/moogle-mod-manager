@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
+	"github.com/kiamev/moogle-mod-manager/cache"
 	"github.com/kiamev/moogle-mod-manager/config"
-	"github.com/kiamev/moogle-mod-manager/mods/managed/cache"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
 	"github.com/kiamev/moogle-mod-manager/util"
 	"net/url"
@@ -20,7 +20,12 @@ type (
 	SelectType string
 	Category   string
 	ModID      string
+	ModName    string
 )
+
+func (n ModName) Contains(text string) bool {
+	return strings.Contains(strings.ToLower(string(n)), strings.ToLower(text))
+}
 
 const (
 	Auto   SelectType = "Auto"
@@ -67,7 +72,7 @@ var Categories = []string{
 
 type ModDef struct {
 	ModID               ModID               `json:"ID" xml:"ID"`
-	Name                string              `json:"Name" xml:"Name"`
+	Name                ModName             `json:"Name" xml:"Name"`
 	Author              string              `json:"Author" xml:"Author"`
 	AuthorLink          string              `json:"AuthorLink" xml:"AuthorLink"`
 	ReleaseDate         string              `json:"ReleaseDate" xml:"ReleaseDate"`
@@ -76,7 +81,7 @@ type ModDef struct {
 	ReleaseNotes        string              `json:"ReleaseNotes" xml:"ReleaseNotes"`
 	Link                string              `json:"Link" xml:"Link"`
 	Version             string              `json:"Version" xml:"Version"`
-	InstallType         *config.InstallType `json:"InstallType,omitempty" xml:"InstallType,omitempty"`
+	InstallType_        *config.InstallType `json:"InstallType,omitempty" xml:"InstallType,omitempty"`
 	Preview             *Preview            `json:"Preview,omitempty" xml:"Preview,omitempty"`
 	ModKind             ModKind             `json:"ModKind" xml:"ModKind"`
 	ModCompatibility    *ModCompatibility   `json:"Compatibility,omitempty" xml:"ModCompatibility,omitempty"`
@@ -86,6 +91,7 @@ type ModDef struct {
 	AlwaysDownload      []*DownloadFiles    `json:"AlwaysDownload,omitempty" xml:"AlwaysDownload,omitempty"`
 	Configurations      []*Configuration    `json:"Configuration,omitempty" xml:"Configurations,omitempty"`
 	ConfigSelectionType SelectType          `json:"ConfigSelectionType" xml:"ConfigSelectionType"`
+	Hide                bool                `json:"Hide" xml:"Hide"`
 	IsManuallyCreated   bool                `json:"IsManuallyCreated" xml:"IsManuallyCreated"`
 }
 
@@ -103,6 +109,14 @@ func (m *Mod) ID() ModID {
 
 func (m *Mod) Kind() Kind {
 	return m.ModKind.Kind
+}
+
+func (m *Mod) InstallType(game config.GameDef) config.InstallType {
+	i := game.DefaultInstallType()
+	if m.InstallType_ != nil {
+		i = *m.InstallType_
+	}
+	return i
 }
 
 func (m *Mod) ModIdAsNumber() (uint64, error) {
@@ -169,7 +183,7 @@ func (c *ModCompatibility) HasItems() bool {
 	return c != nil && (len(c.Requires) > 0 || len(c.Forbids) > 0)
 }
 
-var InstallTypes = []string{string(config.Move), string(config.Archive)}
+var InstallTypes = []string{string(config.Move), string(config.MoveToArchive)}
 
 type Game struct {
 	ID       config.GameID    `json:"Name" xml:"Name"`
