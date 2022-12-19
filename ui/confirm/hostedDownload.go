@@ -13,14 +13,18 @@ import (
 	"strings"
 )
 
-type hostedConfirmer struct{}
+type hostedConfirmer struct {
+	Params
+}
 
-func (_ *hostedConfirmer) ConfirmDownload(enabler *mods.ModEnabler, completeCallback DownloadCompleteCallback, done DownloadCallback) (err error) {
-	var (
-		sb = strings.Builder{}
-	)
-	for i, ti := range enabler.ToInstall {
-		if alreadyDownloaded(enabler, ti) {
+func newHostedConfirmer(params Params) Confirmer {
+	return &hostedConfirmer{Params: params}
+}
+
+func (c *hostedConfirmer) Downloads(done func(mods.Result)) (err error) {
+	var sb = strings.Builder{}
+	for i, ti := range c.ToInstall {
+		if c.alreadyDownloaded(ti) {
 			continue
 		}
 		sb.WriteString(fmt.Sprintf("## Download %d\n\n", i+1))
@@ -34,24 +38,26 @@ func (_ *hostedConfirmer) ConfirmDownload(enabler *mods.ModEnabler, completeCall
 		}
 	}
 	if sb.Len() == 0 {
-		done(enabler, completeCallback, err)
+		done(mods.Ok)
 		return
 	}
 
 	d := dialog.NewCustomConfirm("Download Files?", "Yes", "Cancel", container.NewVScroll(widget.NewRichTextFromMarkdown(sb.String())), func(ok bool) {
-		if ok {
-			done(enabler, completeCallback, err)
+		result := mods.Ok
+		if !ok {
+			result = mods.Cancel
 		}
+		done(result)
 	}, ui.Window)
 	d.Resize(fyne.NewSize(500, 400))
 	d.Show()
 	return
 }
 
-func alreadyDownloaded(enabler *mods.ModEnabler, ti *mods.ToInstall) bool {
+func (c *hostedConfirmer) alreadyDownloaded(ti *mods.ToInstall) bool {
 	file := strings.Split(ti.Download.Hosted.Sources[0], "/")
 	file = strings.Split(file[len(file)-1], "?")
-	dir, _ := ti.GetDownloadLocation(enabler.Game, enabler.TrackedMod)
+	dir, _ := ti.GetDownloadLocation(c.Game, c.Mod)
 	_, err := os.Stat(filepath.Join(dir, file[0]))
 	return err == nil
 }

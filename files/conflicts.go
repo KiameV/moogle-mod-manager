@@ -13,7 +13,7 @@ type (
 	}
 )
 
-func (c *Conflict) FindConflicts(game config.GameDef, files []string) (conflicts []Conflict) {
+func FindConflicts(game config.GameDef, files []string) (conflicts []Conflict) {
 	var (
 		owner mods.ModID
 		tm    mods.TrackedMod

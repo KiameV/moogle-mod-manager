@@ -13,7 +13,7 @@ import (
 
 type ConfigInstaller interface {
 	state.Screen
-	Setup(mod *mods.Mod, baseDir string, done func([]*mods.ToInstall) error) error
+	Setup(mod *mods.Mod, baseDir string, done func(mods.Result, []*mods.ToInstall) error) error
 }
 
 func New() ConfigInstaller {
@@ -28,7 +28,7 @@ type configInstallerUI struct {
 	prevConfigs     []*mods.Configuration
 	choiceContainer *fyne.Container
 	baseDir         string
-	done            func([]*mods.ToInstall) error
+	done            func(mods.Result, []*mods.ToInstall) error
 
 	currentConfig *mods.Configuration
 	currentChoice *mods.Choice
@@ -40,7 +40,7 @@ func (ui *configInstallerUI) OnClose() {}
 
 func (ui *configInstallerUI) DrawAsDialog(fyne.Window) {}
 
-func (ui *configInstallerUI) Setup(mod *mods.Mod, baseDir string, done func([]*mods.ToInstall) error) error {
+func (ui *configInstallerUI) Setup(mod *mods.Mod, baseDir string, done func(mods.Result, []*mods.ToInstall) error) error {
 	if len(mod.Configurations) == 0 || len(mod.Configurations[0].Choices) == 0 {
 		return fmt.Errorf("no configurations for %s", mod.Name)
 	}
@@ -91,7 +91,7 @@ func (ui *configInstallerUI) Draw(w fyne.Window) {
 					return
 				}
 				state.ShowPreviousScreen()
-				if err = ui.done(tis); err != nil {
+				if err = ui.done(mods.Ok, tis); err != nil {
 					util.ShowErrorLong(err)
 					return
 				} else {
@@ -121,6 +121,7 @@ func (ui *configInstallerUI) Draw(w fyne.Window) {
 		c = container.NewBorder(img, nil, nil, nil, c)
 	}
 	cnlButton := widget.NewButton("Cancel", func() {
+		_ = ui.done(mods.Cancel, nil)
 		state.ShowPreviousScreen()
 	})
 	w.SetContent(

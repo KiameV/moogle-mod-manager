@@ -2,25 +2,37 @@ package confirm
 
 import (
 	"fmt"
+	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
 )
 
 type (
-	DownloadCompleteCallback func(enabler *mods.ModEnabler, err error)
-	DownloadCallback         func(enabler *mods.ModEnabler, completeCallback DownloadCompleteCallback, err error)
-	Confirmer                interface {
-		ConfirmDownload(enabler *mods.ModEnabler, competeCallback DownloadCompleteCallback, done DownloadCallback) (err error)
+	Params struct {
+		Game      config.GameDef
+		Mod       mods.TrackedMod
+		ToInstall []*mods.ToInstall
+	}
+	Confirmer interface {
+		Downloads(done func(mods.Result)) error
 	}
 )
 
-func NewConfirmer(kind mods.Kind) Confirmer {
-	switch kind {
-	case mods.Nexus:
-		return &nexusConfirmer{}
-	case mods.CurseForge:
-		return &cfConfirmer{}
-	case mods.Hosted:
-		return &hostedConfirmer{}
+func NewParams(game config.GameDef, mod mods.TrackedMod, toInstall []*mods.ToInstall) Params {
+	return Params{
+		Game:      game,
+		Mod:       mod,
+		ToInstall: toInstall,
 	}
-	panic(fmt.Sprintf("unknown kind %v", kind))
+}
+
+func NewConfirmer(params Params) Confirmer {
+	switch params.Mod.Kind() {
+	case mods.Nexus:
+		return newNexusConfirmer(params)
+	case mods.CurseForge:
+		return newCfConfirmer(params)
+	case mods.Hosted:
+		return newHostedConfirmer(params)
+	}
+	panic(fmt.Sprintf("unknown kind %v", params.Mod.Kind()))
 }

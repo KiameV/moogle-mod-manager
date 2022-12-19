@@ -10,11 +10,17 @@ import (
 	"strings"
 )
 
-func Decompress(from string, to string, continueIfExists bool) (moved []string, err error) {
+type ExtractedFile struct {
+	File     string
+	Relative string
+}
+
+func Decompress(from string, to string, continueIfExists bool) (extracted []ExtractedFile, err error) {
 	var (
-		f  *os.File
-		fi os.FileInfo
-		a  *unarr.Archive
+		f   *os.File
+		fi  os.FileInfo
+		a   *unarr.Archive
+		rel string
 	)
 	if fi, err = os.Stat(to); err == nil && fi.IsDir() {
 		var fis []os.DirEntry
@@ -48,7 +54,9 @@ func Decompress(from string, to string, continueIfExists bool) (moved []string, 
 				defer func() { _ = file.Close() }()
 
 				_, err = file.WriteString(buf.String())
-				moved = append(moved, fp)
+
+				rel, _ = filepath.Rel(to, fp)
+				extracted = append(extracted, ExtractedFile{File: fp, Relative: rel})
 			}
 			return
 		}
@@ -56,7 +64,7 @@ func Decompress(from string, to string, continueIfExists bool) (moved []string, 
 		if f, err = os.Open(from); err != nil {
 			return nil, err
 		}
-		return moved, archiver.Rar{}.Extract(context.Background(), f, nil, handler)
+		return extracted, archiver.Rar{}.Extract(context.Background(), f, nil, handler)
 	}
 
 	if a, err = unarr.NewArchive(from); err != nil {
@@ -68,5 +76,20 @@ func Decompress(from string, to string, continueIfExists bool) (moved []string, 
 		return nil, err
 	}
 
-	return a.Extract(to)
+	return extract(a, to)
+}
+
+func extract(a *unarr.Archive, to string) (extracted []ExtractedFile, err error) {
+	var (
+		files []string
+		rel   string
+	)
+	if files, err = a.Extract(to); err == nil {
+		extracted = make([]ExtractedFile, len(files))
+		for i, file := range files {
+			rel, _ = filepath.Rel(to, file)
+			extracted[i] = ExtractedFile{File: file, Relative: rel}
+		}
+	}
+	return
 }

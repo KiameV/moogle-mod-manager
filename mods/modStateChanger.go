@@ -11,6 +11,7 @@ const (
 	Ok
 	Cancel
 	Error
+	Working
 )
 
 type (
