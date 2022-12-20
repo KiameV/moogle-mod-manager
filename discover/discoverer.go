@@ -6,7 +6,6 @@ import (
 	"github.com/kiamev/moogle-mod-manager/discover/remote"
 	"github.com/kiamev/moogle-mod-manager/discover/repo"
 	"github.com/kiamev/moogle-mod-manager/mods"
-	"github.com/kiamev/moogle-mod-manager/ui/state"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -51,25 +50,33 @@ func GetModsAsLookup(game config.GameDef) (lookup mods.ModLookup[*mods.Mod], err
 		ok         bool
 	)
 
+	/* TODO is this cache needed?
 	if game == nil {
 		lookup = utilLookup
+		ok = true
 	} else {
 		lookup, ok = gameModLookup.Get(game)
 	}
-	if ok {
+	if lookup != nil && lookup.Len() > 0 && ok {
 		return
-	}
+	}*/
 
-	eg.Go(func() (e error) {
-		remoteMods, e = remote.GetMods(game)
-		return
-	})
-	eg.Go(func() (e error) {
-		repoMods, e = repo.NewGetter(repo.Read).GetMods(state.CurrentGame)
-		return
-	})
-	if err = eg.Wait(); err != nil {
-		return
+	if game != nil {
+		eg.Go(func() (e error) {
+			remoteMods, e = remote.GetMods(game)
+			return
+		})
+		eg.Go(func() (e error) {
+			repoMods, e = repo.NewGetter(repo.Read).GetMods(game)
+			return
+		})
+		if err = eg.Wait(); err != nil {
+			return
+		}
+	} else { // utilities
+		if repoMods, err = repo.NewGetter(repo.Read).GetUtilities(); err != nil {
+			return
+		}
 	}
 
 	lookup = mods.NewModLookup[*mods.Mod]()

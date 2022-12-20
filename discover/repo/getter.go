@@ -15,6 +15,7 @@ import (
 type Getter interface {
 	GetMod(*mods.Mod) (*mods.Mod, error)
 	GetMods(game config.GameDef) ([]*mods.Mod, error)
+	GetUtilities() ([]*mods.Mod, error)
 	Pull() error
 	pull(rd repoDef) error
 }
@@ -113,31 +114,52 @@ func (r *repo) GetMod(toGet *mods.Mod) (mod *mods.Mod, err error) {
 }
 
 func (r *repo) GetMods(game config.GameDef) (result []*mods.Mod, err error) {
-	var (
-		m  []string
-		ok error
-	)
+	var m []string
+	if err = r.Pull(); err != nil {
+		return
+	}
 	for _, rd := range repoDefs {
 		if m, err = r.getMods(rd, game); err != nil {
 			return nil, err
 		}
-		for _, f := range m {
-			mod := &mods.Mod{}
-			if err = util.LoadFromFile(f, mod); err != nil {
-				return
-			}
-			if ok = mod.Supports(game); ok == nil {
+	}
+	return r.filesToMod(game, m)
+}
+
+func (r *repo) GetUtilities() ([]*mods.Mod, error) {
+	var (
+		m   []string
+		err error
+	)
+	if err = r.Pull(); err != nil {
+		return nil, err
+	}
+	for _, rd := range repoDefs {
+		if m, err = r.getUtilities(rd); err != nil {
+			return nil, err
+		}
+	}
+	return r.filesToMod(nil, m)
+}
+
+func (r *repo) filesToMod(game config.GameDef, m []string) (result []*mods.Mod, err error) {
+	for _, f := range m {
+		mod := &mods.Mod{}
+		if err = util.LoadFromFile(f, mod); err != nil {
+			return
+		}
+		if game != nil {
+			if ok := mod.Supports(game); ok == nil {
 				result = append(result, mod)
 			}
+		} else {
+			result = append(result, mod)
 		}
 	}
 	return
 }
 
 func (r *repo) getMods(rd repoDef, game config.GameDef) (mods []string, err error) {
-	if err = r.Pull(); err != nil {
-		return
-	}
 	if err = filepath.WalkDir(rd.repoGameDir(r.kind, game), func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -152,6 +174,15 @@ func (r *repo) getMods(rd repoDef, game config.GameDef) (mods []string, err erro
 	}); err != nil {
 		return
 	}
+	var u []string
+	if u, err = r.getUtilities(rd); err != nil {
+		return
+	}
+	mods = append(mods, u...)
+	return
+}
+
+func (r *repo) getUtilities(rd repoDef) (mods []string, err error) {
 	err = filepath.WalkDir(rd.repoUtilDir(r.kind), func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			return err

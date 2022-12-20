@@ -73,7 +73,6 @@ func (d *modCompatsDef) createItem(item interface{}, done ...func(interface{})) 
 	if d.gd != nil && len(d.gd.list.Items) == 1 {
 		game, err = config.GameDefFromID(d.gd.compile()[0].ID)
 	}
-
 	if err != nil {
 		util.ShowErrorLong(errors.New("please specify a supported Games first (from the Games tab)"))
 		return
