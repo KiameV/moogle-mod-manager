@@ -56,7 +56,7 @@ var (
 		steps.VerifyDisable,
 		steps.ShowWorkingDialog,
 		steps.UninstallMove,
-		steps.PostInstall,
+		steps.DisableMod,
 	}
 	installImmediateDecompressSteps = []steps.Step{
 		steps.VerifyEnable,

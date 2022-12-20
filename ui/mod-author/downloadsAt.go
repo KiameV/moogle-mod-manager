@@ -33,11 +33,18 @@ func newDownloadsDef(kind *mods.Kind) *downloadsDef {
 }
 
 func (d *downloadsDef) compile() []*mods.Download {
-	downloads := make([]*mods.Download, len(d.list.Items))
+	dls := make([]*mods.Download, len(d.list.Items))
 	for i, item := range d.list.Items {
-		downloads[i] = item.(*mods.Download)
+		di := item.(*mods.Download)
+		if di.Hosted != nil && len(di.Hosted.Sources) > 0 {
+			di.Name = filepath.Base(di.Hosted.Sources[0])
+			if j := strings.LastIndex(di.Name, "."); j != -1 {
+				di.Name = di.Name[:j]
+			}
+		}
+		dls[i] = di
 	}
-	return downloads
+	return dls
 }
 
 func (d *downloadsDef) getItemKey(item interface{}) string {
@@ -63,7 +70,6 @@ func (d *downloadsDef) onEditItem(item interface{}) {
 func (d *downloadsDef) createItem(item interface{}, done ...func(interface{})) {
 	var (
 		items = []*widget.FormItem{
-			d.newFormItem("Name"),
 			d.newFormItem("Version"),
 		}
 		m        = item.(*mods.Download)
@@ -72,7 +78,6 @@ func (d *downloadsDef) createItem(item interface{}, done ...func(interface{})) {
 		fileID   string
 		url      string
 	)
-	d.createFormItem("Name", m.Name)
 	d.createFormItem("Version", m.Version)
 	d.createFormItem("File Name", "")
 	d.createFormItem("File ModID", "")

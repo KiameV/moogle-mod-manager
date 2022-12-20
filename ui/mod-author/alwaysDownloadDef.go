@@ -16,7 +16,7 @@ type alwaysDownloadDef struct {
 	downloadFilesDef *downloadFilesDef
 }
 
-func newAlwaysDownloadDef(downloads *downloadsDef) *alwaysDownloadDef {
+func newAlwaysDownloadDef(downloads *downloads) *alwaysDownloadDef {
 	d := &alwaysDownloadDef{
 		entryManager:     newEntryManager(),
 		downloadFilesDef: newDownloadFilesDef(downloads),
@@ -54,7 +54,13 @@ func (d *alwaysDownloadDef) createItem(item interface{}, done ...func(interface{
 	dlf := item.(*mods.DownloadFiles)
 	d.downloadFilesDef.populate(dlf)
 
-	fd := dialog.NewForm("Edit Download Files", "Save", "Cancel", d.downloadFilesDef.getFormItems(),
+	fi, err := d.downloadFilesDef.getFormItems()
+	if err != nil {
+		dialog.ShowError(err, ui.Window)
+		return
+	}
+
+	fd := dialog.NewForm("Edit Download Files", "Save", "Cancel", fi,
 		func(ok bool) {
 			if ok {
 				result := d.downloadFilesDef.compile()

@@ -43,9 +43,13 @@ func New() state.Screen {
 	}
 	//a.modKindDef = newModKindDef(a.kind)
 	a.modCompatsDef = newModCompatibilityDef(a.gamesDef)
-	a.downloadDef = newDownloadsDef(a.kind)
-	a.alwaysDownload = newAlwaysDownloadDef(a.downloadDef)
-	a.configsDef = newConfigurationsDef(a.downloadDef)
+	a.subKindSelect = widget.NewSelect(mods.SubKinds, func(string) {
+		a.downloads.UpdateTab()
+		a.tabs.Refresh()
+	})
+	a.downloads = newDownloads(a.kind, a.subKindSelect)
+	a.alwaysDownload = newAlwaysDownloadDef(a.downloads)
+	a.configsDef = newConfigurationsDef(a.downloads)
 	return a
 }
 
@@ -58,7 +62,6 @@ type ModAuthorer struct {
 	previewDef *previewDef
 	//modKindDef     *modKindDef
 	modCompatsDef  *modCompatabilityDef
-	downloadDef    *downloadsDef
 	donationsDef   *donationsDef
 	gamesDef       *gamesDef
 	alwaysDownload *alwaysDownloadDef
@@ -67,6 +70,9 @@ type ModAuthorer struct {
 	description    *richTextEditor
 	releaseNotes   *richTextEditor
 	categorySelect *widget.Select
+	subKindSelect  *widget.Select
+
+	downloads *downloads
 
 	tabs *container.AppTabs
 }
@@ -225,9 +231,18 @@ func (a *ModAuthorer) Draw(w fyne.Window) {
 	)
 	if a.editCallback != nil {
 		smi = append(smi, fyne.NewMenuItem("modify and back (local save)", func() {
-			mod := a.compileMod()
+			mod, err := a.compileMod()
+			if err != nil {
+				util.ShowErrorLong(err)
+				return
+			}
 			callback := func() {
-				a.editCallback(a.compileMod())
+				m, e := a.compileMod()
+				if e != nil {
+					util.ShowErrorLong(e)
+					return
+				}
+				a.editCallback(m)
 				state.ShowPreviousScreen()
 			}
 			if !a.validate(mod, false) {
@@ -251,13 +266,24 @@ func (a *ModAuthorer) Draw(w fyne.Window) {
 			}, w)
 		}),
 		widget.NewButton("Validate", func() {
-			_ = a.validate(a.compileMod(), true)
+			m, err := a.compileMod()
+			if err != nil {
+				util.ShowErrorLong(err)
+				return
+			}
+			_ = a.validate(m, true)
 		}),
 		widget.NewButton("Test", func() {
-			mod := a.compileMod()
-
-			tis, err := mods.NewToInstallForMod(mod.ModKind.Kind, mod, mod.AlwaysDownload)
+			var (
+				tis      []*mods.ToInstall
+				mod, err = a.compileMod()
+			)
 			if err != nil {
+				util.ShowErrorLong(err)
+				return
+			}
+
+			if tis, err = mods.NewToInstallForMod(mod.ModKind.Kind, mod, mod.AlwaysDownload); err != nil {
 				util.ShowErrorLong(err)
 				return
 			}
@@ -297,6 +323,8 @@ func (a *ModAuthorer) updateEntries(mod *mods.Mod) {
 	a.createFormItem("Release Date", mod.ReleaseDate)
 	a.categorySelect.Selected = string(mod.Category)
 	a.categorySelect.Refresh()
+	a.subKindSelect.Selected = string(mod.SubKind())
+	a.subKindSelect.Refresh()
 	a.createFormItem("Version", mod.Version)
 	a.description.SetText(mod.Description)
 	a.releaseNotes.SetText(mod.ReleaseNotes)
@@ -312,11 +340,13 @@ func (a *ModAuthorer) updateEntries(mod *mods.Mod) {
 
 	a.modCompatsDef.set(mod.ModCompatibility)
 	//a.modKindDef.set(&mod.ModKind)
-	a.downloadDef.set(mod.Downloadables)
+	a.downloads.set(mod)
 	a.donationsDef.set(mod.DonationLinks)
 	a.gamesDef.set(mod.Games)
 	a.alwaysDownload.set(mod.AlwaysDownload)
 	a.configsDef.set(mod.Configurations)
+
+	a.downloads.set(mod)
 }
 
 type As byte
@@ -328,10 +358,13 @@ const (
 
 func (a *ModAuthorer) writeToClipboard(as As) {
 	var (
-		b   []byte
-		err error
+		b        []byte
+		mod, err = a.compileMod()
 	)
-	mod := a.compileMod()
+	if err != nil {
+		util.ShowErrorLong(err)
+		return
+	}
 	callback := func() {
 		if b, err = a.Marshal(mod, asJson); err != nil {
 			util.ShowErrorLong(err)
@@ -380,7 +413,7 @@ func (a *ModAuthorer) Marshal(mod *mods.Mod, as As) (b []byte, err error) {
 	return
 }
 
-func (a *ModAuthorer) compileMod() (m *mods.Mod) {
+func (a *ModAuthorer) compileMod() (m *mods.Mod, err error) {
 	m = mods.NewMod(&mods.ModDef{
 		Name:         mods.ModName(a.getString("Name")),
 		Author:       a.getString("Author"),
@@ -398,11 +431,14 @@ func (a *ModAuthorer) compileMod() (m *mods.Mod) {
 		//ConfigSelectionType: mods.SelectType(a.getString("Select Type")),
 		ConfigSelectionType: mods.Auto,
 		ModCompatibility:    a.modCompatsDef.compile(),
-		Downloadables:       a.downloadDef.compile(),
 		DonationLinks:       a.donationsDef.compile(),
 		Games:               a.gamesDef.compile(),
 		IsManuallyCreated:   true,
 	})
+
+	if err = a.downloads.compile(m); err != nil {
+		return
+	}
 
 	switch *a.kind {
 	case mods.Hosted:
@@ -454,7 +490,7 @@ func (a *ModAuthorer) compileMod() (m *mods.Mod) {
 	}
 
 	_ = authored.SetDir(m.ModID, state.GetBaseDir())
-	return m
+	return
 }
 
 func trimNewLine(s string) string {
@@ -465,10 +501,14 @@ func trimNewLine(s string) string {
 
 func (a *ModAuthorer) submitForReview() {
 	var (
-		mod = a.compileMod()
-		pr  string
-		err error
+		mod, err = a.compileMod()
+		pr       string
 	)
+	if err != nil {
+		util.ShowErrorLong(err)
+		return
+	}
+
 	if !a.validate(mod, false) {
 		dialog.ShowInformation("Invalid Mod Def", "The mod is not valid, please fix it first.", ui.Window)
 	}
@@ -490,8 +530,11 @@ func (a *ModAuthorer) submitForReview() {
 		container.NewMax(widget.NewHyperlink(pr, prUrl)), ui.Window)
 }
 
-func (a *ModAuthorer) saveFile(asJson As) {
-	mod := a.compileMod()
+func (a *ModAuthorer) saveFile(asJson As) error {
+	mod, err := a.compileMod()
+	if err != nil {
+		return err
+	}
 	if !a.validate(mod, false) {
 		dialog.ShowConfirm("Continue?", "The mod is not valid, continue anyway?", func(ok bool) {
 			if ok {
@@ -501,6 +544,7 @@ func (a *ModAuthorer) saveFile(asJson As) {
 	} else {
 		a.save(mod, asJson)
 	}
+	return nil
 }
 
 func (a *ModAuthorer) save(mod *mods.Mod, json As) {
@@ -563,12 +607,15 @@ func (a *ModAuthorer) createHostedInputs() *container.AppTabs {
 		a.getBaseDirFormItem("Working Dir"),
 		a.getFormItem("Name"),
 		a.getFormItem("Author"),
+	}
+	if a.kind.Is(mods.Hosted) {
+		entries = append(entries, widget.NewFormItem("Kind", a.subKindSelect))
+	}
+	entries = append(entries,
 		widget.NewFormItem("Category", a.categorySelect),
 		a.getFormItem("Version"),
 		a.getFormItem("Release Date"),
-		a.getFormItem("Link"),
-		//a.getFormItem("Select Type"),
-	}
+		a.getFormItem("Link"))
 	entries = append(entries, a.previewDef.getFormItems()...)
 
 	return container.NewAppTabs(
@@ -577,7 +624,7 @@ func (a *ModAuthorer) createHostedInputs() *container.AppTabs {
 		//container.NewTabItem("Kind", container.NewVScroll(a.modKindDef.draw())),
 		container.NewTabItem("Compatibility", container.NewVScroll(a.modCompatsDef.draw())),
 		container.NewTabItem("Release Notes", a.releaseNotes.Draw()),
-		container.NewTabItem("Downloadables", container.NewVScroll(a.downloadDef.draw())),
+		a.downloads.TabItem,
 		container.NewTabItem("Donation Links", container.NewVScroll(a.donationsDef.draw())),
 		container.NewTabItem("Games", container.NewVScroll(a.gamesDef.draw())),
 		container.NewTabItem("Always Install", container.NewVScroll(a.alwaysDownload.draw())),

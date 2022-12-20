@@ -37,9 +37,6 @@ func newEnableBind(parent *localUI, tm mods.TrackedMod, start func() bool, showW
 }
 
 func (b *enableBind) DataChanged() {
-	if !b.start() {
-		return
-	}
 	var (
 		isChecked, _ = b.Get()
 		tmEnabled    = b.tm.Enabled()
@@ -47,6 +44,9 @@ func (b *enableBind) DataChanged() {
 		err          error
 	)
 	if isChecked != tmEnabled {
+		if !b.start() {
+			return
+		}
 		if isChecked {
 			// Enable
 			if action, err = actions.New(actions.Install, b.newActionParams(), b.ActionDone); err != nil {

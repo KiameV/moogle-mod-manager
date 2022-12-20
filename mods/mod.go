@@ -68,7 +68,8 @@ var Categories = []string{
 	string(UiMenuPortraits),
 	string(UiWindowFrames),
 	string(UiTextBoxPortraits),
-	string(Utility)}
+	string(Utility),
+}
 
 type ModDef struct {
 	ModID               ModID               `json:"ID" xml:"ID"`
@@ -109,6 +110,10 @@ func (m *Mod) ID() ModID {
 
 func (m *Mod) Kind() Kind {
 	return m.ModKind.Kind
+}
+
+func (m *Mod) SubKind() SubKind {
+	return m.ModKind.SubKind.Get()
 }
 
 func (m *Mod) InstallType(game config.GameDef) config.InstallType {

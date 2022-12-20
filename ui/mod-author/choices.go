@@ -18,7 +18,7 @@ type choicesDef struct {
 	previewDef *previewDef
 }
 
-func newChoicesDef(dlDef *downloadsDef, configDef *configurationsDef) *choicesDef {
+func newChoicesDef(dlDef *downloads, configDef *configurationsDef) *choicesDef {
 	d := &choicesDef{
 		entryManager: newEntryManager(),
 		dlfDef:       newDownloadFilesDef(dlDef),
@@ -91,7 +91,13 @@ func (d *choicesDef) createItem(item interface{}, done ...func(interface{})) {
 		d.getFormItem("Next Configuration"),
 	}
 	form = append(form, d.previewDef.getFormItems()...)
-	form = append(form, d.dlfDef.getFormItems()...)
+
+	dls, err := d.dlfDef.getFormItems()
+	if err != nil {
+		dialog.ShowError(err, ui.Window)
+	} else {
+		form = append(form, dls...)
+	}
 
 	fd := dialog.NewForm("Edit Choice", "Save", "Cancel", form, func(ok bool) {
 		if ok {

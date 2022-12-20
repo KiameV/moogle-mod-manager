@@ -17,7 +17,7 @@ type configurationsDef struct {
 	previewDef *previewDef
 }
 
-func newConfigurationsDef(dlDef *downloadsDef) *configurationsDef {
+func newConfigurationsDef(dlDef *downloads) *configurationsDef {
 	d := &configurationsDef{
 		entryManager: newEntryManager(),
 		previewDef:   newPreviewDef(),

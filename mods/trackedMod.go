@@ -12,6 +12,7 @@ type (
 	TrackedMod interface {
 		ID() ModID
 		Kind() Kind
+		SubKind() SubKind
 		Mod() *Mod
 		SetMod(m *Mod)
 		Enable()
@@ -97,6 +98,10 @@ func (m *TrackedModConc) ID() ModID {
 
 func (m *TrackedModConc) Kind() Kind {
 	return m.Mod_.Kind()
+}
+
+func (m *TrackedModConc) SubKind() SubKind {
+	return m.Mod_.SubKind()
 }
 
 func (m *TrackedModConc) Mod() *Mod {
