@@ -12,6 +12,7 @@ import (
 	"github.com/kiamev/moogle-mod-manager/discover"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	cw "github.com/kiamev/moogle-mod-manager/ui/custom-widgets"
+	"github.com/kiamev/moogle-mod-manager/ui/mod-author/entry"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
 	"github.com/kiamev/moogle-mod-manager/ui/state/ui"
 	"github.com/kiamev/moogle-mod-manager/ui/util"
@@ -19,7 +20,7 @@ import (
 )
 
 type modCompatsDef struct {
-	*entryManager
+	entry.Manager
 	list *cw.DynamicList
 	name string
 	gd   *gamesDef
@@ -27,9 +28,9 @@ type modCompatsDef struct {
 
 func newModCompatsDef(name string, gd *gamesDef) *modCompatsDef {
 	d := &modCompatsDef{
-		entryManager: newEntryManager(),
-		name:         name,
-		gd:           gd,
+		Manager: entry.NewManager(),
+		name:    name,
+		gd:      gd,
 	}
 	d.list = cw.NewDynamicList(cw.Callbacks{
 		GetItemKey:    d.getItemKey,

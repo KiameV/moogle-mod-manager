@@ -17,6 +17,7 @@ import (
 	"github.com/kiamev/moogle-mod-manager/mods/managed/authored"
 	config_installer "github.com/kiamev/moogle-mod-manager/ui/config-installer"
 	cw "github.com/kiamev/moogle-mod-manager/ui/custom-widgets"
+	"github.com/kiamev/moogle-mod-manager/ui/mod-author/entry"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
 	"github.com/kiamev/moogle-mod-manager/ui/state/ui"
 	"github.com/kiamev/moogle-mod-manager/ui/util"
@@ -32,29 +33,30 @@ import (
 func New() state.Screen {
 	var kind = mods.Hosted
 	a := &ModAuthorer{
-		kind:           &kind,
-		entryManager:   newEntryManager(),
-		previewDef:     newPreviewDef(),
-		donationsDef:   newDonationsDef(),
-		gamesDef:       newGamesDef(),
-		description:    newRichTextEditor(),
-		releaseNotes:   newRichTextEditor(),
-		categorySelect: widget.NewSelect(mods.Categories, func(string) {}),
+		kind:         &kind,
+		Manager:      entry.NewManager(),
+		previewDef:   newPreviewDef(),
+		donationsDef: newDonationsDef(),
+		gamesDef:     newGamesDef(),
+		description:  newRichTextEditor(),
+		releaseNotes: newRichTextEditor(),
 	}
 	//a.modKindDef = newModKindDef(a.kind)
+	a.categorySelect = entry.NewSelectEntry(a, "Category", "", mods.Categories)
+
 	a.modCompatsDef = newModCompatibilityDef(a.gamesDef)
-	a.subKindSelect = widget.NewSelect(mods.SubKinds, func(string) {
-		a.downloads.UpdateTab()
-		a.tabs.Refresh()
-	})
+	a.subKindSelect = entry.NewSelectEntry(a, "Kind", "", mods.SubKinds)
+	a.subKindSelect.Binding().AddListener(&subKindListener{author: a, entry: a.subKindSelect})
+
 	a.downloads = newDownloads(a.kind, a.subKindSelect)
 	a.alwaysDownload = newAlwaysDownloadDef(a.downloads)
 	a.configsDef = newConfigurationsDef(a.downloads)
+	a.version = entry.NewEntry[string](a, entry.KindString, "Version", "")
 	return a
 }
 
 type ModAuthorer struct {
-	*entryManager
+	entry.Manager
 	modID        mods.ModID
 	kind         *mods.Kind
 	editCallback func(*mods.Mod)
@@ -69,8 +71,9 @@ type ModAuthorer struct {
 
 	description    *richTextEditor
 	releaseNotes   *richTextEditor
-	categorySelect *widget.Select
-	subKindSelect  *widget.Select
+	categorySelect entry.Entry[string]
+	subKindSelect  entry.Entry[string]
+	version        entry.Entry[string]
 
 	downloads *downloads
 
@@ -210,9 +213,9 @@ func (a *ModAuthorer) Draw(w fyne.Window) {
 
 	/*a.tabs.OnSelected = func(tab *container.TabItem) {
 		if len(a.configsDef.list.Items) > 0 {
-			a.getFormItem("Select Type").Widget.(*widget.Select).Enable()
+			a.GetFormItem("Select Type").Widget.(*widget.Select).Enable()
 		} else {
-			a.getFormItem("Select Type").Widget.(*widget.Select).Disable()
+			a.GetFormItem("Select Type").Widget.(*widget.Select).Disable()
 		}
 		tab.Content.Refresh()
 	}*/
@@ -316,24 +319,22 @@ func (a *ModAuthorer) Draw(w fyne.Window) {
 
 func (a *ModAuthorer) updateEntries(mod *mods.Mod) {
 	*a.kind = mod.ModKind.Kind
-	a.createBaseDir(state.GetBaseDirBinding())
+	entry.CreateBaseDir(a, state.GetBaseDirBinding())
 	a.modID = mod.ModID
-	a.createFormItem("Name", string(mod.Name))
-	a.createFormItem("Author", mod.Author)
-	a.createFormItem("Release Date", mod.ReleaseDate)
-	a.categorySelect.Selected = string(mod.Category)
-	a.categorySelect.Refresh()
-	a.subKindSelect.Selected = string(mod.SubKind())
-	a.subKindSelect.Refresh()
-	a.createFormItem("Version", mod.Version)
+	entry.NewEntry[string](a, entry.KindString, "Name", string(mod.Name))
+	entry.NewEntry[string](a, entry.KindString, "Author", mod.Author)
+	entry.NewEntry[string](a, entry.KindString, "Release Date", mod.ReleaseDate)
+	a.categorySelect.Set(string(mod.Category))
+	a.subKindSelect.Set(string(mod.SubKind()))
+	a.version.Set(mod.Version)
 	a.description.SetText(mod.Description)
 	a.releaseNotes.SetText(mod.ReleaseNotes)
-	a.createFormItem("Link", mod.Link)
-	//a.createFormSelect("Select Type", mods.SelectTypes, string(mod.ConfigSelectionType))
+	entry.NewEntry[string](a, entry.KindString, "Link", mod.Link)
+	//a.CreateFormSelect("Select Type", mods.SelectTypes, string(mod.ConfigSelectionType))
 
-	a.createFormItem("Working Dir", config.PWD)
+	entry.NewEntry[string](a, entry.KindString, "Working Dir", config.PWD)
 	if dir, ok := authored.GetDir(mod.ModID); ok && dir != "" {
-		a.createFormItem("Working Dir", dir)
+		entry.NewEntry[string](a, entry.KindString, "Working Dir", dir)
 	}
 
 	a.previewDef.set(mod.Preview)
@@ -415,20 +416,20 @@ func (a *ModAuthorer) Marshal(mod *mods.Mod, as As) (b []byte, err error) {
 
 func (a *ModAuthorer) compileMod() (m *mods.Mod, err error) {
 	m = mods.NewMod(&mods.ModDef{
-		Name:         mods.ModName(a.getString("Name")),
-		Author:       a.getString("Author"),
-		ReleaseDate:  a.getString("Release Date"),
-		Category:     mods.Category(a.categorySelect.Selected),
-		Version:      a.getString("Version"),
+		Name:         mods.ModName(entry.Value[string](a, "Name")),
+		Author:       entry.Value[string](a, "Author"),
+		ReleaseDate:  entry.Value[string](a, "Release Date"),
+		Category:     mods.Category(a.categorySelect.Value()),
+		Version:      a.version.Value(),
 		Description:  a.description.String(),
 		ReleaseNotes: a.releaseNotes.String(),
-		Link:         a.getString("Link"),
+		Link:         entry.Value[string](a, "Link"),
 		ModKind: mods.ModKind{
 			Kind: *a.kind,
 		},
 		Preview: a.previewDef.compile(),
 		//ModKind:      *a.modKindDef.compile(),
-		//ConfigSelectionType: mods.SelectType(a.getString("Select Type")),
+		//ConfigSelectionType: mods.SelectType(entry.Value[string](a, "Select Type")),
 		ConfigSelectionType: mods.Auto,
 		ModCompatibility:    a.modCompatsDef.compile(),
 		DonationLinks:       a.donationsDef.compile(),
@@ -604,39 +605,38 @@ func (a *ModAuthorer) validate(mod *mods.Mod, showMessage bool) bool {
 
 func (a *ModAuthorer) createHostedInputs() *container.AppTabs {
 	var entries = []*widget.FormItem{
-		a.getBaseDirFormItem("Working Dir"),
-		a.getFormItem("Name"),
-		a.getFormItem("Author"),
+		entry.GetBaseDirFormItem(a, "Working Dir"),
+		entry.FormItem[string](a, "Name"),
+		entry.FormItem[string](a, "Author"),
 	}
 	if a.kind.Is(mods.Hosted) {
-		entries = append(entries, widget.NewFormItem("Kind", a.subKindSelect))
+		entries = append(entries, a.subKindSelect.FormItem())
 	}
 	entries = append(entries,
-		widget.NewFormItem("Category", a.categorySelect),
-		a.getFormItem("Version"),
-		a.getFormItem("Release Date"),
-		a.getFormItem("Link"))
+		a.categorySelect.FormItem(),
+		a.version.FormItem(),
+		entry.FormItem[string](a, "Release Date"),
+		entry.FormItem[string](a, "Link"))
 	entries = append(entries, a.previewDef.getFormItems()...)
 
 	return container.NewAppTabs(
 		container.NewTabItem("Mod", container.NewVScroll(widget.NewForm(entries...))),
 		container.NewTabItem("Description", a.description.Draw()),
-		//container.NewTabItem("Kind", container.NewVScroll(a.modKindDef.draw())),
+		container.NewTabItem("Games", container.NewVScroll(a.gamesDef.draw())),
 		container.NewTabItem("Compatibility", container.NewVScroll(a.modCompatsDef.draw())),
 		container.NewTabItem("Release Notes", a.releaseNotes.Draw()),
 		a.downloads.TabItem,
 		container.NewTabItem("Donation Links", container.NewVScroll(a.donationsDef.draw())),
-		container.NewTabItem("Games", container.NewVScroll(a.gamesDef.draw())),
 		container.NewTabItem("Always Install", container.NewVScroll(a.alwaysDownload.draw())),
 		container.NewTabItem("Configurations", container.NewVScroll(a.configsDef.draw())))
 }
 
 func (a *ModAuthorer) createRemoteInputs() *container.AppTabs {
 	var entries = []*widget.FormItem{
-		a.getBaseDirFormItem("Working Dir"),
-		a.getFormItem("Name"),
-		widget.NewFormItem("Category", a.categorySelect),
-		//a.getFormItem("Select Type"),
+		entry.GetBaseDirFormItem(a, "Working Dir"),
+		entry.FormItem[string](a, "Name"),
+		a.categorySelect.FormItem(),
+		//a.GetFormItem("Select Type"),
 	}
 	entries = append(entries, a.previewDef.getFormItems()...)
 
@@ -650,4 +650,18 @@ func (a *ModAuthorer) createRemoteInputs() *container.AppTabs {
 		//container.NewTabItem("Games", container.NewVScroll(a.gamesDef.draw())),
 		container.NewTabItem("Always Install", container.NewVScroll(a.alwaysDownload.draw())),
 		container.NewTabItem("Configurations", container.NewVScroll(a.configsDef.draw())))
+}
+
+type subKindListener struct {
+	author *ModAuthorer
+	entry  entry.Entry[string]
+}
+
+func (s *subKindListener) DataChanged() {
+	if s.author == nil || s.author.downloads == nil || s.author.tabs == nil || s.author.version == nil {
+		return
+	}
+	s.author.downloads.UpdateTab()
+	s.author.tabs.Refresh()
+	s.author.version.Enable(s.entry.Value() != string(mods.HostedGitHub))
 }

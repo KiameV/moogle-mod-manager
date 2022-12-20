@@ -3,20 +3,21 @@ package mod_author
 import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/mods"
+	"github.com/kiamev/moogle-mod-manager/ui/mod-author/entry"
 )
 
 type previewDef struct {
-	*entryManager
+	entry.Manager
 }
 
 func newPreviewDef() *previewDef {
 	d := &previewDef{
-		entryManager: newEntryManager(),
+		Manager: entry.NewManager(),
 	}
-	d.createFormItem("Preview Url", "")
+	entry.NewEntry[string](d, entry.KindString, "Preview Url", "")
 	//d.createFileDialog("Preview Local", "", state.GetBaseDirBinding(), true, true)
-	//d.createFormItem("Size X", "")
-	//d.createFormItem("Size Y", "")
+	//entry.NewEntry[string](d, entry.KindString, "Size X", "")
+	//entry.NewEntry[string](d, entry.KindString, "Size Y", "")
 	return d
 }
 
@@ -32,10 +33,10 @@ func (d *previewDef) set(p *mods.Preview) {
 	if p.Local != nil {
 		local = *p.Local
 	}*/
-	d.createFormItem("Preview Url", url)
+	entry.NewEntry[string](d, entry.KindString, "Preview Url", url)
 	//d.createFileDialog("Preview Local", local, state.GetBaseDirBinding(), true, true)
-	//d.createFormItem("Size X", fmt.Sprintf("%d", p.Size.X))
-	//d.createFormItem("Size Y", fmt.Sprintf("%d", p.Size.Y))
+	//entry.NewEntry[string](d, entry.KindString, "Size X", fmt.Sprintf("%d", p.Size.X))
+	//entry.NewEntry[string](d, entry.KindString, "Size Y", fmt.Sprintf("%d", p.Size.Y))
 }
 
 /*func (d *previewDef) draw() fyne.CanvasObject {
@@ -46,12 +47,12 @@ func (d *previewDef) compile() *mods.Preview {
 	var (
 		p = &mods.Preview{
 			/*Size: &mods.Size{
-				X: d.getInt("Size X"),
-				Y: d.getInt("Size Y"),
+				X: d.GetInt("Size X"),
+				Y: d.GetInt("Size Y"),
 			},*/
 		}
-		url = d.getString("Preview Url")
-		//local = d.getString("Preview Local")
+		url = entry.Value[string](d, "Preview Url")
+		//local = entry.Value[string](d, "Preview Local")
 	)
 	if url != "" {
 		p.Url = &url
@@ -67,9 +68,9 @@ func (d *previewDef) compile() *mods.Preview {
 
 func (d *previewDef) getFormItems() []*widget.FormItem {
 	return []*widget.FormItem{
-		d.getFormItem("Preview Url"),
-		//d.getFileDialog("Preview Local"),
-		//d.getFormItem("Size X"),
-		//d.getFormItem("Size Y"),
+		entry.FormItem[string](d, "Preview Url"),
+		//d.GetFileDialog("Preview Local"),
+		//entry.FormItem[string](d, "Size X"),
+		//entry.FormItem[string](d, "Size Y"),
 	}
 }

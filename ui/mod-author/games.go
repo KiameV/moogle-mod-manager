@@ -8,18 +8,19 @@ import (
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	cw "github.com/kiamev/moogle-mod-manager/ui/custom-widgets"
+	"github.com/kiamev/moogle-mod-manager/ui/mod-author/entry"
 	"github.com/kiamev/moogle-mod-manager/ui/state/ui"
 	"strings"
 )
 
 type gamesDef struct {
-	*entryManager
+	entry.Manager
 	list *cw.DynamicList
 }
 
 func newGamesDef() *gamesDef {
 	d := &gamesDef{
-		entryManager: newEntryManager(),
+		Manager: entry.NewManager(),
 	}
 	d.list = cw.NewDynamicList(cw.Callbacks{
 		GetItemKey:    d.getItemKey,
@@ -59,7 +60,7 @@ func (d *gamesDef) editItem(item interface{}) {
 
 func (d *gamesDef) createItem(item interface{}, done ...func(interface{})) {
 	g := item.(*mods.Game)
-	d.createFormSelect("Games", config.GameIDs(), string(g.ID))
+	entry.NewSelectEntry(d, "Games", string(g.ID), config.GameIDs())
 	versions := g.Versions
 	var v string
 	if versions != nil {
@@ -69,15 +70,15 @@ func (d *gamesDef) createItem(item interface{}, done ...func(interface{})) {
 		}
 		v = strings.Join(s, ", ")
 	}
-	d.createFormItem("Versions", v)
+	entry.NewEntry[string](d, entry.KindString, "Versions", v)
 
 	fd := dialog.NewForm("Edit Games", "Save", "Cancel", []*widget.FormItem{
-		d.getFormItem("Games"),
-		d.getFormItem("Versions"),
+		entry.FormItem[string](d, "Games"),
+		entry.FormItem[string](d, "Versions"),
 	}, func(ok bool) {
 		if ok {
-			g.ID = config.GameID(d.getString("Games"))
-			selected := d.getStrings("Versions", ",")
+			g.ID = config.GameID(entry.Value[string](d, "Games"))
+			selected := strings.Split(entry.Value[string](d, "Versions"), ",")
 			g.Versions = make([]config.Version, len(selected))
 			for i, s := range selected {
 				g.Versions[i] = config.Version{Version: config.VersionID(s)}
