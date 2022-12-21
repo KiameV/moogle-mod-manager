@@ -134,7 +134,7 @@ func (m *Mod) BranchName() string {
 }
 
 func (m *Mod) Save(to string) error {
-	return util.SaveToFile(to, m.ModDef)
+	return util.SaveToFile(to, m.ModDef, '\n')
 }
 
 type Preview struct {
@@ -251,6 +251,14 @@ func (m *Mod) Validate() string {
 	if m.Name == "" {
 		sb.WriteString("Name is required\n")
 	}
+
+	if m.Hide {
+		if m.ModKind.Kind == Hosted {
+			sb.WriteString("Cannot Hide hosted mods\n")
+		}
+		return sb.String()
+	}
+
 	if m.Version == "" {
 		sb.WriteString("Version is required\n")
 	}
@@ -289,7 +297,9 @@ func (m *Mod) Validate() string {
 		//	sb.WriteString(fmt.Sprintf("Downloadables [%s]'s name cannot contain spaces\n"))
 		//}
 		if kind == Hosted {
-			if d.Hosted == nil {
+			if m.ModKind.SubKind == nil || m.ModKind.SubKind.Is(HostedBlank) {
+				sb.WriteString("Kind is required\n")
+			} else if d.Hosted == nil {
 				sb.WriteString(fmt.Sprintf("Downloadables [%s]'s Hosted is required\n", d.Name))
 			} else {
 				if len(d.Hosted.Sources) == 0 {

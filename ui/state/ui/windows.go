@@ -8,3 +8,10 @@ var (
 	PopupWindow  fyne.Window
 	ShowingPopup bool
 )
+
+func ActiveWindow() fyne.Window {
+	if ShowingPopup {
+		return PopupWindow
+	}
+	return Window
+}

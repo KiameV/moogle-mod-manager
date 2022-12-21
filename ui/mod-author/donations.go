@@ -7,17 +7,18 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	cw "github.com/kiamev/moogle-mod-manager/ui/custom-widgets"
+	"github.com/kiamev/moogle-mod-manager/ui/mod-author/entry"
 	"github.com/kiamev/moogle-mod-manager/ui/state/ui"
 )
 
 type donationsDef struct {
-	*entryManager
+	entry.Manager
 	list *cw.DynamicList
 }
 
 func newDonationsDef() *donationsDef {
 	d := &donationsDef{
-		entryManager: newEntryManager(),
+		Manager: entry.NewManager(),
 	}
 	d.list = cw.NewDynamicList(cw.Callbacks{
 		GetItemKey:    d.getItemKey,
@@ -53,16 +54,16 @@ func (d *donationsDef) onEditItem(item interface{}) {
 
 func (d *donationsDef) createItem(item interface{}, done ...func(interface{})) {
 	m := item.(*mods.DonationLink)
-	d.createFormItem("Name", m.Name)
-	d.createFormItem("Link", m.Link)
+	entry.NewEntry[string](d, entry.KindString, "Name", m.Name)
+	entry.NewEntry[string](d, entry.KindString, "Link", m.Link)
 
 	fd := dialog.NewForm("Edit Donation", "Save", "Cancel", []*widget.FormItem{
-		d.getFormItem("Name"),
-		d.getFormItem("Link"),
+		entry.FormItem[string](d, "Name"),
+		entry.FormItem[string](d, "Link"),
 	}, func(ok bool) {
 		if ok {
-			m.Name = d.getString("Name")
-			m.Link = d.getString("Link")
+			m.Name = entry.Value[string](d, "Name")
+			m.Link = entry.Value[string](d, "Link")
 			if len(done) > 0 {
 				done[0](m)
 			}

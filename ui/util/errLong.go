@@ -10,20 +10,14 @@ import (
 )
 
 func ShowErrorLong(err error) {
-	var (
-		window = ui.Window
-		text   = widget.NewRichTextWithText(err.Error())
-	)
-	if ui.ShowingPopup {
-		window = ui.PopupWindow
-	}
+	var text = widget.NewRichTextWithText(err.Error())
 	text.Wrapping = fyne.TextWrapBreak
 
 	button := widget.NewButton("Copy To Clipboard", func() {
 		_ = clipboard.WriteAll(err.Error())
 	})
 
-	errDialog := dialog.NewCustom("Error", "OK", container.NewBorder(button, nil, nil, nil, container.NewVScroll(text)), window)
+	errDialog := dialog.NewCustom("Error", "OK", container.NewBorder(button, nil, nil, nil, container.NewVScroll(text)), ui.ActiveWindow())
 	errDialog.Resize(fyne.NewSize(500, 400))
 	errDialog.Show()
 }

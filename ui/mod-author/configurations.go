@@ -7,11 +7,12 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	cw "github.com/kiamev/moogle-mod-manager/ui/custom-widgets"
+	"github.com/kiamev/moogle-mod-manager/ui/mod-author/entry"
 	"github.com/kiamev/moogle-mod-manager/ui/state/ui"
 )
 
 type configurationsDef struct {
-	*entryManager
+	entry.Manager
 	list       *cw.DynamicList
 	choicesDef *choicesDef
 	previewDef *previewDef
@@ -19,8 +20,8 @@ type configurationsDef struct {
 
 func newConfigurationsDef(dlDef *downloads) *configurationsDef {
 	d := &configurationsDef{
-		entryManager: newEntryManager(),
-		previewDef:   newPreviewDef(),
+		Manager:    entry.NewManager(),
+		previewDef: newPreviewDef(),
 	}
 	d.choicesDef = newChoicesDef(dlDef, d)
 	d.list = cw.NewDynamicList(cw.Callbacks{
@@ -61,25 +62,25 @@ func (d *configurationsDef) onEditItem(item interface{}) {
 
 func (d *configurationsDef) createItem(item interface{}, done ...func(interface{})) {
 	c := item.(*mods.Configuration)
-	d.createFormItem("Name", c.Name)
-	d.createFormMultiLine("Description", c.Description)
-	d.createFormBool("Root", c.Root)
+	entry.NewEntry[string](d, entry.KindString, "Name", c.Name)
+	entry.NewEntry[string](d, entry.KindMultiLine, "Description", c.Description)
+	entry.NewEntry[bool](d, entry.KindBool, "Root", c.Root)
 	d.previewDef.set(c.Preview)
 	d.choicesDef.populate(c.Choices)
 
 	items := []*widget.FormItem{
-		d.getFormItem("Name"),
-		d.getFormItem("Description"),
-		d.getFormItem("Root"),
+		entry.FormItem[string](d, "Name"),
+		entry.FormItem[string](d, "Description"),
+		entry.FormItem[bool](d, "Root"),
 	}
 	items = append(items, d.previewDef.getFormItems()...)
 	items = append(items, widget.NewFormItem("Choices", d.choicesDef.draw(false)))
 
 	fd := dialog.NewForm("Edit Configuration", "Save", "Cancel", items, func(ok bool) {
 		if ok {
-			c.Name = d.getString("Name")
-			c.Description = d.getString("Description")
-			c.Root = d.getBool("Root")
+			c.Name = entry.Value[string](d, "Name")
+			c.Description = entry.Value[string](d, "Description")
+			c.Root = entry.Value[bool](d, "Root")
 			c.Preview = d.previewDef.compile()
 			c.Choices = d.choicesDef.compile()
 			if len(done) > 0 {

@@ -6,6 +6,7 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/ui/state/ui"
+	"github.com/kiamev/moogle-mod-manager/ui/util/working"
 )
 
 type GUI byte
@@ -58,6 +59,9 @@ func GetScreen(gui GUI) Screen {
 }
 
 func ShowScreen(gui GUI, args ...interface{}) {
+	defer working.HideDialog()
+	working.ShowDialog()
+
 	if gui == DiscoverMods {
 		if ui.PopupWindow == nil {
 			ui.PopupWindow = ui.App.NewWindow("Finder")

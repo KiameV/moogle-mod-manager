@@ -16,6 +16,7 @@ type (
 		Has(m T) bool
 		Len() int
 		Remove(m T)
+		RemoveConditionally(f func(t T) bool)
 		Set(m T)
 	}
 	// ModLookupConc is a public for serialization purposes.
@@ -65,6 +66,17 @@ func (l *ModLookupConc[T]) GetByID(modID ModID) (found T, ok bool) {
 
 func (l *ModLookupConc[T]) Remove(m T) {
 	delete(l.Lookup, l.newLookupID(m))
+}
+func (l *ModLookupConc[T]) RemoveConditionally(f func(m T) bool) {
+	var toRemove []lookupID
+	for k, m := range l.Lookup {
+		if f(m) {
+			toRemove = append(toRemove, k)
+		}
+	}
+	for _, k := range toRemove {
+		delete(l.Lookup, k)
+	}
 }
 
 func (l *ModLookupConc[T]) Len() int {

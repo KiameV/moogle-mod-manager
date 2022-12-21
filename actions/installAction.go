@@ -7,6 +7,7 @@ import (
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/ui/util"
+	"github.com/kiamev/moogle-mod-manager/ui/util/working"
 	"sync"
 	"time"
 )
@@ -17,19 +18,9 @@ type (
 		Run() error
 	}
 	action struct {
-		done          Done
-		state         *steps.State
-		steps         []steps.Step
-		workingDialog WorkingDialog
-	}
-	WorkingDialog struct {
-		Show func()
-		Hide func()
-	}
-	Params struct {
-		Game          config.GameDef
-		Mod           mods.TrackedMod
-		WorkingDialog WorkingDialog
+		done  Done
+		state *steps.State
+		steps []steps.Step
 	}
 	ActionKind byte
 )
@@ -79,7 +70,7 @@ var (
 	mutex   = sync.Mutex{}
 )
 
-func New(kind ActionKind, params Params, done Done) (Action, error) {
+func New(kind ActionKind, game config.GameDef, mod mods.TrackedMod, done Done) (Action, error) {
 	mutex.Lock()
 	defer mutex.Unlock()
 	if running {
@@ -92,17 +83,16 @@ func New(kind ActionKind, params Params, done Done) (Action, error) {
 	)
 	switch kind {
 	case Install:
-		s, err = createInstallSteps(params.Game, params.Mod)
+		s, err = createInstallSteps(game, mod)
 	case Uninstall:
-		s, err = createUninstallSteps(params.Game, params.Mod)
+		s, err = createUninstallSteps(game, mod)
 	case Update:
-		s, err = createUpdateSteps(params.Game, params.Mod)
+		s, err = createUpdateSteps(game, mod)
 	}
 	return &action{
-		done:          done,
-		state:         steps.NewState(params.Game, params.Mod),
-		steps:         s,
-		workingDialog: params.WorkingDialog,
+		done:  done,
+		state: steps.NewState(game, mod),
+		steps: s,
 	}, err
 }
 
@@ -164,7 +154,7 @@ func (a action) Run() (err error) {
 
 func (a action) run() {
 	defer func() {
-		a.workingDialog.Hide()
+		working.HideDialog()
 		mutex.Lock()
 		running = false
 		mutex.Unlock()
@@ -181,13 +171,13 @@ func (a action) run() {
 	)
 	for _, step := range a.steps {
 		if result, err = step(a.state); err != nil {
-			a.workingDialog.Hide()
+			working.HideDialog()
 			util.ShowErrorLong(err)
 			return
 		} else if result == mods.Cancel {
 			break
 		} else if result == mods.Working {
-			a.workingDialog.Show()
+			working.ShowDialog()
 		}
 	}
 }

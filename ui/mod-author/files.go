@@ -8,18 +8,19 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	cw "github.com/kiamev/moogle-mod-manager/ui/custom-widgets"
+	"github.com/kiamev/moogle-mod-manager/ui/mod-author/entry"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
 	"github.com/kiamev/moogle-mod-manager/ui/state/ui"
 )
 
 type filesDef struct {
-	*entryManager
+	entry.Manager
 	list *cw.DynamicList
 }
 
 func newFilesDef() *filesDef {
 	d := &filesDef{
-		entryManager: newEntryManager(),
+		Manager: entry.NewManager(),
 	}
 	d.list = cw.NewDynamicList(cw.Callbacks{
 		GetItemKey:    d.getItemKey,
@@ -56,16 +57,16 @@ func (d *filesDef) onEditItem(item interface{}) {
 
 func (d *filesDef) createItem(item interface{}, done ...func(interface{})) {
 	f := item.(*mods.ModFile)
-	d.createFileDialog("From", f.From, state.GetBaseDirBinding(), false, true)
-	d.createFormItem("To FF PR/", f.To)
+	entry.CreateFileDialog(d, "From", f.From, state.GetBaseDirBinding(), false, true)
+	entry.NewEntry[string](d, entry.KindString, "To FF PR/", f.To)
 
 	fd := dialog.NewForm("Edit File Copy", "Save", "Cancel", []*widget.FormItem{
-		d.getFileDialog("From"),
-		d.getFormItem("To FF PR/"),
+		entry.GetFileDialog(d, "From"),
+		entry.FormItem[string](d, "To FF PR/"),
 	}, func(ok bool) {
 		if ok {
-			f.From = cleanPath(d.getString("From"))
-			f.To = cleanPath(d.getString("To FF PR/"))
+			f.From = cleanPath(entry.Value[string](d, "From"))
+			f.To = cleanPath(entry.Value[string](d, "To FF PR/"))
 			if len(done) > 0 {
 				done[0](f)
 			}

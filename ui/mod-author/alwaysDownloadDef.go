@@ -7,18 +7,19 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	cw "github.com/kiamev/moogle-mod-manager/ui/custom-widgets"
+	"github.com/kiamev/moogle-mod-manager/ui/mod-author/entry"
 	"github.com/kiamev/moogle-mod-manager/ui/state/ui"
 )
 
 type alwaysDownloadDef struct {
-	*entryManager
+	entry.Manager
 	list             *cw.DynamicList
 	downloadFilesDef *downloadFilesDef
 }
 
 func newAlwaysDownloadDef(downloads *downloads) *alwaysDownloadDef {
 	d := &alwaysDownloadDef{
-		entryManager:     newEntryManager(),
+		Manager:          entry.NewManager(),
 		downloadFilesDef: newDownloadFilesDef(downloads),
 	}
 	d.list = cw.NewDynamicList(cw.Callbacks{
@@ -30,11 +31,11 @@ func newAlwaysDownloadDef(downloads *downloads) *alwaysDownloadDef {
 }
 
 func (d *alwaysDownloadDef) compile() []*mods.DownloadFiles {
-	downloads := make([]*mods.DownloadFiles, len(d.list.Items))
+	dls := make([]*mods.DownloadFiles, len(d.list.Items))
 	for i, item := range d.list.Items {
-		downloads[i] = item.(*mods.DownloadFiles)
+		dls[i] = item.(*mods.DownloadFiles)
 	}
-	return downloads
+	return dls
 }
 
 func (d *alwaysDownloadDef) getItemKey(item interface{}) string {

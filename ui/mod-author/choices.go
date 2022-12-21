@@ -7,11 +7,12 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	cw "github.com/kiamev/moogle-mod-manager/ui/custom-widgets"
+	"github.com/kiamev/moogle-mod-manager/ui/mod-author/entry"
 	"github.com/kiamev/moogle-mod-manager/ui/state/ui"
 )
 
 type choicesDef struct {
-	*entryManager
+	entry.Manager
 	list       *cw.DynamicList
 	dlfDef     *downloadFilesDef
 	configDef  *configurationsDef
@@ -20,10 +21,10 @@ type choicesDef struct {
 
 func newChoicesDef(dlDef *downloads, configDef *configurationsDef) *choicesDef {
 	d := &choicesDef{
-		entryManager: newEntryManager(),
-		dlfDef:       newDownloadFilesDef(dlDef),
-		configDef:    configDef,
-		previewDef:   newPreviewDef(),
+		Manager:    entry.NewManager(),
+		dlfDef:     newDownloadFilesDef(dlDef),
+		configDef:  configDef,
+		previewDef: newPreviewDef(),
 	}
 	d.list = cw.NewDynamicList(cw.Callbacks{
 		GetItemKey:    d.getItemKey,
@@ -77,18 +78,19 @@ func (d *choicesDef) createItem(item interface{}, done ...func(interface{})) {
 		nextConfig = *c.NextConfigurationName
 	}
 
-	d.createFormItem("Name", c.Name)
-	d.createFormItem("Description", c.Description)
-	d.createFormSelect("Next Configuration", possible, nextConfig)
+	entry.NewEntry[string](d, entry.KindString, "Name", c.Name)
+	entry.NewEntry[string](d, entry.KindString, "Description", c.Description)
+	entry.NewSelectEntry(d, "Next Configuration", nextConfig, possible)
 	d.previewDef.set(c.Preview)
 	if c.DownloadFiles != nil {
 		d.dlfDef.populate(c.DownloadFiles)
 	}
 
 	form := []*widget.FormItem{
-		d.getFormItem("Name"),
-		d.getFormItem("Description"),
-		d.getFormItem("Next Configuration"),
+		entry.FormItem[string](d, "Name"),
+		entry.FormItem[string](d, "Name"),
+		entry.FormItem[string](d, "Description"),
+		entry.FormItem[string](d, "Next Configuration"),
 	}
 	form = append(form, d.previewDef.getFormItems()...)
 
@@ -101,12 +103,12 @@ func (d *choicesDef) createItem(item interface{}, done ...func(interface{})) {
 
 	fd := dialog.NewForm("Edit Choice", "Save", "Cancel", form, func(ok bool) {
 		if ok {
-			c.Name = d.getString("Name")
-			c.Description = d.getString("Description")
+			c.Name = entry.Value[string](d, "Name")
+			c.Description = entry.Value[string](d, "Description")
 			c.Preview = d.previewDef.compile()
 			c.DownloadFiles = d.dlfDef.compile()
-			if d.getString("Next Configuration") != "" {
-				s := d.getString("Next Configuration")
+			if entry.Value[string](d, "Next Configuration") != "" {
+				s := entry.Value[string](d, "Next Configuration")
 				c.NextConfigurationName = &s
 			} else {
 				c.NextConfigurationName = nil

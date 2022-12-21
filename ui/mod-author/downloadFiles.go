@@ -3,10 +3,11 @@ package mod_author
 import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/mods"
+	"github.com/kiamev/moogle-mod-manager/ui/mod-author/entry"
 )
 
 type downloadFilesDef struct {
-	*entryManager
+	entry.Manager
 	downloads *downloads
 	dlName    string
 	files     *filesDef
@@ -15,16 +16,16 @@ type downloadFilesDef struct {
 
 func newDownloadFilesDef(downloads *downloads) *downloadFilesDef {
 	return &downloadFilesDef{
-		entryManager: newEntryManager(),
-		downloads:    downloads,
-		files:        newFilesDef(),
-		dirs:         newDirsDef(),
+		Manager:   entry.NewManager(),
+		downloads: downloads,
+		files:     newFilesDef(),
+		dirs:      newDirsDef(),
 	}
 }
 
 func (d *downloadFilesDef) compile() *mods.DownloadFiles {
 	return &mods.DownloadFiles{
-		DownloadName: d.getString("Download Name"),
+		DownloadName: entry.Value[string](d, "Download Name"),
 		Files:        d.files.compile(),
 		Dirs:         d.dirs.compile(),
 	}
@@ -36,10 +37,10 @@ func (d *downloadFilesDef) compile() *mods.DownloadFiles {
 		possible = append(possible, dl.Name)
 	}
 
-	d.createFormSelect("Download Name", possible, d.dlName)
+	entry.NewEntry[string](d, entry.KindSelect, "Download Name", possible, d.dlName)
 
 	return container.NewVBox(
-		widget.NewForm(d.getFormItem("Download Name")),
+		widget.NewForm(entry.FormItem[string](d, "Download Name")),
 		d.files.draw(true),
 		d.dirs.draw(true),
 	)
@@ -57,10 +58,10 @@ func (d *downloadFilesDef) getFormItems() ([]*widget.FormItem, error) {
 		possible = append(possible, dl.Name)
 	}
 
-	d.createFormSelect("Download Name", possible, d.dlName)
+	entry.NewSelectEntry(d, "Download Name", d.dlName, possible)
 
 	return []*widget.FormItem{
-		d.getFormItem("Download Name"),
+		entry.FormItem[string](d, "Download Name"),
 		widget.NewFormItem("Files", d.files.draw(false)),
 		widget.NewFormItem("Dirs", d.dirs.draw(false)),
 	}, nil

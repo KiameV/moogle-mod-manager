@@ -6,21 +6,22 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/discover/remote/github"
 	"github.com/kiamev/moogle-mod-manager/mods"
+	"github.com/kiamev/moogle-mod-manager/ui/mod-author/entry"
 	"strings"
 )
 
 type githubDownloadsDef struct {
-	*entryManager
+	entry.Manager
 }
 
 func newGithubDownloadsDef() *githubDownloadsDef {
 	return &githubDownloadsDef{
-		entryManager: newEntryManager(),
+		Manager: entry.NewManager(),
 	}
 }
 
 func (d *githubDownloadsDef) version() (string, error) {
-	return github.LatestRelease(d.getString("owner"), d.getString("repo"))
+	return github.LatestRelease(entry.Value[string](d, "owner"), entry.Value[string](d, "repo"))
 }
 
 func (d *githubDownloadsDef) compile() (version string, gh *mods.GitHub, result []*mods.Download, err error) {
@@ -28,7 +29,7 @@ func (d *githubDownloadsDef) compile() (version string, gh *mods.GitHub, result 
 	if version, err = d.version(); err != nil {
 		return
 	}
-	if dls, err = github.ListDownloads(d.getString("owner"), d.getString("repo"), version); err != nil {
+	if dls, err = github.ListDownloads(entry.Value[string](d, "owner"), entry.Value[string](d, "repo"), version); err != nil {
 		return
 	}
 	result = make([]*mods.Download, len(dls))
@@ -46,36 +47,36 @@ func (d *githubDownloadsDef) compile() (version string, gh *mods.GitHub, result 
 		}
 	}
 	gh = &mods.GitHub{
-		Owner: d.getString("owner"),
-		Repo:  d.getString("repo"),
+		Owner: entry.Value[string](d, "owner"),
+		Repo:  entry.Value[string](d, "repo"),
 	}
 	return
 }
 
 func (d *githubDownloadsDef) draw() fyne.CanvasObject {
 	return container.NewVBox(widget.NewForm(
-		d.getFormItem("owner"),
-		d.getFormItem("repo")))
+		entry.FormItem[string](d, "owner"),
+		entry.FormItem[string](d, "repo")))
 }
 
 func (d *githubDownloadsDef) set(gh *mods.GitHub) {
 	if gh == nil {
 		d.clear()
 	} else {
-		d.createFormItem("owner", gh.Owner)
-		d.createFormItem("repo", gh.Repo)
+		entry.NewEntry[string](d, entry.KindString, "owner", gh.Owner)
+		entry.NewEntry[string](d, entry.KindString, "repo", gh.Repo)
 	}
 }
 
 func (d *githubDownloadsDef) getFormItems() []*widget.FormItem {
 	return []*widget.FormItem{
-		d.getFormItem("owner"),
-		d.getFormItem("repo"),
+		entry.FormItem[string](d, "owner"),
+		entry.FormItem[string](d, "repo"),
 	}
 }
 
 func (d *githubDownloadsDef) clear() {
-	d.createFormItem("owner", "")
-	d.createFormItem("repo", "")
+	entry.NewEntry[string](d, entry.KindString, "owner", "")
+	entry.NewEntry[string](d, entry.KindString, "repo", "")
 
 }

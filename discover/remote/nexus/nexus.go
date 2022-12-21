@@ -107,11 +107,11 @@ func (c *client) GetFromUrl(url string) (found bool, mod *mods.Mod, err error) {
 
 func (c *client) GetNewestMods(game config.GameDef, lastID int) (result []*mods.Mod, err error) {
 	var (
-		b     []byte
-		path  = game.Remote().Nexus.Path
-		nDls  fileParent
-		mod   *mods.Mod
-		found bool
+		b       []byte
+		path    = game.Remote().Nexus.Path
+		nDls    fileParent
+		mod     *mods.Mod
+		include bool
 	)
 	if b, err = sendRequest(fmt.Sprintf(nexusApiNewestModsUrl, path)); err != nil {
 		return
@@ -127,9 +127,9 @@ func (c *client) GetNewestMods(game config.GameDef, lastID int) (result []*mods.
 			if nDls, err = getDownloads(path, fmt.Sprintf("%d", nMod.ModID)); err != nil {
 				return
 			}
-			if found, mod, err = toMod(nMod, nDls.Files); err != nil {
+			if include, mod, err = toMod(nMod, nDls.Files); err != nil {
 				return
-			} else if found {
+			} else if !include {
 				continue
 			}
 			result = append(result, mod)

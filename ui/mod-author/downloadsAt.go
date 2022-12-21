@@ -8,21 +8,23 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	cw "github.com/kiamev/moogle-mod-manager/ui/custom-widgets"
+	"github.com/kiamev/moogle-mod-manager/ui/mod-author/entry"
 	"github.com/kiamev/moogle-mod-manager/ui/state/ui"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
 type downloadsDef struct {
-	*entryManager
+	entry.Manager
 	list *cw.DynamicList
 	kind *mods.Kind
 }
 
 func newDownloadsDef(kind *mods.Kind) *downloadsDef {
 	d := &downloadsDef{
-		entryManager: newEntryManager(),
-		kind:         kind,
+		Manager: entry.NewManager(),
+		kind:    kind,
 	}
 	d.list = cw.NewDynamicList(cw.Callbacks{
 		GetItemKey:    d.getItemKey,
@@ -69,20 +71,18 @@ func (d *downloadsDef) onEditItem(item interface{}) {
 
 func (d *downloadsDef) createItem(item interface{}, done ...func(interface{})) {
 	var (
-		items = []*widget.FormItem{
-			d.newFormItem("Version"),
-		}
+		items    []*widget.FormItem
 		m        = item.(*mods.Download)
 		k        = *d.kind
 		fileName string
 		fileID   string
 		url      string
 	)
-	d.createFormItem("Version", m.Version)
-	d.createFormItem("File Name", "")
-	d.createFormItem("File ModID", "")
-	d.createFormItem("Url", "")
-	//d.createFormSelect("Install Type", mods.InstallTypes, string(m.InstallType))
+	entry.NewEntry[string](d, entry.KindString, "Version", m.Version)
+	entry.NewEntry[string](d, entry.KindString, "File Name", "")
+	entry.NewEntry[string](d, entry.KindString, "File ModID", "")
+	entry.NewEntry[string](d, entry.KindString, "Url", "")
+	//entry.NewEntry[string](d, entry.KindSelect, "Install Type", mods.InstallTypes, string(m.InstallType))
 	switch k {
 	case mods.Nexus:
 		if m.Nexus != nil {
@@ -102,7 +102,7 @@ func (d *downloadsDef) createItem(item interface{}, done ...func(interface{})) {
 		if m.Hosted != nil {
 			sources = m.Hosted.Sources
 		}
-		d.createFormMultiLine("Sources", strings.Join(sources, "\n"))
+		entry.NewEntry[string](d, entry.KindMultiLine, "Sources", strings.Join(sources, "\n"))
 	default:
 		dialog.ShowError(fmt.Errorf("unknown mod kind: %s", *d.kind), ui.Window)
 		for _, dn := range done {
@@ -111,41 +111,46 @@ func (d *downloadsDef) createItem(item interface{}, done ...func(interface{})) {
 	}
 
 	if k == mods.Nexus || k == mods.CurseForge {
-		d.createFormItem("File Name", fileName)
-		d.createFormItem("File ModID", fileID)
-		items = append(items, d.getFormItem("File Name"))
-		items = append(items, d.getFormItem("File ModID"))
+		entry.NewEntry[string](d, entry.KindString, "File Name", fileName)
+		entry.NewEntry[string](d, entry.KindString, "File ModID", fileID)
+		items = append(items, entry.FormItem[string](d, "File Name"))
+		items = append(items, entry.FormItem[string](d, "File ModID"))
 		if k == mods.CurseForge {
-			d.createFormItem("Url", url)
-			items = append(items, d.getFormItem("Url"))
+			entry.NewEntry[string](d, entry.KindString, "Url", url)
+			items = append(items, entry.FormItem[string](d, "Url"))
 		}
 	} else if k == mods.Hosted {
-		items = append(items, d.getFormItem("Sources"))
+		items = []*widget.FormItem{
+			entry.FormItem[string](d, "Version"),
+			entry.FormItem[string](d, "Sources"),
+		}
 	}
 
 	fd := dialog.NewForm("Edit Downloadable", "Save", "Cancel", items, func(ok bool) {
 		if ok {
-			m.Version = d.getString("Version")
+			m.Version = entry.Value[string](d, "Version")
 			if k == mods.Nexus {
 				if m.Nexus == nil {
 					m.Nexus = &mods.RemoteDownloadable{}
 				}
-				m.Nexus.FileName = d.getString("File Name")
-				m.Nexus.FileID = d.getInt("File ModID")
+				m.Nexus.FileName = entry.Value[string](d, "File Name")
+				i, _ := strconv.ParseInt(entry.Value[string](d, "File ModID"), 10, 32)
+				m.Nexus.FileID = int(i)
 				m.Name = filepath.Base(m.Nexus.FileName)
 			} else if k == mods.CurseForge {
 				if m.CurseForge == nil {
 					m.CurseForge = &mods.CurseForgeDownloadable{}
 				}
-				m.CurseForge.FileName = d.getString("File Name")
-				m.CurseForge.FileID = d.getInt("File ModID")
-				m.CurseForge.Url = d.getString("Url")
+				m.CurseForge.FileName = entry.Value[string](d, "File Name")
+				i, _ := strconv.ParseInt(entry.Value[string](d, "File ModID"), 10, 32)
+				m.Nexus.FileID = int(i)
+				m.CurseForge.Url = entry.Value[string](d, "Url")
 				m.Name = filepath.Base(m.CurseForge.FileName)
 			} else if k == mods.Hosted {
 				if m.Hosted == nil {
 					m.Hosted = &mods.HostedDownloadable{}
 				}
-				m.Hosted.Sources = d.getStrings("Sources", "\n")
+				m.Hosted.Sources = strings.Split(entry.Value[string](d, "Sources"), "\n")
 				if len(m.Hosted.Sources) > 0 {
 					m.Name = filepath.Base(m.Hosted.Sources[0])
 				}
@@ -153,7 +158,7 @@ func (d *downloadsDef) createItem(item interface{}, done ...func(interface{})) {
 			if m.Name != "" {
 				m.Name = strings.TrimSuffix(m.Name, filepath.Ext(m.Name))
 			}
-			//m.InstallType = mods.InstallType(d.getString("Install Type"))
+			//m.InstallType = mods.InstallType(entry.Value[string](d, "Install Type"))
 			for _, dn := range done {
 				dn(m)
 			}
