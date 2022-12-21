@@ -68,7 +68,7 @@ func (d *dirsDef) createItem(item interface{}, done ...func(interface{})) {
 		entry.FormItem[bool](d, "Recursive"),
 	}, func(ok bool) {
 		if ok {
-			f.From = cleanPath(entry.Value[string](d, "From"))
+			f.From = cleanPath(entry.DialogValue(d, "From"))
 			f.To = cleanPath(entry.Value[string](d, "To FF PR/"))
 			f.Recursive = entry.Value[bool](d, "Recursive")
 			if len(done) > 0 {

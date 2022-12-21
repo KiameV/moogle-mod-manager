@@ -46,7 +46,7 @@ const (
 )
 
 var games = []game{
-	//{path: "finalfantasypixelremaster", id: "3934"},
+	{path: "finalfantasypixelremaster", id: "3934"},
 	{path: "finalfantasy2pixelremaster", id: "3958"},
 	{path: "finalfantasy3pixelremaster", id: "3942"},
 	{path: "finalfantasy4pixelremaster", id: "4022"},
@@ -55,8 +55,9 @@ var games = []game{
 }
 
 func GetFileContents(apiKey string) (string, error) {
+	return "", nil
 	for z, g := range games {
-		fo, _ := os.Create(fmt.Sprintf("%d-output.txt", z+2))
+		fo, _ := os.Create(fmt.Sprintf("%d-output.txt", z+1))
 		for i := 1; i < 60; i++ {
 			var fs filesResp
 			url := strings.Replace(getFilesUrl, ":1", g.path, 1)

@@ -65,7 +65,7 @@ func (d *filesDef) createItem(item interface{}, done ...func(interface{})) {
 		entry.FormItem[string](d, "To FF PR/"),
 	}, func(ok bool) {
 		if ok {
-			f.From = cleanPath(entry.Value[string](d, "From"))
+			f.From = cleanPath(entry.DialogValue(d, "From"))
 			f.To = cleanPath(entry.Value[string](d, "To FF PR/"))
 			if len(done) > 0 {
 				done[0](f)

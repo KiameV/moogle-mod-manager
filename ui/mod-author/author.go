@@ -516,17 +516,14 @@ func (a *ModAuthorer) submitForReview() {
 		dialog.ShowInformation("Invalid Mod Def", "The mod is not valid, please fix it first.", ui.Window)
 	}
 
-	/*if err = repo.NewGetter(repo.Author).Pull(); err != nil {
-		util.ShowErrorLong(err)
-		return
-	}*/
-
-	mod.Description = ""
-	mod.Preview = nil
-	mod.Category = ""
-	mod.Downloadables = nil
-	mod.AlwaysDownload = nil
-	mod.Configurations = nil
+	if mod.Hide {
+		mod.Description = ""
+		mod.Preview = nil
+		mod.Category = ""
+		mod.Downloadables = nil
+		mod.AlwaysDownload = nil
+		mod.Configurations = nil
+	}
 
 	if pr, err = repo.NewCommitter(mod).Submit(); err != nil {
 		util.ShowErrorLong(err)

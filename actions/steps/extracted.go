@@ -7,6 +7,7 @@ import (
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"io/fs"
 	"path/filepath"
+	"strings"
 )
 
 type (
@@ -106,6 +107,7 @@ func (e *Extracted) Compile(game config.GameDef, extractedDir string) (err error
 				if rel, err = filepath.Rel(extractedDir, path); err != nil {
 					return err
 				}
+				rel = strings.ReplaceAll(rel, "\\", "/")
 				if fti, err = newFileToInstallFromDir(fromToExtracted, path, rel, d, installDir); err != nil {
 					return err
 				}
