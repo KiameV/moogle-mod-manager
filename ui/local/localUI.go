@@ -83,21 +83,32 @@ func (ui *localUI) Draw(w fyne.Window) {
 	removeButton := widget.NewButton("Remove", func() {
 		dialog.NewConfirm("Delete?", "Are you sure you want to delete this mod?", func(ok bool) {
 			if ok && ui.selectedMod != nil {
-				if err := managed.RemoveMod(state.CurrentGame, ui.selectedMod); err != nil {
-					util.ShowErrorLong(err)
-					return
-				}
-				for i, m := range ui.mods {
-					if m == ui.selectedMod {
-						ui.mods = append(ui.mods[:i], ui.mods[i+1:]...)
-						break
+				if ui.selectedMod.Enabled() {
+					if a, err := actions.New(actions.Uninstall, state.CurrentGame, ui.selectedMod, func() {
+						if !ui.selectedMod.Enabled() {
+							if err := managed.RemoveMod(state.CurrentGame, ui.selectedMod); err != nil {
+								util.ShowErrorLong(err)
+								return
+							}
+							for i, m := range ui.mods {
+								if m == ui.selectedMod {
+									ui.mods = append(ui.mods[:i], ui.mods[i+1:]...)
+									break
+								}
+							}
+							ui.removeModFromList(ui.selectedMod)
+							ui.selectedMod = nil
+							ui.ModList.UnselectAll()
+							ui.split.Trailing = container.NewMax()
+							ui.split.Refresh()
+						}
+					}); err != nil {
+						util.ShowErrorLong(err)
+					} else if err = a.Run(); err != nil {
+						util.ShowErrorLong(err)
+						return
 					}
 				}
-				ui.removeModFromList(ui.selectedMod)
-				ui.selectedMod = nil
-				ui.ModList.UnselectAll()
-				ui.split.Trailing = container.NewMax()
-				ui.split.Refresh()
 			}
 		}, u.Window).Show()
 	})
