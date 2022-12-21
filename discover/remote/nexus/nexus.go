@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	converter "github.com/JohannesKaufmann/html-to-markdown"
-	"github.com/frustra/bbcode"
 	"github.com/kiamev/moogle-mod-manager/config"
 	u "github.com/kiamev/moogle-mod-manager/discover/remote/util"
 	"github.com/kiamev/moogle-mod-manager/mods"
@@ -14,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -29,6 +28,8 @@ const (
 	// NexusFileDownload file_id, NexusGameID
 	NexusFileDownload = "https://www.nexusmods.com/Core/Libs/Common/Widgets/DownloadPopUp?id=%d&game_id=%v"
 )
+
+var bbcodeRegex *regexp.Regexp = regexp.MustCompile(`\[\/?[a-zA-Z0-9=\[\]_ ]+\]`)
 
 type client struct {
 	compiler u.ModCompiler
@@ -199,6 +200,7 @@ func toMod(n nexusMod, dls []NexusFile) (include bool, mod *mods.Mod, err error)
 		Version:      n.Version,
 		Author:       n.Author,
 		AuthorLink:   n.AuthorLink,
+		Description:  bbcodeRegex.ReplaceAllString(n.Description, ""),
 		Category:     "",
 		ReleaseDate:  n.CreatedTime.Format("Jan 2, 2006"),
 		ReleaseNotes: "",
@@ -220,17 +222,6 @@ func toMod(n nexusMod, dls []NexusFile) (include bool, mod *mods.Mod, err error)
 		AlwaysDownload: nil,
 		Configurations: nil,
 	})
-	compiler := bbcode.NewCompiler(true, true)
-	c := converter.NewConverter("", true, nil)
-	cd := compiler.Compile(n.Description)
-	cd = removeFont(cd)
-	if mod.Description, err = c.ConvertString(cd); err != nil {
-		mod.Description = n.Description
-		err = nil
-	}
-	mod.Description = strings.ReplaceAll(mod.Description, "<br />", "\n")
-	mod.Description = strings.ReplaceAll(mod.Description, "\\\\_", "_")
-	mod.Description = strings.ReplaceAll(mod.Description, "\\_", "_")
 
 	var choices []*mods.Choice
 	for i, d := range dls {
