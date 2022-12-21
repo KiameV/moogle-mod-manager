@@ -8,7 +8,6 @@ require (
 	github.com/JohannesKaufmann/html-to-markdown v1.3.6
 	github.com/atotto/clipboard v0.1.4
 	github.com/carwale/golibraries v1.5.0
-	github.com/frustra/bbcode v0.0.0-20201127003707-6ef347fbe1c8
 	github.com/gen2brain/go-unarr v0.1.6
 	github.com/go-git/go-git/v5 v5.5.1
 	github.com/google/go-github/v45 v45.2.0

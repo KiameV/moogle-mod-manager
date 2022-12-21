@@ -11,3 +11,5 @@ temp
 */moogle-mod-manager.upx
 !example/*
 !winres/*
+*-output.txt
+*-output.zip
