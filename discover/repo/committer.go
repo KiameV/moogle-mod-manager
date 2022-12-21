@@ -69,7 +69,7 @@ func (c *repoClient) Submit() (url string, err error) {
 			err = errors.New("multi-game mods must be hosted")
 			return
 		}
-		file = util.CreateFileName(string(c.mod.ModID))
+		file = util.CreateFileName(c.mod.ModID.AsDir())
 		file = rd.removeFilePrefixes(file)
 		file = filepath.Join(rd.repoDir(Author), "utilities", file)
 	} else {

@@ -92,6 +92,9 @@ func GetModsAsLookup(game config.GameDef) (lookup mods.ModLookup[*mods.Mod], err
 			found.Mod().Merge(*m)
 		}
 	}
+	lookup.RemoveConditionally(func(m *mods.Mod) bool {
+		return m.Mod().Hide
+	})
 	if game == nil {
 		utilLookup = lookup
 	} else {

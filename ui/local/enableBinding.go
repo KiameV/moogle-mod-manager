@@ -11,24 +11,20 @@ import (
 type (
 	enableBind struct {
 		binding.Bool
-		parent      *localUI
-		tm          mods.TrackedMod
-		start       func() bool
-		showWorking func()
-		hideWorking func()
+		parent *localUI
+		tm     mods.TrackedMod
+		start  func() bool
 		//done        mods.DoneCallback
 	}
 )
 
-func newEnableBind(parent *localUI, tm mods.TrackedMod, start func() bool, showWorking func(), hideWorking func() /*, done mods.DoneCallback*/) *enableBind {
+func newEnableBind(parent *localUI, tm mods.TrackedMod, start func() bool /*, done mods.DoneCallback*/) *enableBind {
 	var (
 		b = &enableBind{
-			parent:      parent,
-			Bool:        binding.NewBool(),
-			tm:          tm,
-			start:       start,
-			showWorking: showWorking,
-			hideWorking: hideWorking,
+			parent: parent,
+			Bool:   binding.NewBool(),
+			tm:     tm,
+			start:  start,
 		}
 	)
 	_ = b.Set(tm.Enabled())
@@ -49,7 +45,7 @@ func (b *enableBind) DataChanged() {
 		}
 		if isChecked {
 			// Enable
-			if action, err = actions.New(actions.Install, b.newActionParams(), b.ActionDone); err != nil {
+			if action, err = actions.New(actions.Install, state.CurrentGame, b.tm, b.ActionDone); err != nil {
 				util.ShowErrorLong(err)
 				_ = b.Set(false)
 			} else if err = action.Run(); err != nil {
@@ -58,7 +54,7 @@ func (b *enableBind) DataChanged() {
 			}
 		} else {
 			// Disable
-			if action, err = actions.New(actions.Uninstall, b.newActionParams(), b.ActionDone); err != nil {
+			if action, err = actions.New(actions.Uninstall, state.CurrentGame, b.tm, b.ActionDone); err != nil {
 				util.ShowErrorLong(err)
 				_ = b.Set(true)
 			} else if err = action.Run(); err != nil {
@@ -66,17 +62,6 @@ func (b *enableBind) DataChanged() {
 				_ = b.Set(true)
 			}
 		}
-	}
-}
-
-func (b *enableBind) newActionParams() actions.Params {
-	return actions.Params{
-		Game: state.CurrentGame,
-		Mod:  b.tm,
-		WorkingDialog: actions.WorkingDialog{
-			Show: b.showWorking,
-			Hide: b.hideWorking,
-		},
 	}
 }
 

@@ -12,7 +12,7 @@ type stringFormEntry struct {
 	text  string
 }
 
-func newStringFormEntry(key string, value any) Entry[string] {
+func NewStringFormEntry(key string, value any) Entry[string] {
 	e := &stringFormEntry{
 		text: value.(string),
 	}

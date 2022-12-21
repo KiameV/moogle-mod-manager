@@ -2,6 +2,7 @@ package movers
 
 import (
 	"fmt"
+	"github.com/kiamev/moogle-mod-manager/util"
 	"os"
 	"path/filepath"
 )
@@ -51,7 +52,7 @@ func (*directMover) moveFiles(files []string, from, destination string) (moved [
 			return
 		}
 		// Move the file to the destination directory
-		if err = os.Rename(f, filepath.Join(destination, relPath)); err != nil {
+		if err = util.MoveFile(f, filepath.Join(destination, relPath)); err != nil {
 			return
 		}
 		moved = append(moved, f)
@@ -82,7 +83,7 @@ func (*directMover) backupFiles(files []string, from, destination, backupDir str
 		orig = filepath.Join(destination, relPath)
 		if _, err = os.Stat(orig); err == nil {
 			// Move the file to the backup directory
-			if err = os.Rename(orig, filepath.Join(backupDir, relPath)); err != nil {
+			if err = util.MoveFile(orig, filepath.Join(backupDir, relPath)); err != nil {
 				return
 			}
 			backedUp = append(backedUp, relPath)

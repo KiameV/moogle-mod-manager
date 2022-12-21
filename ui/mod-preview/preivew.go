@@ -8,6 +8,7 @@ import (
 	"github.com/kiamev/moogle-mod-manager/discover"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/ui/util"
+	"github.com/kiamev/moogle-mod-manager/ui/util/working"
 	"net/url"
 	"strings"
 )
@@ -18,6 +19,9 @@ type ModPreviewOptions struct {
 }
 
 func CreatePreview(mod *mods.Mod, options ...ModPreviewOptions) fyne.CanvasObject {
+	defer working.HideDialog()
+	working.ShowDialog()
+
 	c := container.NewVBox()
 	if len(options) > 0 && options[0].UpdateCallback != nil && options[0].TrackedMod != nil && options[0].TrackedMod.UpdatedMod() != nil {
 		c.Add(widget.NewButton("Update", func() {

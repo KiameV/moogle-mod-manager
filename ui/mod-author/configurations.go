@@ -64,14 +64,14 @@ func (d *configurationsDef) createItem(item interface{}, done ...func(interface{
 	c := item.(*mods.Configuration)
 	entry.NewEntry[string](d, entry.KindString, "Name", c.Name)
 	entry.NewEntry[string](d, entry.KindMultiLine, "Description", c.Description)
-	entry.NewEntry[string](d, entry.KindBool, "Root", c.Root)
+	entry.NewEntry[bool](d, entry.KindBool, "Root", c.Root)
 	d.previewDef.set(c.Preview)
 	d.choicesDef.populate(c.Choices)
 
 	items := []*widget.FormItem{
 		entry.FormItem[string](d, "Name"),
 		entry.FormItem[string](d, "Description"),
-		entry.FormItem[string](d, "Root"),
+		entry.FormItem[bool](d, "Root"),
 	}
 	items = append(items, d.previewDef.getFormItems()...)
 	items = append(items, widget.NewFormItem("Choices", d.choicesDef.draw(false)))

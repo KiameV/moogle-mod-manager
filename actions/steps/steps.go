@@ -13,6 +13,7 @@ import (
 	"github.com/kiamev/moogle-mod-manager/ui/confirm"
 	uic "github.com/kiamev/moogle-mod-manager/ui/conflicts"
 	ui "github.com/kiamev/moogle-mod-manager/ui/state"
+	"github.com/kiamev/moogle-mod-manager/util"
 	"os"
 	"path/filepath"
 	"sync"
@@ -106,7 +107,7 @@ func PreDownload(state *State) (result mods.Result, err error) {
 		modPath := filepath.Join(config.Get().GetModsFullPath(state.Game), mod.ID().AsDir())
 		if err = ui.GetScreen(ui.ConfigInstaller).(ci.ConfigInstaller).Setup(mod, modPath, func(r mods.Result, ti []*mods.ToInstall) error {
 			result = r
-			if len(ti) > 0 {
+			if r == mods.Ok && len(ti) > 0 {
 				state.ToInstall = append(state.ToInstall, ti...)
 			}
 			wg.Done()
@@ -118,9 +119,11 @@ func PreDownload(state *State) (result mods.Result, err error) {
 		ui.ShowScreen(ui.ConfigInstaller)
 		wg.Wait()
 		time.Sleep(100 * time.Millisecond)
-
 	}
 
+	if result == mods.Cancel || result == mods.Error {
+		return
+	}
 	if len(state.ToInstall) == 0 {
 		return mods.Error, errors.New("no files to install")
 	}
@@ -281,14 +284,14 @@ func Install(state *State) (mods.Result, error) {
 						if err = os.MkdirAll(filepath.Dir(absBackup), 0755); err != nil {
 							return mods.Error, err
 						}
-						if err = os.Rename(ti.AbsoluteTo, absBackup); err != nil {
+						if err = util.MoveFile(ti.AbsoluteTo, absBackup); err != nil {
 							return mods.Error, err
 						}
 					}
 				}
 
 				// Install the file
-				if err = os.Rename(ti.AbsoluteFrom, ti.AbsoluteTo); err != nil {
+				if err = util.MoveFile(ti.AbsoluteFrom, ti.AbsoluteTo); err != nil {
 					return mods.Error, err
 				}
 				files.SetFiles(state.Game, state.Mod.ID(), ti.AbsoluteTo)
@@ -330,7 +333,7 @@ func UninstallMove(state *State) (mods.Result, error) {
 
 		absBackup := filepath.Join(backupDir, rel)
 		if _, err = os.Stat(absBackup); err == nil {
-			if err = os.Rename(absBackup, f); err != nil {
+			if err = util.MoveFile(absBackup, f); err != nil {
 				return mods.Error, err
 			}
 		}

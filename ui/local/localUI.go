@@ -14,6 +14,7 @@ import (
 	"github.com/kiamev/moogle-mod-manager/ui/state"
 	u "github.com/kiamev/moogle-mod-manager/ui/state/ui"
 	"github.com/kiamev/moogle-mod-manager/ui/util"
+	"github.com/kiamev/moogle-mod-manager/ui/util/working"
 	"github.com/ncruces/zenity"
 )
 
@@ -64,7 +65,7 @@ func (ui *localUI) Draw(w fyne.Window) {
 					c := co.(*fyne.Container)
 					c.Objects[0].(*UpdateButton).SetTrackedMod(tm)
 					c.Objects[1].(*widget.Label).Bind(binding.BindString(tm.DisplayNamePtr()))
-					c.Objects[2].(*widget.Check).Bind(newEnableBind(ui, tm, ui.startEnableDisableCallback, ui.showWorkingDialog, ui.hideDialog))
+					c.Objects[2].(*widget.Check).Bind(newEnableBind(ui, tm, ui.startEnableDisableCallback))
 				}
 			}
 		})
@@ -129,7 +130,7 @@ func (ui *localUI) Draw(w fyne.Window) {
 		if i, ok := cw.GetValueFromDataItem(data); ok {
 			ui.selectedMod = i.(mods.TrackedMod)
 			removeButton.Enable()
-			ui.split.Trailing = container.NewCenter(widget.NewLabel("Loading..."))
+			ui.split.Trailing = container.NewCenter(widget.NewLabel(""))
 			ui.split.Refresh()
 			ui.split.Trailing = mp.CreatePreview(ui.selectedMod.Mod(), mp.ModPreviewOptions{
 				UpdateCallback: func(tm mods.TrackedMod) {
@@ -245,20 +246,6 @@ func (ui *localUI) startEnableDisableCallback() bool {
 	return ui.workingDialog == nil
 }
 
-func (ui *localUI) showWorkingDialog() {
-	if ui.workingDialog == nil {
-		ui.workingDialog = dialog.NewInformation("Working", "Working...", u.Window)
-		ui.workingDialog.Show()
-	}
-}
-
-func (ui *localUI) hideDialog() {
-	if ui.workingDialog != nil {
-		ui.workingDialog.Hide()
-		ui.workingDialog = nil
-	}
-}
-
 /*func (ui *localUI) endEnableDisableCallback(result mods.Result, err ...error) {
 	if ui.workingDialog != nil {
 		ui.workingDialog.Hide()
@@ -275,22 +262,17 @@ func (ui *localUI) hideDialog() {
 }*/
 
 func (ui *localUI) updateMod(tm mods.TrackedMod) {
-	if action, err := actions.New(actions.Update, actions.Params{
-		Game: state.CurrentGame,
-		Mod:  tm,
-		WorkingDialog: actions.WorkingDialog{
-			Show: ui.showWorkingDialog,
-			Hide: ui.hideDialog,
-		},
-	}, nil); err != nil {
+	working.ShowDialog()
+	if action, err := actions.New(actions.Update, state.CurrentGame, tm, func() {
+		working.HideDialog()
+		tm.SetDisplayName(string(tm.Mod().Name))
+		ui.split.Leading.Refresh()
+	}); err != nil {
+		working.HideDialog()
 		util.ShowErrorLong(err)
 	} else if err = action.Run(); err != nil {
+		working.HideDialog()
 		util.ShowErrorLong(err)
-	} else {
-		tm.SetDisplayName(string(tm.Mod().Name))
 	}
-	/*if err := managed.UpdateMod(state.CurrentGame, tm); err != nil {
-		util.ShowErrorLong(err)
-	}*/
 	ui.split.Leading.Refresh()
 }

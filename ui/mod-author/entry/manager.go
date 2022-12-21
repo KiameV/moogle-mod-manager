@@ -66,7 +66,7 @@ func NewEntry[T any](m Manager, kind Kind, key string, value any) Entry[T] {
 		case KindBool:
 			e = newBoolFormEntry(key, value)
 		case KindString:
-			e = newStringFormEntry(key, value)
+			e = NewStringFormEntry(key, value)
 		case KindMultiLine:
 			e = newMultiLineFormEntry(key, value)
 		default:

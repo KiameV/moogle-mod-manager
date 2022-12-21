@@ -321,6 +321,7 @@ func (a *ModAuthorer) updateEntries(mod *mods.Mod) {
 	*a.kind = mod.ModKind.Kind
 	entry.CreateBaseDir(a, state.GetBaseDirBinding())
 	a.modID = mod.ModID
+	entry.NewEntry[bool](a, entry.KindBool, "Hide", mod.Hide)
 	entry.NewEntry[string](a, entry.KindString, "Name", string(mod.Name))
 	entry.NewEntry[string](a, entry.KindString, "Author", mod.Author)
 	entry.NewEntry[string](a, entry.KindString, "Release Date", mod.ReleaseDate)
@@ -416,6 +417,7 @@ func (a *ModAuthorer) Marshal(mod *mods.Mod, as As) (b []byte, err error) {
 
 func (a *ModAuthorer) compileMod() (m *mods.Mod, err error) {
 	m = mods.NewMod(&mods.ModDef{
+		Hide:         entry.Value[bool](a, "Hide"),
 		Name:         mods.ModName(entry.Value[string](a, "Name")),
 		Author:       entry.Value[string](a, "Author"),
 		ReleaseDate:  entry.Value[string](a, "Release Date"),
@@ -518,6 +520,13 @@ func (a *ModAuthorer) submitForReview() {
 		util.ShowErrorLong(err)
 		return
 	}*/
+
+	mod.Description = ""
+	mod.Preview = nil
+	mod.Category = ""
+	mod.Downloadables = nil
+	mod.AlwaysDownload = nil
+	mod.Configurations = nil
 
 	if pr, err = repo.NewCommitter(mod).Submit(); err != nil {
 		util.ShowErrorLong(err)
@@ -634,6 +643,7 @@ func (a *ModAuthorer) createHostedInputs() *container.AppTabs {
 func (a *ModAuthorer) createRemoteInputs() *container.AppTabs {
 	var entries = []*widget.FormItem{
 		entry.GetBaseDirFormItem(a, "Working Dir"),
+		entry.FormItem[bool](a, "Hide"),
 		entry.FormItem[string](a, "Name"),
 		a.categorySelect.FormItem(),
 		//a.GetFormItem("Select Type"),

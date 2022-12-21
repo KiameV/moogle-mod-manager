@@ -17,7 +17,7 @@ func newBoolFormEntry(key string, value any) Entry[bool] {
 		checked: value.(bool),
 	}
 	e.bind = binding.BindBool(&e.checked)
-	e.entry = widget.NewCheckWithData(key, e.bind)
+	e.entry = widget.NewCheckWithData("", e.bind)
 	e.fi = widget.NewFormItem(key, e.entry)
 	return e
 }

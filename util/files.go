@@ -17,7 +17,7 @@ func FileExists(file string) bool {
 }
 
 func CreateFileName(s string) string {
-	if reg, err := regexp.Compile("[^a-zA-Z0-9]+"); err == nil {
+	if reg, err := regexp.Compile("[^a-zA-Z0-9_]+"); err == nil {
 		s = strings.TrimSpace(reg.ReplaceAllString(s, ""))
 		if len(s) > 0 {
 			return s
@@ -67,6 +67,22 @@ func SaveToFile(file string, i interface{}, endFileChar ...byte) (err error) {
 	}
 	if _, err = f.Write(b); err != nil {
 		return fmt.Errorf("failed to write %s: %v", file, err)
+	}
+	return
+}
+
+func MoveFile(from, to string) (err error) {
+	var b []byte
+	if err = os.Rename(from, to); err != nil {
+		if b, err = os.ReadFile(from); err != nil {
+			return
+		}
+		if err = os.WriteFile(to, b, 0755); err != nil {
+			_ = os.Remove(to)
+			return
+		} else {
+			_ = os.Remove(from)
+		}
 	}
 	return
 }
