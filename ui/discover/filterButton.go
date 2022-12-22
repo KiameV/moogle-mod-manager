@@ -9,8 +9,8 @@ import (
 type supportedKind string
 
 const (
-	unsupported supportedKind = "Unverified"
-	supported   supportedKind = "Verified"
+	unsupported supportedKind = "Unsupported"
+	supported   supportedKind = "Supported"
 	all         supportedKind = "All"
 )
 
