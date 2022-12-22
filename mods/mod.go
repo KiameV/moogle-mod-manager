@@ -71,30 +71,45 @@ var Categories = []string{
 	string(Utility),
 }
 
-type ModDef struct {
-	ModID               ModID               `json:"ID" xml:"ID"`
-	Name                ModName             `json:"Name" xml:"Name"`
-	Author              string              `json:"Author" xml:"Author"`
-	AuthorLink          string              `json:"AuthorLink" xml:"AuthorLink"`
-	ReleaseDate         string              `json:"ReleaseDate" xml:"ReleaseDate"`
-	Category            Category            `json:"Category" xml:"Category"`
-	Description         string              `json:"Description" xml:"Description"`
-	ReleaseNotes        string              `json:"ReleaseNotes" xml:"ReleaseNotes"`
-	Link                string              `json:"Link" xml:"Link"`
-	Version             string              `json:"Version" xml:"Version"`
-	InstallType_        *config.InstallType `json:"InstallType,omitempty" xml:"InstallType,omitempty"`
-	Preview             *Preview            `json:"Preview,omitempty" xml:"Preview,omitempty"`
-	ModKind             ModKind             `json:"ModKind" xml:"ModKind"`
-	ModCompatibility    *ModCompatibility   `json:"Compatibility,omitempty" xml:"ModCompatibility,omitempty"`
-	Downloadables       []*Download         `json:"Downloadable" xml:"Downloadables"`
-	DonationLinks       []*DonationLink     `json:"DonationLink" xml:"DonationLinks"`
-	Games               []*Game             `json:"Games" xml:"Games"`
-	AlwaysDownload      []*DownloadFiles    `json:"AlwaysDownload,omitempty" xml:"AlwaysDownload,omitempty"`
-	Configurations      []*Configuration    `json:"Configuration,omitempty" xml:"Configurations,omitempty"`
-	ConfigSelectionType SelectType          `json:"ConfigSelectionType" xml:"ConfigSelectionType"`
-	Hide                bool                `json:"Hide" xml:"Hide"`
-	IsManuallyCreated   bool                `json:"IsManuallyCreated" xml:"IsManuallyCreated"`
-}
+const (
+	BugKindCosmetic Kind = "Cosmetic"
+	BugKindAnnoying Kind = "Annoying"
+	BugKindCrash    Kind = "Critical"
+)
+
+type (
+	BugKind   string
+	BugReport struct {
+		Kind        BugKind `json:"Kind" xml:"Kind"`
+		Description string  `json:"Description" xml:"Description"`
+	}
+	ModDef struct {
+		ModID               ModID               `json:"ID" xml:"ID"`
+		Name                ModName             `json:"Name" xml:"Name"`
+		Author              string              `json:"Author" xml:"Author"`
+		AuthorLink          string              `json:"AuthorLink" xml:"AuthorLink"`
+		ReleaseDate         string              `json:"ReleaseDate" xml:"ReleaseDate"`
+		Category            Category            `json:"Category" xml:"Category"`
+		Description         string              `json:"Description" xml:"Description"`
+		ReleaseNotes        string              `json:"ReleaseNotes" xml:"ReleaseNotes"`
+		Link                string              `json:"Link" xml:"Link"`
+		Version             string              `json:"Version" xml:"Version"`
+		InstallType_        *config.InstallType `json:"InstallType,omitempty" xml:"InstallType,omitempty"`
+		Preview             *Preview            `json:"Preview,omitempty" xml:"Preview,omitempty"`
+		ModKind             ModKind             `json:"ModKind" xml:"ModKind"`
+		ModCompatibility    *ModCompatibility   `json:"Compatibility,omitempty" xml:"ModCompatibility,omitempty"`
+		Downloadables       []*Download         `json:"Downloadable" xml:"Downloadables"`
+		DonationLinks       []*DonationLink     `json:"DonationLink" xml:"DonationLinks"`
+		Games               []*Game             `json:"Games" xml:"Games"`
+		AlwaysDownload      []*DownloadFiles    `json:"AlwaysDownload,omitempty" xml:"AlwaysDownload,omitempty"`
+		Configurations      []*Configuration    `json:"Configuration,omitempty" xml:"Configurations,omitempty"`
+		ConfigSelectionType SelectType          `json:"ConfigSelectionType" xml:"ConfigSelectionType"`
+		Hide                bool                `json:"Hide" xml:"Hide"`
+		VerifiedAsWorking   bool                `json:"VerifiedAsWorking" xml:"VerifiedAsWorking"`
+		Bugs                []BugReport         `json:"Bugs,omitempty" xml:"Bugs,omitempty"`
+		IsManuallyCreated   bool                `json:"IsManuallyCreated" xml:"IsManuallyCreated"`
+	}
+)
 
 func NewMod(def *ModDef) *Mod {
 	return &Mod{ModDef: def}
