@@ -8,6 +8,7 @@ import (
 	u "net/url"
 	"os"
 	"strings"
+	"sync"
 )
 
 const (
@@ -55,45 +56,67 @@ var games = []game{
 }
 
 func GetFileContents(apiKey string) (string, error) {
-	return "", nil
+	var wg sync.WaitGroup
 	for z, g := range games {
-		fo, _ := os.Create(fmt.Sprintf("%d-output.txt", z+1))
-		for i := 1; i < 60; i++ {
-			var fs filesResp
-			url := strings.Replace(getFilesUrl, ":1", g.path, 1)
-			url = strings.Replace(url, ":2", fmt.Sprintf("%d", i), 1)
-			if err := sendRequest(apiKey, url, &fs); err != nil {
+		wg.Add(1)
+		go func(i int, ga game) {
+			defer wg.Done()
+			getGameFiles(apiKey, i, ga)
+		}(z+1, g)
+	}
+	wg.Wait()
+	return "", nil
+}
+
+func getGameFiles(apiKey string, i int, g game) error {
+	sfo, _ := os.Create(fmt.Sprintf("%d-single-easy-output.txt", i))
+	sofo, _ := os.Create(fmt.Sprintf("%d-single-other-output.txt", i))
+	mffo, _ := os.Create(fmt.Sprintf("%d-multifile-output.txt", i))
+	for i := 1; i < 60; i++ {
+		var fs filesResp
+		url := strings.Replace(getFilesUrl, ":1", g.path, 1)
+		url = strings.Replace(url, ":2", fmt.Sprintf("%d", i), 1)
+		if err := sendRequest(apiKey, url, &fs); err != nil {
+			fmt.Println(fmt.Sprintf("error: %s: %v", url, err))
+			continue
+		}
+		var fullSb strings.Builder
+		fullSb.WriteString(fmt.Sprintf("ID %d\n", i))
+		easy := false
+		for _, fl := range fs.Files {
+			fullSb.WriteString(fmt.Sprintf("- File: %s\n", fl.Name))
+			url = fmt.Sprintf(getStructureUrl, g.id, fmt.Sprintf("%d", i), u.QueryEscape(fs.Files[0].Name))
+			var dlf dlFiles
+			if err := sendRequest(apiKey, url, &dlf); err != nil {
+				fmt.Println(fmt.Sprintf("error: %s: %v", url, err))
 				continue
 			}
-			if len(fs.Files) == 1 {
-				url = fmt.Sprintf(getStructureUrl, g.id, fmt.Sprintf("%d", i), u.QueryEscape(fs.Files[0].Name))
-				var dlf dlFiles
-				if err := sendRequest(apiKey, url, &dlf); err != nil {
-					continue
-				}
-				var fs []string
-				compileFiles(dlf, &fs)
-				for _, f := range fs {
-					if strings.HasPrefix(f, "FINAL FANTASY") ||
-						strings.Contains(f, "StandaloneWindows") ||
-						strings.Contains(f, "/StreamingAssets") ||
-						strings.Contains(f, "/FINAL FANTASY") {
-						var sb strings.Builder
-						sb.WriteString(fmt.Sprintf("ID %d\n", i))
-						for _, f := range fs {
-							sb.WriteString("- ")
-							sb.WriteString(f)
-							sb.WriteString("\n")
-						}
-						fo.WriteString(sb.String())
-						break
-					}
+			var fs []string
+			compileFiles(dlf, &fs)
+			for _, f := range fs {
+				fullSb.WriteString(fmt.Sprintf("  - %s\n", f))
+				if strings.HasPrefix(f, "FINAL FANTASY") ||
+					strings.Contains(f, "StandaloneWindows") ||
+					strings.Contains(f, "/StreamingAssets") ||
+					strings.Contains(f, "/FINAL FANTASY") {
+					easy = true
 				}
 			}
 		}
-		fo.Close()
+		if len(fs.Files) == 0 {
+			if easy {
+				sfo.WriteString(fullSb.String())
+			} else {
+				sofo.WriteString(fullSb.String())
+			}
+		} else {
+			mffo.WriteString(fullSb.String())
+		}
 	}
-	return "", nil
+	sfo.Close()
+	sofo.Close()
+	mffo.Close()
+	return nil
 }
 
 func sendRequest(apiKey, url string, to any) error {
@@ -131,5 +154,5 @@ func compileFiles(dlf dlFiles, files *[]string) {
 }
 
 func main() {
-	GetFileContents(os.Getenv("apikey"))
+	//GetFileContents(os.Getenv("apikey"))
 }
