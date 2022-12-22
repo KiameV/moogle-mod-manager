@@ -84,7 +84,7 @@ func (ui *configInstallerUI) Draw(w fyne.Window) {
 			ui.prevConfigs = append(ui.prevConfigs, ui.currentConfig)
 			ui.toInstall = append(ui.toInstall, ui.currentChoice.DownloadFiles)
 			if ui.currentChoice.NextConfigurationName == nil {
-				tis, err := mods.NewToInstallForMod(ui.mod.ModKind.Kind, ui.mod, ui.toInstall)
+				tis, err := mods.NewToInstallForMod(ui.mod.ModKind.Kind, ui.mod, ui.uniqueToInstall())
 				if err != nil {
 					util.ShowErrorLong(err)
 					state.ShowPreviousScreen()
@@ -177,4 +177,18 @@ func (ui *configInstallerUI) popChoice() (c *mods.Configuration) {
 	ui.prevConfigs[l] = nil
 	ui.prevConfigs = ui.prevConfigs[:l]
 	return
+}
+
+func (ui *configInstallerUI) uniqueToInstall() []*mods.DownloadFiles {
+	l := make(map[string]*mods.DownloadFiles)
+	for _, df := range ui.toInstall {
+		if df.DownloadName != "" {
+			l[df.DownloadName] = df
+		}
+	}
+	result := make([]*mods.DownloadFiles, 0, len(l))
+	for _, df := range l {
+		result = append(result, df)
+	}
+	return result
 }

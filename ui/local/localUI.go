@@ -214,6 +214,7 @@ func (ui *localUI) removeSelectedMod() {
 		util.ShowErrorLong(err)
 		return
 	}
+	_ = managed.Save()
 	for i, m := range ui.mods {
 		if m == ui.selectedMod {
 			ui.mods = append(ui.mods[:i], ui.mods[i+1:]...)

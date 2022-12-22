@@ -294,8 +294,10 @@ func (a *ModAuthorer) Draw(w fyne.Window) {
 			if len(a.configsDef.list.Items) == 0 {
 				util.DisplayDownloadsAndFiles(tis)
 			} else {
-				if err = state.GetScreen(state.ConfigInstaller).(config_installer.ConfigInstaller).Setup(mod, state.GetBaseDir(), func(_ mods.Result, tis []*mods.ToInstall) error {
-					util.DisplayDownloadsAndFiles(tis)
+				if err = state.GetScreen(state.ConfigInstaller).(config_installer.ConfigInstaller).Setup(mod, state.GetBaseDir(), func(r mods.Result, tis []*mods.ToInstall) error {
+					if r == mods.Ok && len(tis) > 0 {
+						util.DisplayDownloadsAndFiles(tis)
+					}
 					return nil
 				}); err != nil {
 					util.ShowErrorLong(err)

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/kiamev/moogle-mod-manager/config"
+	"github.com/kiamev/moogle-mod-manager/discover"
 	"github.com/kiamev/moogle-mod-manager/downloads"
 	"github.com/kiamev/moogle-mod-manager/files"
 	"github.com/kiamev/moogle-mod-manager/files/archive"
@@ -57,11 +58,20 @@ func VerifyEnable(state *State) (mods.Result, error) {
 		}
 		if len(c.Requires) > 0 {
 			for _, mc = range c.Requires {
+				var name string
 				mod, found, enabled = managed.IsModEnabled(state.Game, mc.ModID())
-				if !found {
-					return mods.Error, fmt.Errorf("[%s] cannot be enabled because [%s] is not enabled", tm.DisplayName(), mc.ModID())
-				} else if !enabled {
-					return mods.Error, fmt.Errorf("[%s] cannot be enabled because [%s] is not enabled", tm.DisplayName(), mod.DisplayName())
+				if !enabled {
+					if !found || mod == nil {
+						name, _ = discover.GetDisplayName(state.Game, mc.ModID())
+					}
+					if name == "" {
+						if mod != nil {
+							name = mod.DisplayName()
+						} else {
+							name = string(mc.ModID())
+						}
+					}
+					return mods.Error, fmt.Errorf("[%s] cannot be enabled because [%s] is not enabled", tm.DisplayName(), name)
 				}
 			}
 		}

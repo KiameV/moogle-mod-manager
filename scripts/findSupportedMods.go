@@ -103,7 +103,7 @@ func getGameFiles(apiKey string, i int, g game) error {
 				}
 			}
 		}
-		if len(fs.Files) == 0 {
+		if len(fs.Files) == 1 {
 			if easy {
 				sfo.WriteString(fullSb.String())
 			} else {

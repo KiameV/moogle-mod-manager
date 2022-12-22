@@ -59,6 +59,7 @@ var Categories = []string{
 	string(EnemySprite),
 	string(GameOverhauls),
 	string(Gameplay),
+	string(Fonts),
 	string(PlayerNpcSprites),
 	string(ScriptText),
 	string(Soundtrack),
