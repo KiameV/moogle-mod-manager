@@ -76,7 +76,7 @@ func (e *Extracted) Compile(game config.GameDef, extractedDir string) (err error
 	}
 
 	for _, f := range e.Files {
-		fromToExtracted[f.Relative] = f
+		fromToExtracted[strings.ReplaceAll(f.Relative, "\\", "/")] = f
 	}
 	for _, df := range e.ToInstall.DownloadFiles {
 		for _, f := range df.Files {
@@ -104,6 +104,7 @@ func (e *Extracted) Compile(game config.GameDef, extractedDir string) (err error
 				if de.IsDir() {
 					return nil
 				}
+				path = filepath.ToSlash(path)
 				if rel, err = filepath.Rel(extractedDir, path); err != nil {
 					return err
 				}

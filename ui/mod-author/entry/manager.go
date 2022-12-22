@@ -29,6 +29,9 @@ type (
 		Value() T
 		FormItem() *widget.FormItem
 	}
+	valuer[T any] interface {
+		Value() T
+	}
 )
 
 const (
@@ -97,11 +100,14 @@ func NewEntry[T any](m Manager, kind Kind, key string, value T) Entry[T] {
 	return e.(Entry[T])
 }
 
-func NewSelectEntry(m Manager, key string, value any, possible []string) Entry[string] {
+func NewSelectEntry(m Manager, key string, value string, possible []string) Entry[string] {
 	e, found := m.get(key)
 	if !found {
-		e = newSelectFormEntry(key, value, possible)
+		e = NewSelectFormEntry(key, value, possible)
 		m.set(key, e)
+	} else {
+		e.(*SelectFormEntry).Entry.Options = possible
+		e.(*SelectFormEntry).selected = value
 	}
 	return e.(Entry[string])
 }

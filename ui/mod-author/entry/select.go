@@ -5,54 +5,60 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-type selectFormEntry struct {
-	entry    *widget.Select
+type SelectFormEntry struct {
+	Entry    *widget.Select
 	fi       *widget.FormItem
 	selected string
 	bind     binding.String
 }
 
-func newSelectFormEntry(key string, value any, possible []string) Entry[string] {
-	e := &selectFormEntry{
+func NewSelectFormEntry(key string, value any, possible []string) Entry[string] {
+	e := &SelectFormEntry{
 		selected: value.(string),
 	}
 	e.bind = binding.BindString(&e.selected)
 	e.bind.AddListener(e)
-	e.entry = widget.NewSelect(possible, func(s string) {
+	e.Entry = widget.NewSelect(possible, func(s string) {
 		_ = e.bind.Set(s)
 	})
-	e.fi = widget.NewFormItem(key, e.entry)
+	e.fi = widget.NewFormItem(key, e.Entry)
 	return e
 }
 
-func (e *selectFormEntry) Enable(enable bool) {
+func (e *SelectFormEntry) Enable(enable bool) {
 	if enable {
-		e.entry.Enable()
+		e.Entry.Enable()
 	} else {
-		e.entry.Disable()
+		e.Entry.Disable()
 	}
 }
 
-func (e *selectFormEntry) Binding() binding.DataItem {
+func (e *SelectFormEntry) Binding() binding.DataItem {
 	return e.bind
 }
 
-func (e *selectFormEntry) Set(value string) {
+func (e *SelectFormEntry) Set(value string) {
 	_ = e.bind.Set(value)
 }
 
-func (e *selectFormEntry) Value() string {
+func (e *SelectFormEntry) Value() string {
 	return e.selected
 }
 
-func (e *selectFormEntry) DataChanged() {
+func (e *SelectFormEntry) DataChanged() {
 	if v, err := e.bind.Get(); err == nil {
-		if e.entry.Selected != v {
-			e.entry.Selected = v
+		if e.Entry.Selected != v {
+			e.Entry.Selected = v
 		}
 	}
 }
 
-func (e *selectFormEntry) FormItem() *widget.FormItem {
+func (e *SelectFormEntry) FormItem() *widget.FormItem {
 	return e.fi
+}
+
+func (e *SelectFormEntry) Clear() {
+	var s []string
+	e.Entry.Options = s
+	e.Entry.Selected = ""
 }

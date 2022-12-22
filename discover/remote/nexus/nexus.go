@@ -200,7 +200,7 @@ func toMod(n nexusMod, dls []NexusFile) (include bool, mod *mods.Mod, err error)
 		Version:      n.Version,
 		Author:       n.Author,
 		AuthorLink:   n.AuthorLink,
-		Description:  bbcodeRegex.ReplaceAllString(n.Description, ""),
+		Description:  bbcodeRegex.ReplaceAllString(n.Summary, ""),
 		Category:     "",
 		ReleaseDate:  n.CreatedTime.Format("Jan 2, 2006"),
 		ReleaseNotes: "",
