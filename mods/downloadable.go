@@ -44,10 +44,10 @@ type CurseForgeDownloadable struct {
 	Url string `json:"Url"`
 }
 
-func (l *ArchiveLocation) ExtractDir() string {
+func (l *ArchiveLocation) ExtractDir(fileName string) string {
 	s := config.PWD
 	if l != nil {
 		s = filepath.Dir(string(*l))
 	}
-	return filepath.Join(s, "extracted")
+	return filepath.Join(s, "extracted", fileName)
 }

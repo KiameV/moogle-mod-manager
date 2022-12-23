@@ -10,20 +10,7 @@ import (
 type directMover struct{}
 
 func (*directMover) CompileFilesToMove(dir string) (files []string, err error) {
-	// Walk the destination directory tree
-	err = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		// Skip directories
-		if info.IsDir() {
-			return nil
-		}
-		// Add the file to the list of files to move
-		files = append(files, path)
-		return nil
-	})
-	return
+	return compileFlatFilesToMove(dir)
 }
 
 func (d *directMover) MoveFiles(files []string, from, destination, backupDir string) (backups []string, err error) {

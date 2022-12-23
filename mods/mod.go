@@ -214,8 +214,9 @@ type Game struct {
 type DownloadFiles struct {
 	DownloadName string `json:"DownloadName" xml:"DownloadName"`
 	// IsInstallAll is used by nexus mods when a mod.xml is not used
-	Files []*ModFile `json:"File,omitempty" xml:"Files,omitempty"`
-	Dirs  []*ModDir  `json:"Dir,omitempty" xml:"Dirs,omitempty"`
+	Files   []*ModFile `json:"File,omitempty" xml:"Files,omitempty"`
+	Dirs    []*ModDir  `json:"Dir,omitempty" xml:"Dirs,omitempty"`
+	Archive *string    `json:"Archive,omitempty" xml:"Archive,omitempty"`
 }
 
 func (f *DownloadFiles) IsEmpty() bool {
@@ -223,16 +224,14 @@ func (f *DownloadFiles) IsEmpty() bool {
 }
 
 type ModFile struct {
-	From    string  `json:"From" xml:"From"`
-	To      string  `json:"To" xml:"To"`
-	Archive *string `json:"Archive,omitempty" xml:"Archive,omitempty"`
+	From string `json:"From" xml:"From"`
+	To   string `json:"To" xml:"To"`
 }
 
 type ModDir struct {
-	From      string  `json:"From" xml:"From"`
-	To        string  `json:"To" xml:"To"`
-	Recursive bool    `json:"Recursive" xml:"Recursive"`
-	Archive   *string `json:"Archive,omitempty" xml:"Archive,omitempty"`
+	From      string `json:"From" xml:"From"`
+	To        string `json:"To" xml:"To"`
+	Recursive bool   `json:"Recursive" xml:"Recursive"`
 }
 
 type Configuration struct {

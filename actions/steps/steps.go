@@ -108,11 +108,8 @@ func PreDownload(state *State) (result mods.Result, err error) {
 		mod = state.Mod.Mod()
 		wg  sync.WaitGroup
 	)
-	if state.ToInstall, err = mods.NewToInstallForMod(mod.Kind(), mod, mod.AlwaysDownload); err != nil {
-		return mods.Error, err
-	}
-	// Handle any mod configurations
 	if len(mod.Configurations) > 0 {
+		// Handle any mod configurations
 		wg.Add(1)
 		modPath := filepath.Join(config.Get().GetModsFullPath(state.Game), mod.ID().AsDir())
 		if err = ui.GetScreen(ui.ConfigInstaller).(ci.ConfigInstaller).Setup(mod, modPath, func(r mods.Result, ti []*mods.ToInstall) error {
@@ -129,6 +126,11 @@ func PreDownload(state *State) (result mods.Result, err error) {
 		ui.ShowScreen(ui.ConfigInstaller)
 		wg.Wait()
 		time.Sleep(100 * time.Millisecond)
+	} else {
+		// No configurations, just handle the allways install
+		if state.ToInstall, err = mods.NewToInstallForMod(mod.Kind(), mod, mod.AlwaysDownload); err != nil {
+			return mods.Error, err
+		}
 	}
 
 	if result == mods.Cancel || result == mods.Error {
@@ -176,7 +178,7 @@ func Extract(state *State) (mods.Result, error) {
 				return mods.Error, err
 			}
 		} else {
-			to = ti.Download.DownloadedArchiveLocation.ExtractDir()
+			to = ti.Download.DownloadedArchiveLocation.ExtractDir(ti.Download.Name)
 		}
 		if state.Mod.InstallType(state.Game) == config.ImmediateDecompress {
 			if to, err = config.Get().GetDir(state.Game, config.GameDirKind); err != nil {
@@ -258,14 +260,19 @@ func Conflicts(state *State) (result mods.Result, err error) {
 	return result, nil
 }
 
-func Install(state *State) (mods.Result, error) {
-	var (
-		backupDir string
-		err       error
-	)
+func Install(state *State) (result mods.Result, err error) {
+	var backupDir string
 	if backupDir, err = config.Get().GetDir(state.Game, config.BackupDirKind); err != nil {
 		return mods.Error, err
 	}
+	if result, err = install(state, backupDir); err != nil {
+		_, _ = UninstallMove(state)
+	}
+	return
+}
+
+func install(state *State, backupDir string) (mods.Result, error) {
+	var err error
 	switch state.Mod.InstallType(state.Game) {
 	case config.Move:
 		for _, e := range state.ExtractedFiles {
@@ -313,7 +320,6 @@ func Install(state *State) (mods.Result, error) {
 	default:
 		return mods.Error, fmt.Errorf("unknown install type: %v", state.Mod.InstallType(state.Game))
 	}
-
 	return mods.Ok, nil
 }
 
@@ -332,9 +338,10 @@ func UninstallMove(state *State) (mods.Result, error) {
 		return mods.Error, err
 	}
 	for _, f := range i.Keys() {
-		if err = os.Remove(f); err != nil {
-			return mods.Error, err
-		}
+		//if err = os.Remove(f); err != nil {
+		//	return mods.Error, err
+		//}
+		_ = os.Remove(f)
 		files.RemoveFiles(state.Game, state.Mod.ID(), f)
 
 		if rel, err = filepath.Rel(gameDir, f); err != nil {
@@ -382,7 +389,7 @@ func PostInstall(state *State) (mods.Result, error) {
 	for _, ti := range state.ToInstall {
 		l := ti.Download.DownloadedArchiveLocation
 		if l != nil {
-			_ = os.RemoveAll(ti.Download.DownloadedArchiveLocation.ExtractDir())
+			_ = os.RemoveAll(ti.Download.DownloadedArchiveLocation.ExtractDir(""))
 			if config.Get().DeleteDownloadAfterInstall {
 				_ = os.Remove(string(*l))
 			}
