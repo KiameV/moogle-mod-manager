@@ -6,6 +6,7 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
+	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	cw "github.com/kiamev/moogle-mod-manager/ui/custom-widgets"
 	"github.com/kiamev/moogle-mod-manager/ui/mod-author/entry"
@@ -15,12 +16,14 @@ import (
 
 type filesDef struct {
 	entry.Manager
-	list *cw.DynamicList
+	list        *cw.DynamicList
+	installType *config.InstallType
 }
 
-func newFilesDef() *filesDef {
+func newFilesDef(installType *config.InstallType) *filesDef {
 	d := &filesDef{
-		Manager: entry.NewManager(),
+		Manager:     entry.NewManager(),
+		installType: installType,
 	}
 	d.list = cw.NewDynamicList(cw.Callbacks{
 		GetItemKey:    d.getItemKey,
@@ -31,11 +34,11 @@ func newFilesDef() *filesDef {
 }
 
 func (d *filesDef) compile() []*mods.ModFile {
-	downloads := make([]*mods.ModFile, len(d.list.Items))
+	dl := make([]*mods.ModFile, len(d.list.Items))
 	for i, item := range d.list.Items {
-		downloads[i] = item.(*mods.ModFile)
+		dl[i] = item.(*mods.ModFile)
 	}
-	return downloads
+	return dl
 }
 
 func (d *filesDef) getItemKey(item interface{}) string {
@@ -59,20 +62,37 @@ func (d *filesDef) createItem(item interface{}, done ...func(interface{})) {
 	f := item.(*mods.ModFile)
 	entry.CreateFileDialog(d, "From", f.From, state.GetBaseDirBinding(), false, true)
 	entry.NewEntry[string](d, entry.KindString, "To FF PR/", f.To)
+	s := ""
+	if f.ToArchive != nil {
+		s = *f.ToArchive
+	}
+	entry.NewEntry[string](d, entry.KindString, "To Archive", s)
 
-	fd := dialog.NewForm("Edit File Copy", "Save", "Cancel", []*widget.FormItem{
+	items := []*widget.FormItem{
 		entry.GetFileDialog(d, "From"),
 		entry.FormItem[string](d, "To FF PR/"),
-	}, func(ok bool) {
-		if ok {
-			f.From = cleanPath(entry.DialogValue(d, "From"))
-			f.To = cleanPath(entry.Value[string](d, "To FF PR/"))
-			if len(done) > 0 {
-				done[0](f)
+	}
+
+	if d.installType.Is(config.MoveToArchive) {
+		items = append(items, entry.FormItem[string](d, "To Archive"))
+	}
+
+	fd := dialog.NewForm("Edit File Copy", "Save", "Cancel", items,
+		func(ok bool) {
+			if ok {
+				f.From = cleanPath(entry.DialogValue(d, "From"))
+				f.To = cleanPath(entry.Value[string](d, "To FF PR/"))
+				if s = entry.Value[string](d, "To Archive"); s == "" {
+					f.ToArchive = nil
+				} else {
+					f.ToArchive = &s
+				}
+				if len(done) > 0 {
+					done[0](f)
+				}
+				d.list.Refresh()
 			}
-			d.list.Refresh()
-		}
-	}, ui.Window)
+		}, ui.Window)
 	fd.Resize(fyne.NewSize(600, 400))
 	fd.Show()
 }

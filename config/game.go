@@ -126,10 +126,10 @@ func (g *gameDef) SetInstallDir(dir string) {
 
 const (
 	StreamingAssetsDir = "StreamingAssets"
+)
 
-	//Bundles  InstallType = "Bundles"
-	// DLL Patcher https://discord.com/channels/371784427162042368/518331294858608650/863930606446182420
-	//DllPatch   InstallType = "DllPatch"
+const (
+	BlankInstallType    InstallType = ""
 	MoveToArchive       InstallType = "MoveToArchive"
 	Move                InstallType = "Move"
 	ImmediateDecompress InstallType = "ImmediateDecompress"

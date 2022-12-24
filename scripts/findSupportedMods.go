@@ -1,6 +1,7 @@
 package main
 
 import (
+	"archive/zip"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -155,4 +156,40 @@ func compileFiles(dlf dlFiles, files *[]string) {
 
 func main() {
 	//GetFileContents(os.Getenv("apikey"))
+	f, err := os.OpenFile("a.zip", os.O_WRONLY|os.O_CREATE, 0755)
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+	zipWriter := zip.NewWriter(f)
+	defer zipWriter.Close()
+
+	info, err := os.Lstat(`C:\Users\travis\workspace\moogle-mod-manager\scripts\test.txt`)
+	if err != nil {
+		panic(err)
+	}
+	fi, err := os.ReadFile(`C:\Users\travis\workspace\moogle-mod-manager\scripts\test.txt`)
+	if err != nil {
+		panic(err)
+	}
+
+	header, err := zip.FileInfoHeader(info)
+	if err != nil {
+		panic(err)
+	}
+	if _, err := zipWriter.CreateHeader(header); err != nil {
+		fmt.Println("collision")
+	} else if err != nil {
+		panic(err)
+	} else {
+		// File does not already exist in the zip. Add it to the zip.
+		wr, err := zipWriter.CreateHeader(header)
+		if err != nil {
+			panic(err)
+		}
+		_, err = wr.Write(fi)
+		if err != nil {
+			panic(err)
+		}
+	}
 }

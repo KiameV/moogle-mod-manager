@@ -5,6 +5,7 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
+	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	cw "github.com/kiamev/moogle-mod-manager/ui/custom-widgets"
 	"github.com/kiamev/moogle-mod-manager/ui/mod-author/entry"
@@ -19,10 +20,10 @@ type choicesDef struct {
 	previewDef *previewDef
 }
 
-func newChoicesDef(dlDef *downloads, configDef *configurationsDef) *choicesDef {
+func newChoicesDef(dlDef *downloads, configDef *configurationsDef, installType *config.InstallType) *choicesDef {
 	d := &choicesDef{
 		Manager:    entry.NewManager(),
-		dlfDef:     newDownloadFilesDef(dlDef),
+		dlfDef:     newDownloadFilesDef(dlDef, installType),
 		configDef:  configDef,
 		previewDef: newPreviewDef(),
 	}

@@ -2,6 +2,7 @@ package mod_author
 
 import (
 	"fyne.io/fyne/v2/widget"
+	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/ui/mod-author/entry"
 )
@@ -14,12 +15,12 @@ type downloadFilesDef struct {
 	dirs        *dirsDef
 }
 
-func newDownloadFilesDef(downloads *downloads) *downloadFilesDef {
+func newDownloadFilesDef(downloads *downloads, installType *config.InstallType) *downloadFilesDef {
 	d := &downloadFilesDef{
 		Manager:   entry.NewManager(),
 		downloads: downloads,
-		files:     newFilesDef(),
-		dirs:      newDirsDef(),
+		files:     newFilesDef(installType),
+		dirs:      newDirsDef(installType),
 	}
 	var i any = entry.NewSelectEntry(d, "Download Name", "", nil)
 	d.selectEntry = i.(*entry.SelectFormEntry)

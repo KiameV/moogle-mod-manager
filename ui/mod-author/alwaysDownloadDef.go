@@ -5,6 +5,7 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
+	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	cw "github.com/kiamev/moogle-mod-manager/ui/custom-widgets"
 	"github.com/kiamev/moogle-mod-manager/ui/mod-author/entry"
@@ -17,10 +18,10 @@ type alwaysDownloadDef struct {
 	downloadFilesDef *downloadFilesDef
 }
 
-func newAlwaysDownloadDef(downloads *downloads) *alwaysDownloadDef {
+func newAlwaysDownloadDef(downloads *downloads, installType *config.InstallType) *alwaysDownloadDef {
 	d := &alwaysDownloadDef{
 		Manager:          entry.NewManager(),
-		downloadFilesDef: newDownloadFilesDef(downloads),
+		downloadFilesDef: newDownloadFilesDef(downloads, installType),
 	}
 	d.list = cw.NewDynamicList(cw.Callbacks{
 		GetItemKey:    d.getItemKey,

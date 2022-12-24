@@ -37,10 +37,10 @@ func New() state.Screen {
 		Manager:      entry.NewManager(),
 		previewDef:   newPreviewDef(),
 		donationsDef: newDonationsDef(),
-		gamesDef:     newGamesDef(),
 		description:  newRichTextEditor(),
 		releaseNotes: newRichTextEditor(),
 	}
+	a.gamesDef = newGamesDef(a.gameAdded)
 	//a.modKindDef = newModKindDef(a.kind)
 	a.categorySelect = entry.NewSelectEntry(a, "Category", "", mods.Categories)
 
@@ -48,9 +48,12 @@ func New() state.Screen {
 	a.subKindSelect = entry.NewSelectEntry(a, "Kind", "", mods.SubKinds)
 	a.subKindSelect.Binding().AddListener(&subKindListener{author: a, entry: a.subKindSelect})
 
+	a.installTypeSelect = entry.NewSelectEntry(a, "Install Type", "", mods.InstallTypes)
+	a.installTypeSelect.Binding().AddListener(&installTypeListener{author: a, entry: a.installTypeSelect})
+
 	a.downloads = newDownloads(a.kind, a.subKindSelect)
-	a.alwaysDownload = newAlwaysDownloadDef(a.downloads)
-	a.configsDef = newConfigurationsDef(a.downloads)
+	a.alwaysDownload = newAlwaysDownloadDef(a.downloads, &a.installType)
+	a.configsDef = newConfigurationsDef(a.downloads, &a.installType)
 	a.version = entry.NewEntry[string](a, entry.KindString, "Version", "")
 	return a
 }
@@ -69,15 +72,18 @@ type ModAuthorer struct {
 	alwaysDownload *alwaysDownloadDef
 	configsDef     *configurationsDef
 
-	description    *richTextEditor
-	releaseNotes   *richTextEditor
-	categorySelect entry.Entry[string]
-	subKindSelect  entry.Entry[string]
-	version        entry.Entry[string]
+	description       *richTextEditor
+	releaseNotes      *richTextEditor
+	categorySelect    entry.Entry[string]
+	subKindSelect     entry.Entry[string]
+	version           entry.Entry[string]
+	installTypeSelect entry.Entry[string]
 
 	downloads *downloads
 
 	tabs *container.AppTabs
+
+	installType config.InstallType
 }
 
 func (a *ModAuthorer) PreDraw(fyne.Window, ...interface{}) error { return nil }
@@ -333,6 +339,17 @@ func (a *ModAuthorer) updateEntries(mod *mods.Mod) {
 	a.description.SetText(mod.Description)
 	a.releaseNotes.SetText(mod.ReleaseNotes)
 	entry.NewEntry[string](a, entry.KindString, "Link", mod.Link)
+
+	a.installType = config.BlankInstallType
+	if mod.InstallType_ == nil || a.installType == config.BlankInstallType {
+		for _, g := range mod.Games {
+			if game, err := config.GameDefFromID(g.ID); game != nil && err == nil {
+				a.installType = game.DefaultInstallType()
+			}
+		}
+	}
+	a.installTypeSelect.Set(string(a.installType))
+
 	//a.CreateFormSelect("Select Type", mods.SelectTypes, string(mod.ConfigSelectionType))
 
 	entry.NewEntry[string](a, entry.KindString, "Working Dir", config.PWD)
@@ -440,6 +457,10 @@ func (a *ModAuthorer) compileMod() (m *mods.Mod, err error) {
 		Games:               a.gamesDef.compile(),
 		IsManuallyCreated:   true,
 	})
+
+	if a.installType != config.BlankInstallType {
+		m.InstallType_ = &a.installType
+	}
 
 	if err = a.downloads.compile(m); err != nil {
 		return
@@ -623,6 +644,7 @@ func (a *ModAuthorer) createHostedInputs() *container.AppTabs {
 	entries = append(entries,
 		a.categorySelect.FormItem(),
 		a.version.FormItem(),
+		a.installTypeSelect.FormItem(),
 		entry.FormItem[string](a, "Release Date"),
 		entry.FormItem[string](a, "Link"))
 	entries = append(entries, a.previewDef.getFormItems()...)
@@ -645,6 +667,7 @@ func (a *ModAuthorer) createRemoteInputs() *container.AppTabs {
 		entry.FormItem[bool](a, "Hide"),
 		entry.FormItem[string](a, "Name"),
 		a.categorySelect.FormItem(),
+		a.installTypeSelect.FormItem(),
 		//a.GetFormItem("Select Type"),
 	}
 	entries = append(entries, a.previewDef.getFormItems()...)
@@ -661,16 +684,37 @@ func (a *ModAuthorer) createRemoteInputs() *container.AppTabs {
 		container.NewTabItem("Configurations", container.NewVScroll(a.configsDef.draw())))
 }
 
+func (a *ModAuthorer) gameAdded(id config.GameID) {
+	if a != nil && a.installType == config.BlankInstallType {
+		if game, err := config.GameDefFromID(id); game != nil && err == nil {
+			a.installType = game.DefaultInstallType()
+			a.installTypeSelect.Set(string(a.installType))
+		}
+	}
+}
+
 type subKindListener struct {
 	author *ModAuthorer
 	entry  entry.Entry[string]
 }
 
-func (s *subKindListener) DataChanged() {
-	if s.author == nil || s.author.downloads == nil || s.author.tabs == nil || s.author.version == nil {
+func (l *subKindListener) DataChanged() {
+	if l.author == nil || l.author.downloads == nil || l.author.tabs == nil || l.author.version == nil {
 		return
 	}
-	s.author.downloads.UpdateTab()
-	s.author.tabs.Refresh()
-	s.author.version.Enable(s.entry.Value() != string(mods.HostedGitHub))
+	l.author.downloads.UpdateTab()
+	l.author.tabs.Refresh()
+	l.author.version.Enable(l.entry.Value() != string(mods.HostedGitHub))
+}
+
+type installTypeListener struct {
+	author *ModAuthorer
+	entry  entry.Entry[string]
+}
+
+func (l *installTypeListener) DataChanged() {
+	if l.author == nil {
+		return
+	}
+	l.author.installType = config.InstallType(l.entry.Value())
 }

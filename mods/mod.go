@@ -214,24 +214,40 @@ type Game struct {
 type DownloadFiles struct {
 	DownloadName string `json:"DownloadName" xml:"DownloadName"`
 	// IsInstallAll is used by nexus mods when a mod.xml is not used
-	Files   []*ModFile `json:"File,omitempty" xml:"Files,omitempty"`
-	Dirs    []*ModDir  `json:"Dir,omitempty" xml:"Dirs,omitempty"`
-	Archive *string    `json:"Archive,omitempty" xml:"Archive,omitempty"`
+	Files []*ModFile `json:"File,omitempty" xml:"Files,omitempty"`
+	Dirs  []*ModDir  `json:"Dir,omitempty" xml:"Dirs,omitempty"`
 }
 
 func (f *DownloadFiles) IsEmpty() bool {
 	return len(f.Files) == 0 && len(f.Dirs) == 0
 }
 
+func (f *DownloadFiles) HasArchive() []string {
+	var s []string
+	for _, file := range f.Files {
+		if file.ToArchive == nil {
+			s = append(s, file.From)
+		}
+	}
+	for _, dir := range f.Dirs {
+		if dir.ToArchive == nil {
+			s = append(s, dir.From)
+		}
+	}
+	return s
+}
+
 type ModFile struct {
-	From string `json:"From" xml:"From"`
-	To   string `json:"To" xml:"To"`
+	From      string  `json:"From" xml:"From"`
+	To        string  `json:"To" xml:"To"`
+	ToArchive *string `json:"ToArchive,omitempty" xml:"ToArchive,omitempty"`
 }
 
 type ModDir struct {
-	From      string `json:"From" xml:"From"`
-	To        string `json:"To" xml:"To"`
-	Recursive bool   `json:"Recursive" xml:"Recursive"`
+	From      string  `json:"From" xml:"From"`
+	To        string  `json:"To" xml:"To"`
+	Recursive bool    `json:"Recursive" xml:"Recursive"`
+	ToArchive *string `json:"ToArchive,omitempty" xml:"ToArchive,omitempty"`
 }
 
 type Configuration struct {
@@ -371,7 +387,12 @@ func (m *Mod) Validate() string {
 
 	for _, ad := range m.AlwaysDownload {
 		if ad.IsEmpty() {
-			sb.WriteString(fmt.Sprintf("AlwaysDownload [%s]' Must have at least one File or Dir specified\n", ad.DownloadName))
+			sb.WriteString(fmt.Sprintf("AlwaysDownload [%s] Must have at least one File or Dir specified\n", ad.DownloadName))
+		}
+		if m.InstallType_.Is(config.MoveToArchive) {
+			if f := ad.HasArchive(); len(f) > 0 {
+				sb.WriteString("AlwaysDownload missing archives for " + strings.Join(f, ", "))
+			}
 		}
 		if _, ok := dlableNames[ad.DownloadName]; !ok {
 			sb.WriteString("Always Download's downloadable doesn't exist\n")
@@ -397,6 +418,14 @@ func (m *Mod) Validate() string {
 				sb.WriteString(fmt.Sprintf("Configuration's [%s] Choice [%s]'s Next Configuration Name must not be the same as the Configuration's Name\n", c.Name, ch.Name))
 			}
 			if ch.DownloadFiles != nil && ch.DownloadFiles.DownloadName != "" {
+				if ch.DownloadFiles.IsEmpty() {
+					sb.WriteString(fmt.Sprintf("Configuration's [%s] Choice [%s]'s must have at least one File or Dir specified\n", c.Name, ch.Name))
+				}
+				if m.InstallType_.Is(config.MoveToArchive) {
+					if f := ch.DownloadFiles.HasArchive(); len(f) > 0 {
+						sb.WriteString(fmt.Sprintf("Configuration's [%s] Choice [%s]'s missing archives for "+strings.Join(f, ", "), c.Name, ch.Name))
+					}
+				}
 				if _, ok := dlableNames[ch.DownloadFiles.DownloadName]; !ok {
 					sb.WriteString(fmt.Sprintf("Configuration's [%s] Choice [%s]'s downloadable doesn't exist\n", c.Name, ch.Name))
 				}

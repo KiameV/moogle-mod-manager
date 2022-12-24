@@ -3,11 +3,11 @@ package steps
 import (
 	"errors"
 	"fmt"
+	"github.com/kiamev/moogle-mod-manager/archive"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/discover"
 	"github.com/kiamev/moogle-mod-manager/downloads"
 	"github.com/kiamev/moogle-mod-manager/files"
-	"github.com/kiamev/moogle-mod-manager/files/archive"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/mods/managed"
 	ci "github.com/kiamev/moogle-mod-manager/ui/config-installer"
@@ -167,18 +167,19 @@ func Download(state *State) (result mods.Result, err error) {
 
 func Extract(state *State) (mods.Result, error) {
 	var (
+		it       = state.Mod.InstallType(state.Game)
 		to       string
 		override bool
 		ef       []archive.ExtractedFile
 		err      error
 	)
 	for _, ti := range state.ToInstall {
-		if state.Mod.InstallType(state.Game) == config.ImmediateDecompress {
+		if it == config.ImmediateDecompress {
 			if to, err = config.Get().GetDir(state.Game, config.GameDirKind); err != nil {
 				return mods.Error, err
 			}
 		} else {
-			to = ti.Download.DownloadedArchiveLocation.ExtractDir(ti.Download.Name)
+			to = ti.Download.DownloadedArchiveLocation.ExtractDir(string(ti.Download.Name))
 		}
 		if state.Mod.InstallType(state.Game) == config.ImmediateDecompress {
 			if to, err = config.Get().GetDir(state.Game, config.GameDirKind); err != nil {
@@ -272,53 +273,58 @@ func Install(state *State) (result mods.Result, err error) {
 }
 
 func install(state *State, backupDir string) (mods.Result, error) {
-	var err error
 	switch state.Mod.InstallType(state.Game) {
 	case config.Move:
-		for _, e := range state.ExtractedFiles {
-			for _, ti := range e.FilesToInstall() {
-				if ti.Skip {
-					continue
-				}
+		return installDirectMove(state, backupDir)
+	case config.MoveToArchive:
+		return installDirectMoveToArchive(state, backupDir)
+	}
+	return mods.Error, fmt.Errorf("unknown install type: %v", state.Mod.InstallType(state.Game))
+}
 
-				dir := filepath.Dir(ti.AbsoluteTo)
-				if _, err = os.Stat(dir); err != nil {
-					// Create the directory structure
-					if err = os.MkdirAll(dir, 0755); err != nil {
-						return mods.Error, err
-					}
-				} else if _, err = os.Stat(ti.AbsoluteTo); err == nil {
-					// File Exists
-					// See if there's a file backup
-					absBackup := filepath.Join(backupDir, ti.Relative)
-					if _, err = os.Stat(absBackup); err == nil {
-						// Backup Exists
-						if err = os.Remove(ti.AbsoluteTo); err != nil {
-							return mods.Error, err
-						}
-					} else {
-						// No Backup
-						if err = os.MkdirAll(filepath.Dir(absBackup), 0755); err != nil {
-							return mods.Error, err
-						}
-						if err = util.MoveFile(ti.AbsoluteTo, absBackup); err != nil {
-							return mods.Error, err
-						}
-					}
-				}
+func installDirectMove(state *State, backupDir string) (mods.Result, error) {
+	var (
+		dir string
+		err error
+	)
+	for _, e := range state.ExtractedFiles {
+		for _, ti := range e.FilesToInstall() {
+			if ti.Skip {
+				continue
+			}
 
-				// Install the file
-				if err = util.MoveFile(ti.AbsoluteFrom, ti.AbsoluteTo); err != nil {
+			dir = filepath.Dir(ti.AbsoluteTo)
+			if _, err = os.Stat(dir); err != nil {
+				// Create the directory structure
+				if err = os.MkdirAll(dir, 0755); err != nil {
 					return mods.Error, err
 				}
-				files.SetFiles(state.Game, state.Mod.ID(), ti.AbsoluteTo)
+			} else if _, err = os.Stat(ti.AbsoluteTo); err == nil {
+				// File Exists
+				// See if there's a file backup
+				absBackup := filepath.Join(backupDir, ti.Relative)
+				if _, err = os.Stat(absBackup); err == nil {
+					// Backup Exists
+					if err = os.Remove(ti.AbsoluteTo); err != nil {
+						return mods.Error, err
+					}
+				} else {
+					// No Backup
+					if err = os.MkdirAll(filepath.Dir(absBackup), 0755); err != nil {
+						return mods.Error, err
+					}
+					if err = util.MoveFile(ti.AbsoluteTo, absBackup); err != nil {
+						return mods.Error, err
+					}
+				}
 			}
+
+			// Install the file
+			if err = util.MoveFile(ti.AbsoluteFrom, ti.AbsoluteTo); err != nil {
+				return mods.Error, err
+			}
+			files.SetFiles(state.Game, state.Mod.ID(), ti.AbsoluteTo)
 		}
-	case config.MoveToArchive:
-		// TODO
-		panic("not implemented")
-	default:
-		return mods.Error, fmt.Errorf("unknown install type: %v", state.Mod.InstallType(state.Game))
 	}
 	return mods.Ok, nil
 }

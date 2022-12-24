@@ -2,8 +2,8 @@ package steps
 
 import (
 	"fmt"
+	"github.com/kiamev/moogle-mod-manager/archive"
 	"github.com/kiamev/moogle-mod-manager/config"
-	"github.com/kiamev/moogle-mod-manager/files/archive"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"io/fs"
 	"path/filepath"
@@ -21,10 +21,11 @@ type (
 		AbsoluteFrom string
 		AbsoluteTo   string
 		Skip         bool
+		archive      *string
 	}
 )
 
-func newFileToInstallFromFile(relToExtracted map[string]archive.ExtractedFile, f *mods.ModFile, installDir string) (*FileToInstall, error) {
+func newFileToInstallFromFile(relToExtracted map[string]archive.ExtractedFile, f *mods.ModFile, installDir string, archive *string) (*FileToInstall, error) {
 	af, found := relToExtracted[f.From]
 	if !found {
 		return nil, fmt.Errorf("file %v not found in extracted files", f)
@@ -34,10 +35,11 @@ func newFileToInstallFromFile(relToExtracted map[string]archive.ExtractedFile, f
 		AbsoluteFrom: af.From,
 		AbsoluteTo:   filepath.Join(installDir, f.To),
 		Skip:         false,
+		archive:      archive,
 	}, nil
 }
 
-func newFileToInstallFromDir(relToExtracted map[string]archive.ExtractedFile, path string, rel string, d *mods.ModDir, installDir string) (*FileToInstall, error) {
+func newFileToInstallFromDir(relToExtracted map[string]archive.ExtractedFile, path string, rel string, d *mods.ModDir, installDir string, archive *string) (*FileToInstall, error) {
 	var (
 		af, found = relToExtracted[rel]
 		r, err    = filepath.Rel(d.From, rel)
@@ -53,6 +55,7 @@ func newFileToInstallFromDir(relToExtracted map[string]archive.ExtractedFile, pa
 		AbsoluteFrom: af.From,
 		AbsoluteTo:   filepath.Join(installDir, d.To, r),
 		Skip:         false,
+		archive:      archive,
 	}, nil
 }
 
@@ -80,7 +83,7 @@ func (e *Extracted) Compile(game config.GameDef, extractedDir string) (err error
 	}
 	for _, df := range e.ToInstall.DownloadFiles {
 		for _, f := range df.Files {
-			if fti, err = newFileToInstallFromFile(fromToExtracted, f, installDir); err != nil {
+			if fti, err = newFileToInstallFromFile(fromToExtracted, f, installDir, f.ToArchive); err != nil {
 				return
 			}
 			e.filesToInstall = append(e.filesToInstall, fti)
@@ -109,7 +112,7 @@ func (e *Extracted) Compile(game config.GameDef, extractedDir string) (err error
 					return err
 				}
 				rel = strings.ReplaceAll(rel, "\\", "/")
-				if fti, err = newFileToInstallFromDir(fromToExtracted, path, rel, d, installDir); err != nil {
+				if fti, err = newFileToInstallFromDir(fromToExtracted, path, rel, d, installDir, d.ToArchive); err != nil {
 					return err
 				}
 				e.filesToInstall = append(e.filesToInstall, fti)
