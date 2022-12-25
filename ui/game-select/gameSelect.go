@@ -26,14 +26,10 @@ func (s *GameSelect) Draw(w fyne.Window) {
 		games  = config.GameDefs()
 		inputs = make([]fyne.CanvasObject, 0, len(games)*2-1)
 	)
-	for i, g := range games {
-		//this should probably be changed to whatever the equivalent of a foreach is, but I don't know that lol
-		if i > 0 {
-			
-		}
+	for _, g := range games {
 		inputs = append(inputs, s.createInput(g))
 	}
-	w.SetContent(container.New(layout.NewGridLayout(3),inputs...))
+	w.SetContent(container.New(layout.NewGridLayout(3), inputs...))
 }
 
 func (s *GameSelect) createInput(g config.GameDef) *fyne.Container {
