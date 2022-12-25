@@ -11,7 +11,11 @@ var (
 
 func ActiveWindow() fyne.Window {
 	if ShowingPopup {
-		return PopupWindow
+		if PopupWindow == nil {
+			ShowingPopup = false
+		} else {
+			return PopupWindow
+		}
 	}
 	return Window
 }

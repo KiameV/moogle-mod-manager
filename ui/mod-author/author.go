@@ -51,6 +51,8 @@ func New() state.Screen {
 	a.installTypeSelect = entry.NewSelectEntry(a, "Install Type", "", mods.InstallTypes)
 	a.installTypeSelect.Binding().AddListener(&installTypeListener{author: a, entry: a.installTypeSelect})
 
+	a.selectType = entry.NewSelectEntry(a, "Selection Type", "", mods.SelectTypes)
+
 	a.downloads = newDownloads(a.kind, a.subKindSelect)
 	a.alwaysDownload = newAlwaysDownloadDef(a.downloads, &a.installType)
 	a.configsDef = newConfigurationsDef(a.downloads, &a.installType)
@@ -78,6 +80,7 @@ type ModAuthorer struct {
 	subKindSelect     entry.Entry[string]
 	version           entry.Entry[string]
 	installTypeSelect entry.Entry[string]
+	selectType        entry.Entry[string]
 
 	downloads *downloads
 
@@ -349,8 +352,10 @@ func (a *ModAuthorer) updateEntries(mod *mods.Mod) {
 		}
 	}
 	a.installTypeSelect.Set(string(a.installType))
-
-	//a.CreateFormSelect("Select Type", mods.SelectTypes, string(mod.ConfigSelectionType))
+	if mod.ConfigSelectionType == "" {
+		mod.ConfigSelectionType = mods.Auto
+	}
+	a.selectType.Set(string(mod.ConfigSelectionType))
 
 	entry.NewEntry[string](a, entry.KindString, "Working Dir", config.PWD)
 	if dir, ok := authored.GetDir(mod.ModID); ok && dir != "" {
@@ -450,12 +455,12 @@ func (a *ModAuthorer) compileMod() (m *mods.Mod, err error) {
 		},
 		Preview: a.previewDef.compile(),
 		//ModKind:      *a.modKindDef.compile(),
-		//ConfigSelectionType: mods.SelectType(entry.Value[string](a, "Select Type")),
-		ConfigSelectionType: mods.Auto,
-		ModCompatibility:    a.modCompatsDef.compile(),
-		DonationLinks:       a.donationsDef.compile(),
-		Games:               a.gamesDef.compile(),
-		IsManuallyCreated:   true,
+		ConfigSelectionType: mods.SelectType(a.selectType.Value()),
+		//ConfigSelectionType: mods.Auto,
+		ModCompatibility:  a.modCompatsDef.compile(),
+		DonationLinks:     a.donationsDef.compile(),
+		Games:             a.gamesDef.compile(),
+		IsManuallyCreated: true,
 	})
 
 	if a.installType != config.BlankInstallType {
@@ -645,6 +650,7 @@ func (a *ModAuthorer) createHostedInputs() *container.AppTabs {
 		a.categorySelect.FormItem(),
 		a.version.FormItem(),
 		a.installTypeSelect.FormItem(),
+		a.selectType.FormItem(),
 		entry.FormItem[string](a, "Release Date"),
 		entry.FormItem[string](a, "Link"))
 	entries = append(entries, a.previewDef.getFormItems()...)
@@ -668,7 +674,7 @@ func (a *ModAuthorer) createRemoteInputs() *container.AppTabs {
 		entry.FormItem[string](a, "Name"),
 		a.categorySelect.FormItem(),
 		a.installTypeSelect.FormItem(),
-		//a.GetFormItem("Select Type"),
+		a.selectType.FormItem(),
 	}
 	entries = append(entries, a.previewDef.getFormItems()...)
 

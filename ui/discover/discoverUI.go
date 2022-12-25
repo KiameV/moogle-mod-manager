@@ -123,8 +123,8 @@ func (ui *discoverUI) draw(w fyne.Window, isPopup bool) {
 		ui.split.Trailing = container.NewBorder(
 			container.NewHBox(widget.NewButton("Include Mod", func() {
 				mod := ui.selectedMod
-				if err := managed.AddMod(state.CurrentGame, mods.NewTrackerMod(mod, state.CurrentGame)); err != nil {
-					util.ShowErrorLong(err)
+				if _, e := managed.AddMod(state.CurrentGame, mod); e != nil {
+					util.ShowErrorLong(e)
 					return
 				}
 				for i, m := range ui.mods {

@@ -65,7 +65,11 @@ func (ui *localUI) Draw(w fyne.Window) {
 					c := co.(*fyne.Container)
 					c.Objects[0].(*UpdateButton).SetTrackedMod(tm)
 					c.Objects[1].(*widget.Label).Bind(binding.BindString(tm.DisplayNamePtr()))
-					c.Objects[2].(*widget.Check).Bind(newEnableBind(ui, tm, ui.startEnableDisableCallback))
+					c.Objects[2].(*widget.Check).Bind(newEnableBind(ui, tm, ui.startEnableDisableCallback, func(r actions.Result) {
+						for _, tm := range r.RequiredMods {
+							ui.addModToList(tm)
+						}
+					}))
 				}
 			}
 		})
@@ -83,8 +87,10 @@ func (ui *localUI) Draw(w fyne.Window) {
 	removeButton := widget.NewButton("Remove", func() {
 		dialog.NewConfirm("Delete?", "Are you sure you want to delete this mod?", func(ok bool) {
 			if ok && ui.selectedMod != nil && ui.selectedMod.Enabled() {
-				if a, err := actions.New(actions.Uninstall, state.CurrentGame, ui.selectedMod, func() {
-					if !ui.selectedMod.Enabled() {
+				if a, err := actions.New(actions.Uninstall, state.CurrentGame, ui.selectedMod, func(r actions.Result) {
+					if r.Err != nil {
+						util.ShowErrorLong(r.Err)
+					} else if r.Status == mods.Ok && !ui.selectedMod.Enabled() {
 						ui.removeSelectedMod()
 					}
 				}); err != nil {
@@ -203,6 +209,11 @@ func (ui *localUI) addFromUrl() {
 
 func (ui *localUI) addModToList(mod mods.TrackedMod) {
 	u := binding.NewUntyped()
+	for _, m := range ui.mods {
+		if m.ID() == mod.ID() {
+			return
+		}
+	}
 	if err := u.Set(mod); err == nil {
 		_ = ui.data.Append(u)
 	}
@@ -214,7 +225,6 @@ func (ui *localUI) removeSelectedMod() {
 		util.ShowErrorLong(err)
 		return
 	}
-	_ = managed.Save()
 	for i, m := range ui.mods {
 		if m == ui.selectedMod {
 			ui.mods = append(ui.mods[:i], ui.mods[i+1:]...)
@@ -279,15 +289,16 @@ func (ui *localUI) startEnableDisableCallback() bool {
 
 func (ui *localUI) updateMod(tm mods.TrackedMod) {
 	working.ShowDialog()
-	if action, err := actions.New(actions.Update, state.CurrentGame, tm, func() {
-		working.HideDialog()
-		tm.SetDisplayName(string(tm.Mod().Name))
-		ui.split.Leading.Refresh()
+	if action, err := actions.New(actions.Update, state.CurrentGame, tm, func(r actions.Result) {
+		if r.Err != nil {
+			util.ShowErrorLong(r.Err)
+		} else {
+			tm.SetDisplayName(string(tm.Mod().Name))
+			ui.split.Leading.Refresh()
+		}
 	}); err != nil {
-		working.HideDialog()
 		util.ShowErrorLong(err)
 	} else if err = action.Run(); err != nil {
-		working.HideDialog()
 		util.ShowErrorLong(err)
 	}
 	ui.split.Leading.Refresh()

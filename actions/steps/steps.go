@@ -28,6 +28,8 @@ type (
 		Downloaded     []string
 		ToInstall      []*mods.ToInstall
 		ExtractedFiles []Extracted
+		Requires       *mods.Mod
+		Added          []mods.TrackedMod
 	}
 	Step func(state *State) (result mods.Result, err error)
 )
@@ -44,34 +46,49 @@ func VerifyEnable(state *State) (mods.Result, error) {
 		tm      = state.Mod
 		c       = tm.Mod().ModCompatibility
 		mc      *mods.ModCompat
-		mod     mods.TrackedMod
+		t       mods.TrackedMod
+		mod     *mods.Mod
 		found   bool
 		enabled bool
 	)
 	if c != nil {
 		if len(c.Forbids) > 0 {
 			for _, mc = range c.Forbids {
-				if mod, found, enabled = managed.IsModEnabled(state.Game, mc.ModID()); found && enabled {
-					return mods.Error, fmt.Errorf("[%s] cannot be enabled because [%s] is enabled", tm.DisplayName(), mod.DisplayName())
+				if t, found, enabled = managed.IsModEnabled(state.Game, mc.ModID()); found && enabled {
+					return mods.Error, fmt.Errorf("[%s] cannot be enabled because [%s] is enabled", tm.DisplayName(), t.DisplayName())
 				}
 			}
 		}
 		if len(c.Requires) > 0 {
 			for _, mc = range c.Requires {
-				var name string
-				mod, found, enabled = managed.IsModEnabled(state.Game, mc.ModID())
+				t, found, enabled = managed.IsModEnabled(state.Game, mc.ModID())
 				if !enabled {
-					if !found || mod == nil {
-						name, _ = discover.GetDisplayName(state.Game, mc.ModID())
-					}
-					if name == "" {
-						if mod != nil {
-							name = mod.DisplayName()
-						} else {
-							name = string(mc.ModID())
+					if t != nil {
+						mod = t.Mod()
+					} else {
+						l, err := discover.GetModsAsLookup(state.Game)
+						if err != nil {
+							return mods.Error, err
+						}
+						if mod, found = l.GetByID(mc.ModID()); mod == nil || !found {
+							return mods.Error, fmt.Errorf("[%s] cannot be enabled because [%s] is not enabled", tm.DisplayName(), string(mc.ModID()))
 						}
 					}
-					return mods.Error, fmt.Errorf("[%s] cannot be enabled because [%s] is not enabled", tm.DisplayName(), name)
+
+					var wg sync.WaitGroup
+					var result mods.Result
+					wg.Add(1)
+					confirm.ShowEnableModConfirmDialog(state.Mod.Mod().Name, mod.Mod(), func(r mods.Result) {
+						result = r
+						wg.Done()
+					})
+					wg.Wait()
+					if result == mods.Ok {
+						state.Requires = mod
+						return mods.Repeat, nil
+					} else {
+						return mods.Cancel, nil
+					}
 				}
 			}
 		}
@@ -365,18 +382,16 @@ func UninstallMove(state *State) (mods.Result, error) {
 }
 
 func EnableMod(state *State) (result mods.Result, err error) {
-	state.Mod.Enable()
 	result = mods.Ok
-	if err = managed.Save(); err != nil {
+	if err = managed.EnableMod(state.Mod); err != nil {
 		result = mods.Error
 	}
 	return
 }
 
 func DisableMod(state *State) (result mods.Result, err error) {
-	state.Mod.Disable()
 	result = mods.Ok
-	if err = managed.Save(); err != nil {
+	if err = managed.DisableMod(state.Mod); err != nil {
 		result = mods.Error
 	}
 	return

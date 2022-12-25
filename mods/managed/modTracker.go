@@ -11,6 +11,7 @@ import (
 	"github.com/kiamev/moogle-mod-manager/discover/remote/curseforge"
 	"github.com/kiamev/moogle-mod-manager/discover/remote/nexus"
 	"github.com/kiamev/moogle-mod-manager/mods"
+	"github.com/kiamev/moogle-mod-manager/ui/state"
 	"github.com/kiamev/moogle-mod-manager/util"
 	"path/filepath"
 	"strings"
@@ -30,7 +31,7 @@ func Initialize(games []config.GameDef) (err error) {
 		for _, game := range games {
 			lookup.Set(game)
 		}
-		return Save()
+		return save()
 	}
 
 	if len(games) != lookup.Len() {
@@ -53,37 +54,33 @@ func Initialize(games []config.GameDef) (err error) {
 	return
 }
 
-func AddModFromFile(game config.GameDef, file string) (tm mods.TrackedMod, err error) {
+func AddModFromFile(game config.GameDef, file string) (mods.TrackedMod, error) {
 	var mod *mods.Mod
-	if err = util.LoadFromFile(file, &mod); err != nil {
-		return
+	if err := util.LoadFromFile(file, &mod); err != nil {
+		return nil, err
 	}
 	if s := mod.Validate(); s != "" {
 		return nil, fmt.Errorf("failed to load mod:\n%s", s)
 	}
-
-	tm = mods.NewTrackerMod(mod, game)
-	if err = AddMod(game, tm); err != nil {
-		return nil, err
-	}
-	return tm, Save()
+	return AddMod(game, mod)
 }
 
-func AddModFromUrl(game config.GameDef, url string) (tm mods.TrackedMod, err error) {
+func AddModFromUrl(game config.GameDef, url string) (mods.TrackedMod, error) {
 	var (
 		mod *mods.Mod
 		b   []byte
+		err error
 	)
 	if i := strings.Index(url, "?"); i != -1 {
 		url = url[:i]
 	}
 	if nexus.IsNexus(url) {
 		if _, mod, err = remote.GetFromUrl(mods.Nexus, url); err != nil {
-			return
+			return nil, err
 		}
 	} else if curseforge.IsCurseforge(url) {
 		if _, mod, err = remote.GetFromUrl(mods.CurseForge, url); err != nil {
-			return
+			return nil, err
 		}
 	} else {
 		if b, err = browser.DownloadAsBytes(url); err != nil {
@@ -99,18 +96,17 @@ func AddModFromUrl(game config.GameDef, url string) (tm mods.TrackedMod, err err
 		}
 	}
 
-	tm = mods.NewTrackerMod(mod, game)
-	if err = AddMod(game, tm); err != nil {
-		return nil, err
-	}
-	return tm, Save()
+	return AddMod(game, mod)
 }
 
-func AddMod(game config.GameDef, tm mods.TrackedMod) error {
-	if err := addMod(game, tm); err != nil {
-		return err
+func AddMod(game config.GameDef, mod *mods.Mod) (tm mods.TrackedMod, err error) {
+	var found bool
+	if tm, found = lookup.GetModByID(game, mod.ID()); found {
+		return
 	}
-	return Save()
+	tm = mods.NewTrackerMod(mod, state.CurrentGame)
+	err = addMod(game, tm)
+	return
 }
 
 func addMod(game config.GameDef, tm mods.TrackedMod) (err error) {
@@ -128,11 +124,21 @@ func addMod(game config.GameDef, tm mods.TrackedMod) (err error) {
 	}
 
 	lookup.SetMod(game, tm)
-	return
+	return save()
 }
 
 func GetMods(game config.GameDef) []mods.TrackedMod {
 	return lookup.GetMods(game)
+}
+
+func DisableMod(tm mods.TrackedMod) error {
+	tm.Disable()
+	return save()
+}
+
+func EnableMod(tm mods.TrackedMod) error {
+	tm.Enable()
+	return save()
 }
 
 func GetEnabledMods(game config.GameDef) (result []mods.TrackedMod) {
@@ -160,10 +166,10 @@ func TryGetMod(game config.GameDef, id mods.ModID) (m mods.TrackedMod, found boo
 
 func RemoveMod(game config.GameDef, tm mods.TrackedMod) error {
 	lookup.RemoveMod(game, tm)
-	return nil
+	return save()
 }
 
-func Save() error {
+func save() error {
 	return util.SaveToFile(filepath.Join(config.PWD, modTrackerName), &lookup)
 }
 
