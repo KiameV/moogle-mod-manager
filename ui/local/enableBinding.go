@@ -11,20 +11,21 @@ import (
 type (
 	enableBind struct {
 		binding.Bool
-		parent *localUI
-		tm     mods.TrackedMod
-		start  func() bool
-		//done        mods.DoneCallback
+		parent             *localUI
+		tm                 mods.TrackedMod
+		start              func() bool
+		modEnabledCallback func(result actions.Result)
 	}
 )
 
-func newEnableBind(parent *localUI, tm mods.TrackedMod, start func() bool /*, done mods.DoneCallback*/) *enableBind {
+func newEnableBind(parent *localUI, tm mods.TrackedMod, start func() bool, modEnabledCallback func(r actions.Result)) *enableBind {
 	var (
 		b = &enableBind{
-			parent: parent,
-			Bool:   binding.NewBool(),
-			tm:     tm,
-			start:  start,
+			parent:             parent,
+			Bool:               binding.NewBool(),
+			tm:                 tm,
+			start:              start,
+			modEnabledCallback: modEnabledCallback,
 		}
 	)
 	_ = b.Set(tm.Enabled())
@@ -65,6 +66,10 @@ func (b *enableBind) DataChanged() {
 	}
 }
 
-func (b *enableBind) ActionDone() {
+func (b *enableBind) ActionDone(r actions.Result) {
+	if r.Err != nil {
+		util.ShowErrorLong(r.Err)
+	}
+	b.modEnabledCallback(r)
 	b.parent.ModList.Refresh()
 }

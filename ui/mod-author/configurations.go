@@ -5,6 +5,7 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
+	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	cw "github.com/kiamev/moogle-mod-manager/ui/custom-widgets"
 	"github.com/kiamev/moogle-mod-manager/ui/mod-author/entry"
@@ -18,12 +19,12 @@ type configurationsDef struct {
 	previewDef *previewDef
 }
 
-func newConfigurationsDef(dlDef *downloads) *configurationsDef {
+func newConfigurationsDef(dlDef *downloads, installType *config.InstallType) *configurationsDef {
 	d := &configurationsDef{
 		Manager:    entry.NewManager(),
 		previewDef: newPreviewDef(),
 	}
-	d.choicesDef = newChoicesDef(dlDef, d)
+	d.choicesDef = newChoicesDef(dlDef, d, installType)
 	d.list = cw.NewDynamicList(cw.Callbacks{
 		GetItemKey:    d.getItemKey,
 		GetItemFields: d.getItemFields,

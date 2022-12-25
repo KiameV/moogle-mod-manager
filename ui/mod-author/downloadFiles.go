@@ -2,25 +2,29 @@ package mod_author
 
 import (
 	"fyne.io/fyne/v2/widget"
+	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/ui/mod-author/entry"
 )
 
 type downloadFilesDef struct {
 	entry.Manager
-	downloads *downloads
-	dlName    string
-	files     *filesDef
-	dirs      *dirsDef
+	downloads   *downloads
+	selectEntry *entry.SelectFormEntry
+	files       *filesDef
+	dirs        *dirsDef
 }
 
-func newDownloadFilesDef(downloads *downloads) *downloadFilesDef {
-	return &downloadFilesDef{
+func newDownloadFilesDef(downloads *downloads, installType *config.InstallType) *downloadFilesDef {
+	d := &downloadFilesDef{
 		Manager:   entry.NewManager(),
 		downloads: downloads,
-		files:     newFilesDef(),
-		dirs:      newDirsDef(),
+		files:     newFilesDef(installType),
+		dirs:      newDirsDef(installType),
 	}
+	var i any = entry.NewSelectEntry(d, "Download Name", "", nil)
+	d.selectEntry = i.(*entry.SelectFormEntry)
+	return d
 }
 
 func (d *downloadFilesDef) compile() *mods.DownloadFiles {
@@ -57,8 +61,7 @@ func (d *downloadFilesDef) getFormItems() ([]*widget.FormItem, error) {
 	for _, dl := range dls {
 		possible = append(possible, dl.Name)
 	}
-
-	entry.NewSelectEntry(d, "Download Name", d.dlName, possible)
+	d.selectEntry.Entry.Options = possible
 
 	return []*widget.FormItem{
 		entry.FormItem[string](d, "Download Name"),
@@ -68,7 +71,7 @@ func (d *downloadFilesDef) getFormItems() ([]*widget.FormItem, error) {
 }
 
 func (d *downloadFilesDef) clear() {
-	d.dlName = ""
+	d.selectEntry.Set("")
 	d.files.clear()
 	d.dirs.clear()
 }
@@ -77,7 +80,7 @@ func (d *downloadFilesDef) populate(dlf *mods.DownloadFiles) {
 	if dlf == nil {
 		d.clear()
 	} else {
-		d.dlName = dlf.DownloadName
+		d.selectEntry.Set(dlf.DownloadName)
 		d.files.populate(dlf.Files)
 		d.dirs.populate(dlf.Dirs)
 	}

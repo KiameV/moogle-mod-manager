@@ -11,5 +11,5 @@ temp
 */moogle-mod-manager.upx
 !example/*
 !winres/*
-*.exe
-*.x86_64
+scripts/*
+!scripts/findSupportedMods.go

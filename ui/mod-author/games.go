@@ -15,12 +15,14 @@ import (
 
 type gamesDef struct {
 	entry.Manager
-	list *cw.DynamicList
+	list      *cw.DynamicList
+	gameAdded func(config.GameID)
 }
 
-func newGamesDef() *gamesDef {
+func newGamesDef(gameAdded func(config.GameID)) *gamesDef {
 	d := &gamesDef{
-		Manager: entry.NewManager(),
+		Manager:   entry.NewManager(),
+		gameAdded: gameAdded,
 	}
 	d.list = cw.NewDynamicList(cw.Callbacks{
 		GetItemKey:    d.getItemKey,
@@ -87,6 +89,9 @@ func (d *gamesDef) createItem(item interface{}, done ...func(interface{})) {
 				done[0](g)
 			}
 			d.list.Refresh()
+			if d.gameAdded != nil {
+				d.gameAdded(g.ID)
+			}
 		}
 	}, ui.Window)
 	fd.Resize(fyne.NewSize(400, 400))

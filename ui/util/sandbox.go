@@ -19,6 +19,9 @@ func DisplayDownloadsAndFiles(toInstall []*mods.ToInstall) {
 	}()
 	sb := strings.Builder{}
 	for _, ti := range toInstall {
+		if ti.Download == nil {
+			continue
+		}
 		sb.WriteString(fmt.Sprintf("## %s\n\n", ti.Download.Name))
 		sb.WriteString("### Sources:\n\n")
 		if ti.Download.Hosted != nil {

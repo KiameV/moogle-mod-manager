@@ -3,10 +3,11 @@ package steps
 import (
 	"errors"
 	"fmt"
+	"github.com/kiamev/moogle-mod-manager/archive"
 	"github.com/kiamev/moogle-mod-manager/config"
+	"github.com/kiamev/moogle-mod-manager/discover"
 	"github.com/kiamev/moogle-mod-manager/downloads"
 	"github.com/kiamev/moogle-mod-manager/files"
-	"github.com/kiamev/moogle-mod-manager/files/archive"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/mods/managed"
 	ci "github.com/kiamev/moogle-mod-manager/ui/config-installer"
@@ -27,6 +28,8 @@ type (
 		Downloaded     []string
 		ToInstall      []*mods.ToInstall
 		ExtractedFiles []Extracted
+		Requires       *mods.Mod
+		Added          []mods.TrackedMod
 	}
 	Step func(state *State) (result mods.Result, err error)
 )
@@ -43,25 +46,49 @@ func VerifyEnable(state *State) (mods.Result, error) {
 		tm      = state.Mod
 		c       = tm.Mod().ModCompatibility
 		mc      *mods.ModCompat
-		mod     mods.TrackedMod
+		t       mods.TrackedMod
+		mod     *mods.Mod
 		found   bool
 		enabled bool
 	)
 	if c != nil {
 		if len(c.Forbids) > 0 {
 			for _, mc = range c.Forbids {
-				if mod, found, enabled = managed.IsModEnabled(state.Game, mc.ModID()); found && enabled {
-					return mods.Error, fmt.Errorf("[%s] cannot be enabled because [%s] is enabled", tm.DisplayName(), mod.DisplayName())
+				if t, found, enabled = managed.IsModEnabled(state.Game, mc.ModID()); found && enabled {
+					return mods.Error, fmt.Errorf("[%s] cannot be enabled because [%s] is enabled", tm.DisplayName(), t.DisplayName())
 				}
 			}
 		}
 		if len(c.Requires) > 0 {
 			for _, mc = range c.Requires {
-				mod, found, enabled = managed.IsModEnabled(state.Game, mc.ModID())
-				if !found {
-					return mods.Error, fmt.Errorf("[%s] cannot be enabled because [%s] is not enabled", tm.DisplayName(), mc.ModID())
-				} else if !enabled {
-					return mods.Error, fmt.Errorf("[%s] cannot be enabled because [%s] is not enabled", tm.DisplayName(), mod.DisplayName())
+				t, found, enabled = managed.IsModEnabled(state.Game, mc.ModID())
+				if !enabled {
+					if t != nil {
+						mod = t.Mod()
+					} else {
+						l, err := discover.GetModsAsLookup(state.Game)
+						if err != nil {
+							return mods.Error, err
+						}
+						if mod, found = l.GetByID(mc.ModID()); mod == nil || !found {
+							return mods.Error, fmt.Errorf("[%s] cannot be enabled because [%s] is not enabled", tm.DisplayName(), string(mc.ModID()))
+						}
+					}
+
+					var wg sync.WaitGroup
+					var result mods.Result
+					wg.Add(1)
+					confirm.ShowEnableModConfirmDialog(state.Mod.Mod().Name, mod.Mod(), func(r mods.Result) {
+						result = r
+						wg.Done()
+					})
+					wg.Wait()
+					if result == mods.Ok {
+						state.Requires = mod
+						return mods.Repeat, nil
+					} else {
+						return mods.Cancel, nil
+					}
 				}
 			}
 		}
@@ -98,11 +125,8 @@ func PreDownload(state *State) (result mods.Result, err error) {
 		mod = state.Mod.Mod()
 		wg  sync.WaitGroup
 	)
-	if state.ToInstall, err = mods.NewToInstallForMod(mod.Kind(), mod, mod.AlwaysDownload); err != nil {
-		return mods.Error, err
-	}
-	// Handle any mod configurations
 	if len(mod.Configurations) > 0 {
+		// Handle any mod configurations
 		wg.Add(1)
 		modPath := filepath.Join(config.Get().GetModsFullPath(state.Game), mod.ID().AsDir())
 		if err = ui.GetScreen(ui.ConfigInstaller).(ci.ConfigInstaller).Setup(mod, modPath, func(r mods.Result, ti []*mods.ToInstall) error {
@@ -119,6 +143,11 @@ func PreDownload(state *State) (result mods.Result, err error) {
 		ui.ShowScreen(ui.ConfigInstaller)
 		wg.Wait()
 		time.Sleep(100 * time.Millisecond)
+	} else {
+		// No configurations, just handle the allways install
+		if state.ToInstall, err = mods.NewToInstallForMod(mod.Kind(), mod, mod.AlwaysDownload); err != nil {
+			return mods.Error, err
+		}
 	}
 
 	if result == mods.Cancel || result == mods.Error {
@@ -155,18 +184,19 @@ func Download(state *State) (result mods.Result, err error) {
 
 func Extract(state *State) (mods.Result, error) {
 	var (
+		it       = state.Mod.InstallType(state.Game)
 		to       string
 		override bool
 		ef       []archive.ExtractedFile
 		err      error
 	)
 	for _, ti := range state.ToInstall {
-		if state.Mod.InstallType(state.Game) == config.ImmediateDecompress {
+		if it == config.ImmediateDecompress {
 			if to, err = config.Get().GetDir(state.Game, config.GameDirKind); err != nil {
 				return mods.Error, err
 			}
 		} else {
-			to = ti.Download.DownloadedArchiveLocation.ExtractDir()
+			to = ti.Download.DownloadedArchiveLocation.ExtractDir(string(ti.Download.Name))
 		}
 		if state.Mod.InstallType(state.Game) == config.ImmediateDecompress {
 			if to, err = config.Get().GetDir(state.Game, config.GameDirKind); err != nil {
@@ -248,62 +278,71 @@ func Conflicts(state *State) (result mods.Result, err error) {
 	return result, nil
 }
 
-func Install(state *State) (mods.Result, error) {
-	var (
-		backupDir string
-		err       error
-	)
+func Install(state *State) (result mods.Result, err error) {
+	var backupDir string
 	if backupDir, err = config.Get().GetDir(state.Game, config.BackupDirKind); err != nil {
 		return mods.Error, err
 	}
+	if result, err = install(state, backupDir); err != nil {
+		_, _ = UninstallMove(state)
+	}
+	return
+}
+
+func install(state *State, backupDir string) (mods.Result, error) {
 	switch state.Mod.InstallType(state.Game) {
 	case config.Move:
-		for _, e := range state.ExtractedFiles {
-			for _, ti := range e.FilesToInstall() {
-				if ti.Skip {
-					continue
-				}
+		return installDirectMove(state, backupDir)
+	case config.MoveToArchive:
+		return installDirectMoveToArchive(state, backupDir)
+	}
+	return mods.Error, fmt.Errorf("unknown install type: %v", state.Mod.InstallType(state.Game))
+}
 
-				dir := filepath.Dir(ti.AbsoluteTo)
-				if _, err = os.Stat(dir); err != nil {
-					// Create the directory structure
-					if err = os.MkdirAll(dir, 0755); err != nil {
-						return mods.Error, err
-					}
-				} else if _, err = os.Stat(ti.AbsoluteTo); err == nil {
-					// File Exists
-					// See if there's a file backup
-					absBackup := filepath.Join(backupDir, ti.Relative)
-					if _, err = os.Stat(absBackup); err == nil {
-						// Backup Exists
-						if err = os.Remove(ti.AbsoluteTo); err != nil {
-							return mods.Error, err
-						}
-					} else {
-						// No Backup
-						if err = os.MkdirAll(filepath.Dir(absBackup), 0755); err != nil {
-							return mods.Error, err
-						}
-						if err = util.MoveFile(ti.AbsoluteTo, absBackup); err != nil {
-							return mods.Error, err
-						}
-					}
-				}
+func installDirectMove(state *State, backupDir string) (mods.Result, error) {
+	var (
+		dir string
+		err error
+	)
+	for _, e := range state.ExtractedFiles {
+		for _, ti := range e.FilesToInstall() {
+			if ti.Skip {
+				continue
+			}
 
-				// Install the file
-				if err = util.MoveFile(ti.AbsoluteFrom, ti.AbsoluteTo); err != nil {
+			dir = filepath.Dir(ti.AbsoluteTo)
+			if _, err = os.Stat(dir); err != nil {
+				// Create the directory structure
+				if err = os.MkdirAll(dir, 0755); err != nil {
 					return mods.Error, err
 				}
-				files.SetFiles(state.Game, state.Mod.ID(), ti.AbsoluteTo)
+			} else if _, err = os.Stat(ti.AbsoluteTo); err == nil {
+				// File Exists
+				// See if there's a file backup
+				absBackup := filepath.Join(backupDir, ti.Relative)
+				if _, err = os.Stat(absBackup); err == nil {
+					// Backup Exists
+					if err = os.Remove(ti.AbsoluteTo); err != nil {
+						return mods.Error, err
+					}
+				} else {
+					// No Backup
+					if err = os.MkdirAll(filepath.Dir(absBackup), 0755); err != nil {
+						return mods.Error, err
+					}
+					if err = util.MoveFile(ti.AbsoluteTo, absBackup); err != nil {
+						return mods.Error, err
+					}
+				}
 			}
-		}
-	case config.MoveToArchive:
-		// TODO
-		panic("not implemented")
-	default:
-		return mods.Error, fmt.Errorf("unknown install type: %v", state.Mod.InstallType(state.Game))
-	}
 
+			// Install the file
+			if err = util.MoveFile(ti.AbsoluteFrom, ti.AbsoluteTo); err != nil {
+				return mods.Error, err
+			}
+			files.SetFiles(state.Game, state.Mod.ID(), ti.AbsoluteTo)
+		}
+	}
 	return mods.Ok, nil
 }
 
@@ -322,9 +361,10 @@ func UninstallMove(state *State) (mods.Result, error) {
 		return mods.Error, err
 	}
 	for _, f := range i.Keys() {
-		if err = os.Remove(f); err != nil {
-			return mods.Error, err
-		}
+		//if err = os.Remove(f); err != nil {
+		//	return mods.Error, err
+		//}
+		_ = os.Remove(f)
 		files.RemoveFiles(state.Game, state.Mod.ID(), f)
 
 		if rel, err = filepath.Rel(gameDir, f); err != nil {
@@ -342,18 +382,16 @@ func UninstallMove(state *State) (mods.Result, error) {
 }
 
 func EnableMod(state *State) (result mods.Result, err error) {
-	state.Mod.Enable()
 	result = mods.Ok
-	if err = managed.Save(); err != nil {
+	if err = managed.EnableMod(state.Mod); err != nil {
 		result = mods.Error
 	}
 	return
 }
 
 func DisableMod(state *State) (result mods.Result, err error) {
-	state.Mod.Disable()
 	result = mods.Ok
-	if err = managed.Save(); err != nil {
+	if err = managed.DisableMod(state.Mod); err != nil {
 		result = mods.Error
 	}
 	return
@@ -372,7 +410,7 @@ func PostInstall(state *State) (mods.Result, error) {
 	for _, ti := range state.ToInstall {
 		l := ti.Download.DownloadedArchiveLocation
 		if l != nil {
-			_ = os.RemoveAll(ti.Download.DownloadedArchiveLocation.ExtractDir())
+			_ = os.RemoveAll(ti.Download.DownloadedArchiveLocation.ExtractDir(""))
 			if config.Get().DeleteDownloadAfterInstall {
 				_ = os.Remove(string(*l))
 			}

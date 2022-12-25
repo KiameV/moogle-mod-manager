@@ -63,7 +63,7 @@ func GetModsAsLookup(game config.GameDef) (lookup mods.ModLookup[*mods.Mod], err
 
 	if game != nil {
 		eg.Go(func() (e error) {
-			remoteMods, e = remote.GetMods(game)
+			remoteMods, e = remote.GetMods(game, false)
 			return
 		})
 		eg.Go(func() (e error) {

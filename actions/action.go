@@ -6,21 +6,27 @@ import (
 	"github.com/kiamev/moogle-mod-manager/actions/steps"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
-	"github.com/kiamev/moogle-mod-manager/ui/util"
+	"github.com/kiamev/moogle-mod-manager/mods/managed"
 	"github.com/kiamev/moogle-mod-manager/ui/util/working"
 	"sync"
 	"time"
 )
 
 type (
-	Done   func()
+	Done   func(result Result)
 	Action interface {
 		Run() error
 	}
+	Result struct {
+		Status       mods.Result
+		Err          error
+		RequiredMods []mods.TrackedMod
+	}
 	action struct {
-		done  Done
-		state *steps.State
-		steps []steps.Step
+		done             Done
+		state            *steps.State
+		steps            []steps.Step
+		isInternalAction bool
 	}
 	ActionKind byte
 )
@@ -76,7 +82,15 @@ func New(kind ActionKind, game config.GameDef, mod mods.TrackedMod, done Done) (
 	if running {
 		return nil, errors.New("another action is running")
 	}
+	a, err := new(kind, game, mod, done)
+	if err != nil {
+		return nil, err
+	}
+	a.isInternalAction = false
+	return a, nil
+}
 
+func new(kind ActionKind, game config.GameDef, mod mods.TrackedMod, done Done) (*action, error) {
 	var (
 		s   []steps.Step
 		err error
@@ -90,9 +104,10 @@ func New(kind ActionKind, game config.GameDef, mod mods.TrackedMod, done Done) (
 		s, err = createUpdateSteps(game, mod)
 	}
 	return &action{
-		done:  done,
-		state: steps.NewState(game, mod),
-		steps: s,
+		done:             done,
+		state:            steps.NewState(game, mod),
+		steps:            s,
+		isInternalAction: true,
 	}, err
 }
 
@@ -135,17 +150,18 @@ func createUpdateSteps(game config.GameDef, tm mods.TrackedMod) (s []steps.Step,
 }
 
 func (a action) Run() (err error) {
-	mutex.Lock()
-	if running {
-		err = errors.New("another action is running")
-	} else {
-		running = true
+	if !a.isInternalAction {
+		mutex.Lock()
+		if running {
+			err = errors.New("another action is running")
+		} else {
+			running = true
+		}
+		mutex.Unlock()
+		if err != nil {
+			return
+		}
 	}
-	mutex.Unlock()
-	if err != nil {
-		return
-	}
-
 	go func() {
 		a.run()
 	}()
@@ -153,32 +169,96 @@ func (a action) Run() (err error) {
 }
 
 func (a action) run() {
-	defer func() {
-		working.HideDialog()
-		mutex.Lock()
-		running = false
-		mutex.Unlock()
-		if a.done != nil {
-			go func() {
-				time.Sleep(100 * time.Millisecond)
-				a.done()
-			}()
-		}
-	}()
 	var (
 		result mods.Result
 		err    error
 	)
-	for _, step := range a.steps {
-		if result, err = step(a.state); err != nil {
+	defer func() {
+		if !a.isInternalAction {
 			working.HideDialog()
-			util.ShowErrorLong(err)
+			mutex.Lock()
+			running = false
+			mutex.Unlock()
+		}
+		if a.done != nil {
+			go func() {
+				time.Sleep(100 * time.Millisecond)
+				a.done(a.newResult(result, err))
+			}()
+		}
+	}()
+	for i := 0; i < len(a.steps); i++ {
+		if result, err = a.steps[i](a.state); err != nil {
 			return
 		} else if result == mods.Cancel {
 			break
 		} else if result == mods.Working {
 			working.ShowDialog()
+		} else if result == mods.Repeat {
+			i--
+			if a.state.Requires != nil {
+				if result, err = installRequiredMod(a.state); result == mods.Cancel || result == mods.Error || err != nil {
+					return
+				}
+			} else {
+				panic("repeat step without required mod")
+			}
+		} else if result != mods.Ok {
+			result = mods.Error
+			err = fmt.Errorf("unknown result %d", result)
+			return
 		}
+	}
+}
+
+func installRequiredMod(state *steps.State) (result mods.Result, err error) {
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func(result *mods.Result, err *error) {
+		var (
+			a  Action
+			tm mods.TrackedMod
+			e  error
+		)
+		if tm, e = managed.AddMod(state.Game, state.Requires); e != nil {
+			*result = mods.Error
+			*err = e
+			return
+		}
+		if a, e = new(Install, state.Game, tm, func(r Result) {
+			// Done running install
+			*result = r.Status
+			*err = r.Err
+			if r.Status == mods.Ok {
+				state.Added = append(state.Added, tm)
+			}
+			wg.Done()
+		}); e != nil {
+			*result = mods.Error
+			*err = e
+			return
+		}
+		if e = a.Run(); e != nil {
+			*result = mods.Error
+			*err = e
+			return
+		}
+	}(&result, &err)
+	if result == mods.Cancel || result == mods.Error {
+		return
+	}
+	wg.Wait()
+	return
+}
+
+func (a action) newResult(r mods.Result, err error) Result {
+	if err != nil {
+		r = mods.Error
+	}
+	return Result{
+		Status:       r,
+		Err:          err,
+		RequiredMods: a.state.Added,
 	}
 }
 

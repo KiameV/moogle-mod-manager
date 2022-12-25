@@ -12,6 +12,7 @@ const (
 	Cancel
 	Error
 	Working
+	Repeat
 )
 
 type (

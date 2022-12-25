@@ -29,6 +29,9 @@ type (
 		Value() T
 		FormItem() *widget.FormItem
 	}
+	valuer[T any] interface {
+		Value() T
+	}
 )
 
 const (
@@ -54,12 +57,30 @@ func (m *manager) set(key string, value any) {
 func Value[T any](m Manager, key string) (t T) {
 	e, ok := m.get(key)
 	if ok {
-		t = e.(Entry[T]).Value()
+		switch en := e.(type) {
+		case Entry[T]:
+			t = en.Value()
+		default:
+			panic("unknown type")
+		}
 	}
 	return
 }
 
-func NewEntry[T any](m Manager, kind Kind, key string, value any) Entry[T] {
+func DialogValue(m Manager, key string) string {
+	e, ok := m.get(key)
+	if ok {
+		switch en := e.(type) {
+		case *cw.OpenFileDialogContainer:
+			return en.OpenFileDialogHandler.Get()
+		default:
+			panic("unknown type")
+		}
+	}
+	return ""
+}
+
+func NewEntry[T any](m Manager, kind Kind, key string, value T) Entry[T] {
 	e, found := m.get(key)
 	if !found {
 		switch kind {
@@ -73,15 +94,20 @@ func NewEntry[T any](m Manager, kind Kind, key string, value any) Entry[T] {
 			panic(fmt.Sprintf("unknown entry kind %d", kind))
 		}
 		m.set(key, e)
+	} else {
+		e.(Entry[T]).Set(value)
 	}
 	return e.(Entry[T])
 }
 
-func NewSelectEntry(m Manager, key string, value any, possible []string) Entry[string] {
+func NewSelectEntry(m Manager, key string, value string, possible []string) Entry[string] {
 	e, found := m.get(key)
 	if !found {
-		e = newSelectFormEntry(key, value, possible)
+		e = NewSelectFormEntry(key, value, possible)
 		m.set(key, e)
+	} else {
+		e.(*SelectFormEntry).Entry.Options = possible
+		e.(*SelectFormEntry).selected = value
 	}
 	return e.(Entry[string])
 }

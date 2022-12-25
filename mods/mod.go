@@ -59,6 +59,7 @@ var Categories = []string{
 	string(EnemySprite),
 	string(GameOverhauls),
 	string(Gameplay),
+	string(Fonts),
 	string(PlayerNpcSprites),
 	string(ScriptText),
 	string(Soundtrack),
@@ -71,30 +72,45 @@ var Categories = []string{
 	string(Utility),
 }
 
-type ModDef struct {
-	ModID               ModID               `json:"ID" xml:"ID"`
-	Name                ModName             `json:"Name" xml:"Name"`
-	Author              string              `json:"Author" xml:"Author"`
-	AuthorLink          string              `json:"AuthorLink" xml:"AuthorLink"`
-	ReleaseDate         string              `json:"ReleaseDate" xml:"ReleaseDate"`
-	Category            Category            `json:"Category" xml:"Category"`
-	Description         string              `json:"Description" xml:"Description"`
-	ReleaseNotes        string              `json:"ReleaseNotes" xml:"ReleaseNotes"`
-	Link                string              `json:"Link" xml:"Link"`
-	Version             string              `json:"Version" xml:"Version"`
-	InstallType_        *config.InstallType `json:"InstallType,omitempty" xml:"InstallType,omitempty"`
-	Preview             *Preview            `json:"Preview,omitempty" xml:"Preview,omitempty"`
-	ModKind             ModKind             `json:"ModKind" xml:"ModKind"`
-	ModCompatibility    *ModCompatibility   `json:"Compatibility,omitempty" xml:"ModCompatibility,omitempty"`
-	Downloadables       []*Download         `json:"Downloadable" xml:"Downloadables"`
-	DonationLinks       []*DonationLink     `json:"DonationLink" xml:"DonationLinks"`
-	Games               []*Game             `json:"Games" xml:"Games"`
-	AlwaysDownload      []*DownloadFiles    `json:"AlwaysDownload,omitempty" xml:"AlwaysDownload,omitempty"`
-	Configurations      []*Configuration    `json:"Configuration,omitempty" xml:"Configurations,omitempty"`
-	ConfigSelectionType SelectType          `json:"ConfigSelectionType" xml:"ConfigSelectionType"`
-	Hide                bool                `json:"Hide" xml:"Hide"`
-	IsManuallyCreated   bool                `json:"IsManuallyCreated" xml:"IsManuallyCreated"`
-}
+const (
+	BugKindCosmetic Kind = "Cosmetic"
+	BugKindAnnoying Kind = "Annoying"
+	BugKindCrash    Kind = "Critical"
+)
+
+type (
+	BugKind   string
+	BugReport struct {
+		Kind        BugKind `json:"Kind" xml:"Kind"`
+		Description string  `json:"Description" xml:"Description"`
+	}
+	ModDef struct {
+		ModID               ModID               `json:"ID" xml:"ID"`
+		Name                ModName             `json:"Name" xml:"Name"`
+		Author              string              `json:"Author" xml:"Author"`
+		AuthorLink          string              `json:"AuthorLink" xml:"AuthorLink"`
+		ReleaseDate         string              `json:"ReleaseDate" xml:"ReleaseDate"`
+		Category            Category            `json:"Category" xml:"Category"`
+		Description         string              `json:"Description" xml:"Description"`
+		ReleaseNotes        string              `json:"ReleaseNotes" xml:"ReleaseNotes"`
+		Link                string              `json:"Link" xml:"Link"`
+		Version             string              `json:"Version" xml:"Version"`
+		InstallType_        *config.InstallType `json:"InstallType,omitempty" xml:"InstallType,omitempty"`
+		Preview             *Preview            `json:"Preview,omitempty" xml:"Preview,omitempty"`
+		ModKind             ModKind             `json:"ModKind" xml:"ModKind"`
+		ModCompatibility    *ModCompatibility   `json:"Compatibility,omitempty" xml:"ModCompatibility,omitempty"`
+		Downloadables       []*Download         `json:"Downloadable" xml:"Downloadables"`
+		DonationLinks       []*DonationLink     `json:"DonationLink" xml:"DonationLinks"`
+		Games               []*Game             `json:"Games" xml:"Games"`
+		AlwaysDownload      []*DownloadFiles    `json:"AlwaysDownload,omitempty" xml:"AlwaysDownload,omitempty"`
+		Configurations      []*Configuration    `json:"Configuration,omitempty" xml:"Configurations,omitempty"`
+		ConfigSelectionType SelectType          `json:"ConfigSelectionType" xml:"ConfigSelectionType"`
+		Hide                bool                `json:"Hide" xml:"Hide"`
+		VerifiedAsWorking   bool                `json:"VerifiedAsWorking" xml:"VerifiedAsWorking"`
+		Bugs                []BugReport         `json:"Bugs,omitempty" xml:"Bugs,omitempty"`
+		IsManuallyCreated   bool                `json:"IsManuallyCreated" xml:"IsManuallyCreated"`
+	}
+)
 
 func NewMod(def *ModDef) *Mod {
 	return &Mod{ModDef: def}
@@ -206,17 +222,32 @@ func (f *DownloadFiles) IsEmpty() bool {
 	return len(f.Files) == 0 && len(f.Dirs) == 0
 }
 
+func (f *DownloadFiles) HasArchive() []string {
+	var s []string
+	for _, file := range f.Files {
+		if file.ToArchive == nil {
+			s = append(s, file.From)
+		}
+	}
+	for _, dir := range f.Dirs {
+		if dir.ToArchive == nil {
+			s = append(s, dir.From)
+		}
+	}
+	return s
+}
+
 type ModFile struct {
-	From    string  `json:"From" xml:"From"`
-	To      string  `json:"To" xml:"To"`
-	Archive *string `json:"Archive,omitempty" xml:"Archive,omitempty"`
+	From      string  `json:"From" xml:"From"`
+	To        string  `json:"To" xml:"To"`
+	ToArchive *string `json:"ToArchive,omitempty" xml:"ToArchive,omitempty"`
 }
 
 type ModDir struct {
 	From      string  `json:"From" xml:"From"`
 	To        string  `json:"To" xml:"To"`
 	Recursive bool    `json:"Recursive" xml:"Recursive"`
-	Archive   *string `json:"Archive,omitempty" xml:"Archive,omitempty"`
+	ToArchive *string `json:"ToArchive,omitempty" xml:"ToArchive,omitempty"`
 }
 
 type Configuration struct {
@@ -356,7 +387,12 @@ func (m *Mod) Validate() string {
 
 	for _, ad := range m.AlwaysDownload {
 		if ad.IsEmpty() {
-			sb.WriteString(fmt.Sprintf("AlwaysDownload [%s]' Must have at least one File or Dir specified\n", ad.DownloadName))
+			sb.WriteString(fmt.Sprintf("AlwaysDownload [%s] Must have at least one File or Dir specified\n", ad.DownloadName))
+		}
+		if m.InstallType_.Is(config.MoveToArchive) {
+			if f := ad.HasArchive(); len(f) > 0 {
+				sb.WriteString("AlwaysDownload missing archives for " + strings.Join(f, ", "))
+			}
 		}
 		if _, ok := dlableNames[ad.DownloadName]; !ok {
 			sb.WriteString("Always Download's downloadable doesn't exist\n")
@@ -382,6 +418,14 @@ func (m *Mod) Validate() string {
 				sb.WriteString(fmt.Sprintf("Configuration's [%s] Choice [%s]'s Next Configuration Name must not be the same as the Configuration's Name\n", c.Name, ch.Name))
 			}
 			if ch.DownloadFiles != nil && ch.DownloadFiles.DownloadName != "" {
+				if ch.DownloadFiles.IsEmpty() {
+					sb.WriteString(fmt.Sprintf("Configuration's [%s] Choice [%s]'s must have at least one File or Dir specified\n", c.Name, ch.Name))
+				}
+				if m.InstallType_.Is(config.MoveToArchive) {
+					if f := ch.DownloadFiles.HasArchive(); len(f) > 0 {
+						sb.WriteString(fmt.Sprintf("Configuration's [%s] Choice [%s]'s missing archives for "+strings.Join(f, ", "), c.Name, ch.Name))
+					}
+				}
 				if _, ok := dlableNames[ch.DownloadFiles.DownloadName]; !ok {
 					sb.WriteString(fmt.Sprintf("Configuration's [%s] Choice [%s]'s downloadable doesn't exist\n", c.Name, ch.Name))
 				}

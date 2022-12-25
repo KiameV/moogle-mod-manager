@@ -56,9 +56,9 @@ func Decompress(from string, to string, continueIfExists bool) (extracted []Extr
 				_, err = file.WriteString(buf.String())
 
 				extracted = append(extracted, ExtractedFile{
-					Name:     filepath.Base(fp),
-					From:     fp,
-					Relative: f.NameInArchive,
+					Name:     strings.ReplaceAll(filepath.Base(fp), "\\", "/"),
+					From:     strings.ReplaceAll(fp, "\\", "/"),
+					Relative: strings.ReplaceAll(f.NameInArchive, "\\", "/"),
 				})
 			}
 			return

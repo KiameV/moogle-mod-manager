@@ -6,6 +6,7 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
+	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	cw "github.com/kiamev/moogle-mod-manager/ui/custom-widgets"
 	"github.com/kiamev/moogle-mod-manager/ui/mod-author/entry"
@@ -16,12 +17,14 @@ import (
 
 type dirsDef struct {
 	entry.Manager
-	list *cw.DynamicList
+	list        *cw.DynamicList
+	installType *config.InstallType
 }
 
-func newDirsDef() *dirsDef {
+func newDirsDef(installType *config.InstallType) *dirsDef {
 	d := &dirsDef{
-		Manager: entry.NewManager(),
+		Manager:     entry.NewManager(),
+		installType: installType,
 	}
 	d.list = cw.NewDynamicList(cw.Callbacks{
 		GetItemKey:    d.getItemKey,
@@ -32,11 +35,11 @@ func newDirsDef() *dirsDef {
 }
 
 func (d *dirsDef) compile() []*mods.ModDir {
-	downloads := make([]*mods.ModDir, len(d.list.Items))
+	dl := make([]*mods.ModDir, len(d.list.Items))
 	for i, item := range d.list.Items {
-		downloads[i] = item.(*mods.ModDir)
+		dl[i] = item.(*mods.ModDir)
 	}
-	return downloads
+	return dl
 }
 
 func (d *dirsDef) getItemKey(item interface{}) string {
@@ -61,22 +64,38 @@ func (d *dirsDef) createItem(item interface{}, done ...func(interface{})) {
 	entry.CreateFileDialog(d, "From", f.From, state.GetBaseDirBinding(), true, true)
 	entry.NewEntry[string](d, entry.KindString, "To FF PR/", f.To)
 	entry.NewEntry[bool](d, entry.KindBool, "Recursive", f.Recursive)
+	s := ""
+	if f.ToArchive != nil {
+		s = *f.ToArchive
+	}
+	entry.NewEntry[string](d, entry.KindString, "To Archive", s)
 
-	fd := dialog.NewForm("Edit Directory Copy", "Save", "Cancel", []*widget.FormItem{
+	items := []*widget.FormItem{
 		entry.GetFileDialog(d, "From"),
 		entry.FormItem[string](d, "To FF PR/"),
 		entry.FormItem[bool](d, "Recursive"),
-	}, func(ok bool) {
-		if ok {
-			f.From = cleanPath(entry.Value[string](d, "From"))
-			f.To = cleanPath(entry.Value[string](d, "To FF PR/"))
-			f.Recursive = entry.Value[bool](d, "Recursive")
-			if len(done) > 0 {
-				done[0](f)
+	}
+	if d.installType.Is(config.MoveToArchive) {
+		items = append(items, entry.FormItem[string](d, "To Archive"))
+	}
+
+	fd := dialog.NewForm("Edit Directory Copy", "Save", "Cancel", items,
+		func(ok bool) {
+			if ok {
+				f.From = cleanPath(entry.DialogValue(d, "From"))
+				f.To = cleanPath(entry.Value[string](d, "To FF PR/"))
+				f.Recursive = entry.Value[bool](d, "Recursive")
+				if s = entry.Value[string](d, "To Archive"); s == "" {
+					f.ToArchive = nil
+				} else {
+					f.ToArchive = &s
+				}
+				if len(done) > 0 {
+					done[0](f)
+				}
+				d.list.Refresh()
 			}
-			d.list.Refresh()
-		}
-	}, ui.Window)
+		}, ui.Window)
 	fd.Resize(fyne.NewSize(600, 400))
 	fd.Show()
 }

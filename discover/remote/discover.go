@@ -8,6 +8,18 @@ import (
 	"sync"
 )
 
+var cache = make(map[config.GameID]map[mods.ModID]*mods.Mod)
+
+func GetMod(game config.GameDef, id mods.ModID, rebuildCache bool) (found bool, mod *mods.Mod, err error) {
+	if _, err = GetMods(game, rebuildCache); err != nil {
+		return
+	}
+	if c, ok := cache[game.ID()]; ok {
+		mod, found = c[id]
+	}
+	return
+}
+
 func GetFromUrl(kind mods.Kind, url string) (bool, *mods.Mod, error) {
 	var c Client
 	switch kind {
@@ -21,16 +33,36 @@ func GetFromUrl(kind mods.Kind, url string) (bool, *mods.Mod, error) {
 	return c.GetFromUrl(url)
 }
 
-func GetMods(game config.GameDef) (result []*mods.Mod, err error) {
+func GetMods(game config.GameDef, rebuildCache bool) (result []*mods.Mod, err error) {
 	var (
 		eg = errgroup.Group{}
 		m  = sync.Mutex{}
+		c  = cache[game.ID()]
 	)
 
-	for _, c := range GetClients() {
-		getMods(game, c, &eg, &m, &result)
+	if c != nil && len(c) > 0 && !rebuildCache {
+		// Use the cache
+		result = make([]*mods.Mod, 0, len(cache))
+		for _, mod := range c {
+			result = append(result, mod)
+		}
+		return
 	}
-	err = eg.Wait()
+
+	// Get the mods from the remote sources
+	for _, cl := range GetClients() {
+		getMods(game, cl, &eg, &m, &result)
+	}
+	if err = eg.Wait(); err != nil {
+		return
+	}
+
+	// Build the cache
+	l := make(map[mods.ModID]*mods.Mod)
+	for _, mod := range result {
+		l[mod.ID()] = mod
+	}
+	cache[game.ID()] = l
 	return
 }
 
