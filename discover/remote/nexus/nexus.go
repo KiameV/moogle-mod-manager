@@ -139,6 +139,23 @@ func (c *client) GetNewestMods(game config.GameDef, lastID int) (result []*mods.
 	return
 }
 
+func GetDownloads(game config.GameDef, modID string) (dls []*mods.Download, err error) {
+	var (
+		b    []byte
+		path = game.Remote().Nexus.Path
+		url  = fmt.Sprintf(nexusApiModDlUrl, path, modID, nexusApiModDlUrlSuffix)
+		nDls fileParent
+	)
+	if b, err = sendRequest(url); err != nil {
+		return
+	}
+	if err = json.Unmarshal(b, &nDls); err != nil {
+		return
+	}
+	dls = nDls.ToDownloads()
+	return
+}
+
 func getDownloads(path config.NexusPath, modID string) (nDls fileParent, err error) {
 	var (
 		b   []byte
@@ -211,7 +228,8 @@ func toMod(n nexusMod, dls []NexusFile) (include bool, mod *mods.Mod, err error)
 			//Size:  nil,
 		},
 		ModKind: mods.ModKind{
-			Kind: mods.Nexus,
+			Kinds:   mods.Kinds{mods.Nexus},
+			NexusID: (*mods.NexusModID)(&n.ModID),
 		},
 		Games: []*mods.Game{{
 			ID:       game.ID(),
@@ -225,14 +243,7 @@ func toMod(n nexusMod, dls []NexusFile) (include bool, mod *mods.Mod, err error)
 
 	var choices []*mods.Choice
 	for i, d := range dls {
-		mod.Downloadables[i] = &mods.Download{
-			Name:    d.Name,
-			Version: d.Version,
-			Nexus: &mods.RemoteDownloadable{
-				FileID:   d.FileID,
-				FileName: d.FileName,
-			},
-		}
+		mod.Downloadables[i] = d.ToDownload()
 		dlf := &mods.DownloadFiles{
 			DownloadName: d.Name,
 			Dirs: []*mods.ModDir{

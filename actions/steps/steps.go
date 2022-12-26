@@ -145,7 +145,7 @@ func PreDownload(state *State) (result mods.Result, err error) {
 		time.Sleep(100 * time.Millisecond)
 	} else {
 		// No configurations, just handle the allways install
-		if state.ToInstall, err = mods.NewToInstallForMod(mod.Kind(), mod, mod.AlwaysDownload); err != nil {
+		if state.ToInstall, err = mods.NewToInstallForMod(mod, mod.AlwaysDownload); err != nil {
 			return mods.Error, err
 		}
 	}

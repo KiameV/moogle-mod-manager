@@ -9,21 +9,21 @@ import (
 )
 
 type ToInstall struct {
-	kind          Kind
+	kinds         Kinds
 	Download      *Download
 	DownloadFiles []*DownloadFiles
 	downloadDir   string
 }
 
-func NewToInstall(kind Kind, download *Download, downloadFiles *DownloadFiles) *ToInstall {
+func NewToInstall(kinds Kinds, download *Download, downloadFiles *DownloadFiles) *ToInstall {
 	return &ToInstall{
-		kind:          kind,
+		kinds:         kinds,
 		Download:      download,
 		DownloadFiles: []*DownloadFiles{downloadFiles},
 	}
 }
 
-func NewToInstallForMod(kind Kind, mod *Mod, downloadFiles []*DownloadFiles) (result []*ToInstall, err error) {
+func NewToInstallForMod(mod *Mod, downloadFiles []*DownloadFiles) (result []*ToInstall, err error) {
 	mLookup := make(map[string]*Download)
 	dfLookup := make(map[string]*DownloadFiles)
 	for _, dl := range mod.Downloadables {
@@ -42,24 +42,16 @@ func NewToInstallForMod(kind Kind, mod *Mod, downloadFiles []*DownloadFiles) (re
 	}
 	for n, df := range dfLookup {
 		dl := mLookup[n]
-		result = append(result, NewToInstall(kind, dl, df))
+		result = append(result, NewToInstall(mod.Kinds(), dl, df))
 	}
 	return
 }
 
 func (ti *ToInstall) GetDownloadLocation(game config.GameDef, tm TrackedMod) (string, error) {
-	switch ti.kind {
-	case Hosted:
-		switch tm.SubKind() {
-		case HostedGitHub:
-			return ti.getHostedDownloadLocation(game, tm, tm.Mod().Version)
-		default:
-			return ti.getHostedDownloadLocation(game, tm, ti.Download.Version)
-		}
-	case Nexus, CurseForge:
-		return ti.getRemoteDownloadLocation(game, tm)
+	if ti.kinds.IsHosted() {
+		return ti.getHostedDownloadLocation(game, tm, tm.Mod().Version)
 	}
-	panic(fmt.Sprintf("unknown kind %v", ti.kind))
+	return ti.getRemoteDownloadLocation(game, tm)
 }
 
 func (ti *ToInstall) getHostedDownloadLocation(game config.GameDef, tm TrackedMod, v string) (string, error) {

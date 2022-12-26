@@ -10,15 +10,27 @@ import (
 )
 
 func Download(game config.GameDef, mod mods.TrackedMod, toInstall []*mods.ToInstall) (err error) {
-	switch mod.Kind() {
-	case mods.CurseForge:
-		err = curseForge(game, mod, toInstall)
-	case mods.Nexus:
-		err = nexus(game, mod, toInstall)
-	case mods.Hosted:
-		err = hosted(game, mod, toInstall)
-	default:
-		return fmt.Errorf("unknown kind %v", mod.Kind())
+	k := mod.Kinds()
+	if k.IsHosted() {
+		if err = hosted(game, mod, toInstall); err == nil {
+			// Success
+			return
+		}
+	}
+	if k.Is(mods.CurseForge) {
+		if err = curseForge(game, mod, toInstall); err == nil {
+			// Success
+			return
+		}
+	}
+	if k.Is(mods.Nexus) {
+		if err = nexus(game, mod, toInstall); err == nil {
+			// Success
+			return
+		}
+	}
+	if err != nil {
+		return fmt.Errorf("unknown kind %s", k.String())
 	}
 	return
 }

@@ -1,18 +1,18 @@
 package mods
 
+import "strings"
+
 type (
-	Kind    string
-	SubKind string
+	Kind       string
+	NexusModID int
+	CfModID    int
 )
 
 const (
-	Hosted     Kind = "Hosted"
-	Nexus      Kind = "Nexus"
-	CurseForge Kind = "CurseForge"
-
-	HostedBlank  SubKind = ""
-	HostedAt     SubKind = "HostedAt"
-	HostedGitHub SubKind = "GitHub"
+	Nexus        Kind = "Nexus"
+	CurseForge   Kind = "CurseForge"
+	HostedAt     Kind = "HostedAt"
+	HostedGitHub Kind = "GitHub"
 )
 
 type (
@@ -20,10 +20,12 @@ type (
 		Owner string `json:"Owner"`
 		Repo  string `json:"Repo"`
 	}
+	Kinds   []Kind
 	ModKind struct {
-		Kind    Kind     `json:"Kind" xml:"Kind"`
-		SubKind *SubKind `json:"SubKind,omitempty" xml:"SubKind,omitempty"`
-		GitHub  *GitHub  `json:"Github,omitempty" xml:"Github,omitempty"`
+		Kinds        Kinds       `json:"Kinds" xml:"Kinds"`
+		NexusID      *NexusModID `json:"NexusID" xml:"NexusID"`
+		CurseForgeID *CfModID    `json:"CurseForgeID" xml:"CurseForgeID"`
+		GitHub       *GitHub     `json:"Github,omitempty" xml:"Github,omitempty"`
 	}
 )
 
@@ -32,31 +34,45 @@ var SubKinds = []string{
 	string(HostedGitHub),
 }
 
-func NewModKind(kind Kind, subKind SubKind) ModKind {
-	var sk *SubKind
-	if kind == Hosted {
-		sk = &subKind
-	}
-	return ModKind{
-		Kind:    kind,
-		SubKind: sk,
-	}
-}
-
 func (k Kind) Is(kind Kind) bool {
 	return k == kind
 }
 
-func (sk *SubKind) Get() SubKind {
-	if sk != nil {
-		return *sk
-	}
-	return HostedBlank
-}
-
-func (sk *SubKind) Is(value SubKind) bool {
-	if sk != nil {
-		return *sk == value
+func (k *Kinds) Is(kind Kind) bool {
+	for _, i := range *k {
+		if i == kind {
+			return true
+		}
 	}
 	return false
+}
+
+func (k *Kinds) Add(kind Kind) {
+	if !k.Is(kind) {
+		*k = append(*k, kind)
+	}
+}
+
+func (k *Kinds) Remove(kind Kind) {
+	for i, v := range *k {
+		if v == kind {
+			*k = append((*k)[:i], (*k)[i+1:]...)
+			break
+		}
+	}
+}
+
+func (k *Kinds) IsHosted() bool {
+	return k.Is(HostedAt) || k.Is(HostedGitHub)
+}
+
+func (k *Kinds) String() string {
+	sb := strings.Builder{}
+	for i, v := range *k {
+		if i > 0 {
+			sb.WriteByte(',')
+		}
+		sb.WriteString(string(v))
+	}
+	return sb.String()
 }

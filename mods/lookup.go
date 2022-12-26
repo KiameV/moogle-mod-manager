@@ -6,7 +6,7 @@ type (
 	lookupID string
 	mod      interface {
 		ID() ModID
-		Kind() Kind
+		Kinds() Kinds
 		Mod() *Mod
 	}
 	ModLookup[T mod] interface {
@@ -84,5 +84,5 @@ func (l *ModLookupConc[T]) Len() int {
 }
 
 func (l *ModLookupConc[T]) newLookupID(m T) lookupID {
-	return lookupID(fmt.Sprintf("%s.%s", m.Kind(), m.ID()))
+	return lookupID(fmt.Sprintf("%s.%s", m.Kinds()[0], m.ID()))
 }

@@ -2,7 +2,6 @@ package mod_author
 
 import (
 	"errors"
-	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
@@ -107,8 +106,7 @@ func (d *modCompatsDef) createItem(item interface{}, done ...func(interface{})) 
 	}, func(ok bool) {
 		if ok {
 			var selected *mods.Mod
-			m.Hosted = nil
-			m.Nexus = nil
+			m.ID = ""
 			if search.Text != "" {
 				for _, mod := range modLookup.All() {
 					if mod.Name.Contains(search.Text) {
@@ -120,25 +118,7 @@ func (d *modCompatsDef) createItem(item interface{}, done ...func(interface{})) 
 					// TODO
 					return
 				}
-				switch selected.ModKind.Kind {
-				case mods.Hosted:
-					m.Kind = mods.Hosted
-					m.Hosted = &mods.ModCompatHosted{
-						ModID: selected.ModID,
-					}
-				case mods.Nexus:
-					m.Kind = mods.Nexus
-					m.Nexus = &mods.ModCompatNexus{
-						ModID: selected.ModID,
-					}
-				case mods.CurseForge:
-					m.Kind = mods.CurseForge
-					m.CurseForge = &mods.ModCompatCF{
-						ModID: selected.ModID,
-					}
-				default:
-					panic(fmt.Sprint("unknown mod kind: ", selected.ModKind.Kind))
-				}
+				m.ID = selected.ID()
 			}
 			if len(done) > 0 {
 				done[0](m)

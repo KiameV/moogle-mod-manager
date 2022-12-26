@@ -13,7 +13,7 @@ type (
 		Version string `json:"Version" xml:"Version"`
 
 		Hosted     *HostedDownloadable     `json:"Hosted,omitempty" xml:"Hosted,omitempty"`
-		Nexus      *RemoteDownloadable     `json:"Nexus,omitempty" xml:"Nexus,omitempty"`
+		Nexus      *NexusDownloadable      `json:"Nexus,omitempty" xml:"Nexus,omitempty"`
 		CurseForge *CurseForgeDownloadable `json:"CurseForge,omitempty" xml:"CurseForge,omitempty"`
 
 		DownloadedArchiveLocation *ArchiveLocation `json:"DownloadedLoc,omitempty" xml:"DownloadedLoc,omitempty"`
@@ -34,14 +34,15 @@ type HostedDownloadable struct {
 	Sources []string `json:"Source" xml:"Sources"`
 }
 
-type RemoteDownloadable struct {
+type NexusDownloadable struct {
 	FileID   int    `json:"FileID"`
 	FileName string `json:"FileName"`
 }
 
 type CurseForgeDownloadable struct {
-	RemoteDownloadable
-	Url string `json:"Url"`
+	FileID   int    `json:"FileID"`
+	FileName string `json:"FileName"`
+	Url      string `json:"Url"`
 }
 
 func (l *ArchiveLocation) ExtractDir(fileName string) string {

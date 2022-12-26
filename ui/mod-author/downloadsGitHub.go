@@ -1,7 +1,6 @@
 package mod_author
 
 import (
-	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/discover/remote/github"
@@ -24,12 +23,26 @@ func (d *githubDownloadsDef) version() (string, error) {
 	return github.LatestRelease(entry.Value[string](d, "owner"), entry.Value[string](d, "repo"))
 }
 
-func (d *githubDownloadsDef) compile() (version string, gh *mods.GitHub, result []*mods.Download, err error) {
-	var dls []github.Download
+func (d *githubDownloadsDef) compile() (version string, gh *mods.GitHub, err error) {
 	if version, err = d.version(); err != nil {
 		return
 	}
+	gh = &mods.GitHub{
+		Owner: entry.Value[string](d, "owner"),
+		Repo:  entry.Value[string](d, "repo"),
+	}
+	return
+}
+
+func (d *githubDownloadsDef) compileDownloads() (result []*mods.Download, err error) {
+	var (
+		dls     []github.Download
+		version string
+	)
 	if dls, err = github.ListDownloads(entry.Value[string](d, "owner"), entry.Value[string](d, "repo"), version); err != nil {
+		return
+	}
+	if version, err = d.version(); err != nil {
 		return
 	}
 	result = make([]*mods.Download, len(dls))
@@ -46,17 +59,15 @@ func (d *githubDownloadsDef) compile() (version string, gh *mods.GitHub, result 
 			},
 		}
 	}
-	gh = &mods.GitHub{
-		Owner: entry.Value[string](d, "owner"),
-		Repo:  entry.Value[string](d, "repo"),
-	}
 	return
 }
 
-func (d *githubDownloadsDef) draw() fyne.CanvasObject {
-	return container.NewVBox(widget.NewForm(
-		entry.FormItem[string](d, "owner"),
-		entry.FormItem[string](d, "repo")))
+func (d *githubDownloadsDef) draw() *container.TabItem {
+	return container.NewTabItem(
+		"GitHub",
+		widget.NewForm(
+			entry.FormItem[string](d, "owner"),
+			entry.FormItem[string](d, "repo")))
 }
 
 func (d *githubDownloadsDef) set(gh *mods.GitHub) {

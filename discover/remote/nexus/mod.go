@@ -2,39 +2,59 @@ package nexus
 
 import (
 	"github.com/kiamev/moogle-mod-manager/config"
+	"github.com/kiamev/moogle-mod-manager/mods"
 	"time"
 )
 
-type nexusMod struct {
-	ModID           int              `json:"mod_id"`
-	Name            string           `json:"name"`
-	Summary         string           `json:"summary"`
-	Description     string           `json:"description"`
-	PictureUrl      string           `json:"picture_url"`
-	CreatedTime     time.Time        `json:"created_time"`
-	UpdatedTime     time.Time        `json:"updated_time"`
-	Version         string           `json:"version"`
-	GamePath        config.NexusPath `json:"domain_name"`
-	CategoryID      int              `json:"category_id"`
-	Author          string           `json:"author"`
-	AuthorLink      string           `json:"author_link"`
-	HasAdultContent bool             `json:"contains_adult_content"`
-	Available       bool             `json:"available"`
-	Link            string           `json:"-"`
+type (
+	nexusMod struct {
+		ModID           int              `json:"mod_id"`
+		Name            string           `json:"name"`
+		Summary         string           `json:"summary"`
+		Description     string           `json:"description"`
+		PictureUrl      string           `json:"picture_url"`
+		CreatedTime     time.Time        `json:"created_time"`
+		UpdatedTime     time.Time        `json:"updated_time"`
+		Version         string           `json:"version"`
+		GamePath        config.NexusPath `json:"domain_name"`
+		CategoryID      int              `json:"category_id"`
+		Author          string           `json:"author"`
+		AuthorLink      string           `json:"author_link"`
+		HasAdultContent bool             `json:"contains_adult_content"`
+		Available       bool             `json:"available"`
+		Link            string           `json:"-"`
+	}
+	NexusFile struct {
+		FileID      int    `json:"file_id"`
+		Name        string `json:"name"`
+		Version     string `json:"version"`
+		IsPrimary   bool   `json:"is_primary"`
+		FileName    string `json:"file_name"`
+		ModVersion  string `json:"mod_version"`
+		Description string `json:"description"`
+	}
+	fileParent struct {
+		Files []NexusFile `json:"files"`
+	}
+)
+
+func (f NexusFile) ToDownload() *mods.Download {
+	return &mods.Download{
+		Name:    f.Name,
+		Version: f.Version,
+		Nexus: &mods.NexusDownloadable{
+			FileID:   f.FileID,
+			FileName: f.FileName,
+		},
+	}
 }
 
-type NexusFile struct {
-	FileID      int    `json:"file_id"`
-	Name        string `json:"name"`
-	Version     string `json:"version"`
-	IsPrimary   bool   `json:"is_primary"`
-	FileName    string `json:"file_name"`
-	ModVersion  string `json:"mod_version"`
-	Description string `json:"description"`
-}
-
-type fileParent struct {
-	Files []NexusFile `json:"files"`
+func (p fileParent) ToDownloads() []*mods.Download {
+	result := make([]*mods.Download, len(p.Files))
+	for i, f := range p.Files {
+		result[i] = f.ToDownload()
+	}
+	return result
 }
 
 /*

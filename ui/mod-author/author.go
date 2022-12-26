@@ -31,9 +31,8 @@ import (
 )
 
 func New() state.Screen {
-	var kind = mods.Hosted
 	a := &ModAuthorer{
-		kind:         &kind,
+		kinds:        &mods.Kinds{},
 		Manager:      entry.NewManager(),
 		previewDef:   newPreviewDef(),
 		donationsDef: newDonationsDef(),
@@ -45,15 +44,13 @@ func New() state.Screen {
 	a.categorySelect = entry.NewSelectEntry(a, "Category", "", mods.Categories)
 
 	a.modCompatsDef = newModCompatibilityDef(a.gamesDef)
-	a.subKindSelect = entry.NewSelectEntry(a, "Kind", "", mods.SubKinds)
-	a.subKindSelect.Binding().AddListener(&subKindListener{author: a, entry: a.subKindSelect})
 
 	a.installTypeSelect = entry.NewSelectEntry(a, "Install Type", "", mods.InstallTypes)
 	a.installTypeSelect.Binding().AddListener(&installTypeListener{author: a, entry: a.installTypeSelect})
 
 	a.selectType = entry.NewSelectEntry(a, "Selection Type", "", mods.SelectTypes)
 
-	a.downloads = newDownloads(a.kind, a.subKindSelect)
+	a.downloads = newDownloads(a.gamesDef, a.kinds)
 	a.alwaysDownload = newAlwaysDownloadDef(a.downloads, &a.installType)
 	a.configsDef = newConfigurationsDef(a.downloads, &a.installType)
 	a.version = entry.NewEntry[string](a, entry.KindString, "Version", "")
@@ -63,7 +60,7 @@ func New() state.Screen {
 type ModAuthorer struct {
 	entry.Manager
 	modID        mods.ModID
-	kind         *mods.Kind
+	kinds        *mods.Kinds
 	editCallback func(*mods.Mod)
 
 	previewDef *previewDef
@@ -77,7 +74,6 @@ type ModAuthorer struct {
 	description       *richTextEditor
 	releaseNotes      *richTextEditor
 	categorySelect    entry.Entry[string]
-	subKindSelect     entry.Entry[string]
 	version           entry.Entry[string]
 	installTypeSelect entry.Entry[string]
 	selectType        entry.Entry[string]
@@ -102,9 +98,6 @@ func (a *ModAuthorer) OnClose() {
 func (a *ModAuthorer) NewHostedMod() {
 	a.modID = ""
 	a.updateEntries(mods.NewMod(&mods.ModDef{
-		ModKind: mods.ModKind{
-			Kind: mods.Hosted,
-		},
 		ReleaseDate:         time.Now().Format("Jan 02 2006"),
 		ConfigSelectionType: mods.Auto,
 	}))
@@ -112,9 +105,10 @@ func (a *ModAuthorer) NewHostedMod() {
 
 func (a *ModAuthorer) NewNexusMod() {
 	a.modID = ""
+	*a.kinds = mods.Kinds{mods.Nexus}
 	a.updateEntries(mods.NewMod(&mods.ModDef{
 		ModKind: mods.ModKind{
-			Kind: mods.Nexus,
+			Kinds: *a.kinds,
 		},
 		ReleaseDate:         time.Now().Format("Jan 02 2006"),
 		ConfigSelectionType: mods.Auto,
@@ -140,9 +134,10 @@ func (a *ModAuthorer) NewNexusMod() {
 
 func (a *ModAuthorer) NewCurseForgeMod() {
 	a.modID = ""
+	*a.kinds = mods.Kinds{mods.CurseForge}
 	a.updateEntries(mods.NewMod(&mods.ModDef{
 		ModKind: mods.ModKind{
-			Kind: mods.CurseForge,
+			Kinds: *a.kinds,
 		},
 		ReleaseDate:         time.Now().Format("Jan 02 2006"),
 		ConfigSelectionType: mods.Auto,
@@ -193,15 +188,11 @@ func (a *ModAuthorer) LoadModToEdit() (successfullyLoadedMod bool) {
 		util.ShowErrorLong(err)
 		return false
 	}
-	*a.kind = mod.ModKind.Kind
-	a.modID = mod.ModID
 	a.updateEntries(&mod)
 	return true
 }
 
 func (a *ModAuthorer) EditMod(mod *mods.Mod, editCallback func(*mods.Mod)) {
-	a.modID = mod.ModID
-	*a.kind = mod.ModKind.Kind
 	a.editCallback = editCallback
 	a.updateEntries(mod)
 }
@@ -211,14 +202,7 @@ func (a *ModAuthorer) Draw(w fyne.Window) {
 		state.SetBaseDir(dir)
 	}
 
-	switch *a.kind {
-	case mods.Hosted:
-		a.tabs = a.createHostedInputs()
-	case mods.CurseForge, mods.Nexus:
-		a.tabs = a.createRemoteInputs()
-	default:
-		panic("invalid mod kind")
-	}
+	a.tabs = a.createHostedInputs()
 
 	/*a.tabs.OnSelected = func(tab *container.TabItem) {
 		if len(a.configsDef.list.Items) > 0 {
@@ -232,7 +216,7 @@ func (a *ModAuthorer) Draw(w fyne.Window) {
 	smi := make([]*fyne.MenuItem, 0, 4)
 	smi = append(smi,
 		fyne.NewMenuItem("as json (local save)", func() {
-			a.saveFile(asJson)
+			_ = a.saveFile(asJson)
 		}),
 		/*fyne.NewMenuItem("as xml", func() {
 			a.saveFile(asXml)
@@ -295,7 +279,7 @@ func (a *ModAuthorer) Draw(w fyne.Window) {
 				return
 			}
 
-			if tis, err = mods.NewToInstallForMod(mod.ModKind.Kind, mod, mod.AlwaysDownload); err != nil {
+			if tis, err = mods.NewToInstallForMod(mod, mod.AlwaysDownload); err != nil {
 				util.ShowErrorLong(err)
 				return
 			}
@@ -329,15 +313,14 @@ func (a *ModAuthorer) Draw(w fyne.Window) {
 }
 
 func (a *ModAuthorer) updateEntries(mod *mods.Mod) {
-	*a.kind = mod.ModKind.Kind
-	entry.CreateBaseDir(a, state.GetBaseDirBinding())
 	a.modID = mod.ModID
+	*a.kinds = mod.ModKind.Kinds
+	entry.CreateBaseDir(a, state.GetBaseDirBinding())
 	entry.NewEntry[bool](a, entry.KindBool, "Hide", mod.Hide)
 	entry.NewEntry[string](a, entry.KindString, "Name", string(mod.Name))
 	entry.NewEntry[string](a, entry.KindString, "Author", mod.Author)
 	entry.NewEntry[string](a, entry.KindString, "Release Date", mod.ReleaseDate)
 	a.categorySelect.Set(string(mod.Category))
-	a.subKindSelect.Set(string(mod.SubKind()))
 	a.version.Set(mod.Version)
 	a.description.SetText(mod.Description)
 	a.releaseNotes.SetText(mod.ReleaseNotes)
@@ -451,7 +434,7 @@ func (a *ModAuthorer) compileMod() (m *mods.Mod, err error) {
 		ReleaseNotes: a.releaseNotes.String(),
 		Link:         entry.Value[string](a, "Link"),
 		ModKind: mods.ModKind{
-			Kind: *a.kind,
+			Kinds: *a.kinds,
 		},
 		Preview: a.previewDef.compile(),
 		//ModKind:      *a.modKindDef.compile(),
@@ -471,19 +454,23 @@ func (a *ModAuthorer) compileMod() (m *mods.Mod, err error) {
 		return
 	}
 
-	switch *a.kind {
-	case mods.Hosted:
-		name := u.CreateFileName(string(m.Name))
-		author := u.CreateFileName(m.Author)
-		if name != "" && author != "" {
-			m.ModID = mods.ModID(strings.ToLower(fmt.Sprintf("%s.%s", name, author)))
+	if a.modID != "" {
+		m.ModID = a.modID
+	} else {
+		k := m.Kinds()
+		if k.IsHosted() {
+			name := u.CreateFileName(string(m.Name))
+			author := u.CreateFileName(m.Author)
+			if name != "" && author != "" {
+				m.ModID = mods.ModID(strings.ToLower(fmt.Sprintf("%s.%s", name, author)))
+			}
+		} else if k.Is(mods.Nexus) {
+			m.ModID = mods.NewModID(mods.Nexus, string(a.modID))
+		} else if k.Is(mods.CurseForge) {
+			m.ModID = mods.NewModID(mods.CurseForge, string(a.modID))
+		} else {
+			err = fmt.Errorf("unknown or missing kind")
 		}
-	case mods.Nexus:
-		m.ModID = mods.NewModID(mods.Nexus, string(a.modID))
-	case mods.CurseForge:
-		m.ModID = mods.NewModID(mods.CurseForge, string(a.modID))
-	default:
-		panic("invalid mod kind")
 	}
 
 	m.AlwaysDownload = a.alwaysDownload.compile()
@@ -643,9 +630,6 @@ func (a *ModAuthorer) createHostedInputs() *container.AppTabs {
 		entry.FormItem[string](a, "Name"),
 		entry.FormItem[string](a, "Author"),
 	}
-	if a.kind.Is(mods.Hosted) {
-		entries = append(entries, a.subKindSelect.FormItem())
-	}
 	entries = append(entries,
 		a.categorySelect.FormItem(),
 		a.version.FormItem(),
@@ -667,28 +651,28 @@ func (a *ModAuthorer) createHostedInputs() *container.AppTabs {
 		container.NewTabItem("Configurations", container.NewVScroll(a.configsDef.draw())))
 }
 
-func (a *ModAuthorer) createRemoteInputs() *container.AppTabs {
-	var entries = []*widget.FormItem{
-		entry.GetBaseDirFormItem(a, "Working Dir"),
-		entry.FormItem[bool](a, "Hide"),
-		entry.FormItem[string](a, "Name"),
-		a.categorySelect.FormItem(),
-		a.installTypeSelect.FormItem(),
-		a.selectType.FormItem(),
-	}
-	entries = append(entries, a.previewDef.getFormItems()...)
-
-	return container.NewAppTabs(
-		container.NewTabItem("Mod", container.NewVScroll(widget.NewForm(entries...))),
-		container.NewTabItem("Description", a.description.Draw()),
-		container.NewTabItem("Compatibility", container.NewVScroll(a.modCompatsDef.draw())),
-		//container.NewTabItem("Release Notes", a.releaseNotes.Draw()),
-		//container.NewTabItem("Downloadables", container.NewVScroll(a.downloadDef.draw())),
-		container.NewTabItem("Donation Links", container.NewVScroll(a.donationsDef.draw())),
-		//container.NewTabItem("Games", container.NewVScroll(a.gamesDef.draw())),
-		container.NewTabItem("Always Install", container.NewVScroll(a.alwaysDownload.draw())),
-		container.NewTabItem("Configurations", container.NewVScroll(a.configsDef.draw())))
-}
+//func (a *ModAuthorer) createRemoteInputs() *container.AppTabs {
+//	var entries = []*widget.FormItem{
+//		entry.GetBaseDirFormItem(a, "Working Dir"),
+//		entry.FormItem[bool](a, "Hide"),
+//		entry.FormItem[string](a, "Name"),
+//		a.categorySelect.FormItem(),
+//		a.installTypeSelect.FormItem(),
+//		a.selectType.FormItem(),
+//	}
+//	entries = append(entries, a.previewDef.getFormItems()...)
+//
+//	return container.NewAppTabs(
+//		container.NewTabItem("Mod", container.NewVScroll(widget.NewForm(entries...))),
+//		container.NewTabItem("Description", a.description.Draw()),
+//		container.NewTabItem("Compatibility", container.NewVScroll(a.modCompatsDef.draw())),
+//		//container.NewTabItem("Release Notes", a.releaseNotes.Draw()),
+//		//container.NewTabItem("Downloadables", container.NewVScroll(a.downloadDef.draw())),
+//		container.NewTabItem("Donation Links", container.NewVScroll(a.donationsDef.draw())),
+//		//container.NewTabItem("Games", container.NewVScroll(a.gamesDef.draw())),
+//		container.NewTabItem("Always Install", container.NewVScroll(a.alwaysDownload.draw())),
+//		container.NewTabItem("Configurations", container.NewVScroll(a.configsDef.draw())))
+//}
 
 func (a *ModAuthorer) gameAdded(id config.GameID) {
 	if a != nil && a.installType == config.BlankInstallType {
@@ -697,20 +681,6 @@ func (a *ModAuthorer) gameAdded(id config.GameID) {
 			a.installTypeSelect.Set(string(a.installType))
 		}
 	}
-}
-
-type subKindListener struct {
-	author *ModAuthorer
-	entry  entry.Entry[string]
-}
-
-func (l *subKindListener) DataChanged() {
-	if l.author == nil || l.author.downloads == nil || l.author.tabs == nil || l.author.version == nil {
-		return
-	}
-	l.author.downloads.UpdateTab()
-	l.author.tabs.Refresh()
-	l.author.version.Enable(l.entry.Value() != string(mods.HostedGitHub))
 }
 
 type installTypeListener struct {

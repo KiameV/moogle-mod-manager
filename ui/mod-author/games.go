@@ -40,6 +40,16 @@ func (d *gamesDef) compile() (games []*mods.Game) {
 	return games
 }
 
+func (d *gamesDef) gameDefs() (games []config.GameDef, err error) {
+	games = make([]config.GameDef, len(d.list.Items))
+	for i, item := range d.list.Items {
+		if games[i], err = config.GameDefFromID(item.(*mods.Game).ID); err != nil {
+			return
+		}
+	}
+	return
+}
+
 func (d *gamesDef) getItemKey(item interface{}) string {
 	return string(item.(*mods.Game).ID)
 }

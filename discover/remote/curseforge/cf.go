@@ -232,7 +232,8 @@ func toMod(m cfMod, desc string, dls []CfFile) (include bool, mod *mods.Mod, err
 			Local: nil,
 		},
 		ModKind: mods.ModKind{
-			Kind: mods.CurseForge,
+			Kinds:        mods.Kinds{mods.CurseForge},
+			CurseForgeID: (*mods.CfModID)(&m.ModID),
 		},
 		Games: []*mods.Game{{
 			ID:       game.ID(),
@@ -259,11 +260,9 @@ func toMod(m cfMod, desc string, dls []CfFile) (include bool, mod *mods.Mod, err
 			Name:    d.Name,
 			Version: d.Version(),
 			CurseForge: &mods.CurseForgeDownloadable{
-				RemoteDownloadable: mods.RemoteDownloadable{
-					FileID:   d.FileID,
-					FileName: d.Name,
-				},
-				Url: d.DownloadUrl,
+				FileID:   d.FileID,
+				FileName: d.Name,
+				Url:      d.DownloadUrl,
 			},
 		}
 		dlf := &mods.DownloadFiles{

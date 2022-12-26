@@ -83,7 +83,7 @@ func (ui *configInstallerUI) Draw(w fyne.Window) {
 			ui.prevConfigs = append(ui.prevConfigs, ui.currentConfig)
 			ui.choices = append(ui.choices, ui.currentChoice)
 			if ui.currentChoice.NextConfigurationName == nil {
-				tis, err := mods.NewToInstallForMod(ui.mod.ModKind.Kind, ui.mod, ui.uniqueToInstall())
+				tis, err := mods.NewToInstallForMod(ui.mod, ui.uniqueToInstall())
 				if err != nil {
 					util.ShowErrorLong(err)
 					state.ShowPreviousScreen()

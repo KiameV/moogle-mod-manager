@@ -28,25 +28,24 @@ func CheckForUpdates(game config.GameDef, result func(err error)) {
 	}
 
 	for _, tm := range lookup.GetMods(game) {
-		switch tm.Kind() {
-		case mods.Hosted:
+		k := tm.Kinds()
+		if k.IsHosted() {
 			wg.Add(1)
 			h := &hostedUpdateChecker{tm: tm, wg: &wg}
 			ucs = append(ucs, h)
 			dispatcher.JobQueue <- h
-		case mods.Nexus:
+		}
+		if k.Is(mods.Nexus) {
 			wg.Add(1)
 			n := &remoteUpdateChecker{tm: tm, wg: &wg, client: remote.NewNexusClient()}
 			ucs = append(ucs, n)
 			dispatcher.JobQueue <- n
-		case mods.CurseForge:
+		}
+		if k.Is(mods.CurseForge) {
 			wg.Add(1)
 			n := &remoteUpdateChecker{tm: tm, wg: &wg, client: remote.NewCurseForgeClient()}
 			ucs = append(ucs, n)
 			dispatcher.JobQueue <- n
-		default:
-			result(fmt.Errorf("unknown mod kind %s", tm.Kind()))
-			return
 		}
 	}
 	wg.Wait()

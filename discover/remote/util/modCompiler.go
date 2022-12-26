@@ -82,7 +82,7 @@ func (c *modCompiler) AppendNewMods(folder string, game config.GameDef, ms []*mo
 
 func (c *modCompiler) getLastModID(ms []*mods.Mod) (lastID int) {
 	for _, m := range ms {
-		if m.ModKind.Kind == c.kind {
+		if m.ModKind.Kinds.Is(c.kind) {
 			id, _ := m.ModIdAsNumber()
 			if int(id) > lastID {
 				lastID = int(id)
