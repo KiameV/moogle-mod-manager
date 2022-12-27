@@ -1,6 +1,7 @@
 package local
 
 import (
+	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
@@ -16,6 +17,7 @@ import (
 	"github.com/kiamev/moogle-mod-manager/ui/util"
 	"github.com/kiamev/moogle-mod-manager/ui/util/working"
 	"github.com/ncruces/zenity"
+	"os/exec"
 )
 
 type LocalUI interface {
@@ -121,6 +123,12 @@ func (ui *localUI) Draw(w fyne.Window) {
 		})
 	})
 
+	launchGameButton := widget.NewButton("Launch Game", func() {
+		if err := exec.Command("explorer", fmt.Sprintf(`steam://rungameid/%s`, state.CurrentGame.SteamID())).Start(); err != nil {
+			util.ShowErrorLong(err)
+		}
+	})
+
 	for _, mod := range managed.GetMods(state.CurrentGame) {
 		ui.addModToList(mod)
 	}
@@ -160,7 +168,7 @@ func (ui *localUI) Draw(w fyne.Window) {
 		ui.split.Trailing = container.NewMax()
 	}
 
-	buttons := container.NewHBox(findButton, addButton, removeButton, ui.checkAll)
+	buttons := container.NewHBox(findButton, addButton, removeButton, ui.checkAll, launchGameButton)
 	ui.split = container.NewHSplit(
 		ui.ModList,
 		container.NewMax())
