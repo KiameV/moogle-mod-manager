@@ -645,7 +645,7 @@ func (a *ModAuthorer) createHostedInputs() *container.AppTabs {
 		container.NewTabItem("Games", container.NewVScroll(a.gamesDef.draw())),
 		container.NewTabItem("Compatibility", container.NewVScroll(a.modCompatsDef.draw())),
 		container.NewTabItem("Release Notes", a.releaseNotes.Draw()),
-		a.downloads.TabItem,
+		container.NewTabItem("Mod Hosts", a.downloads.draw()),
 		container.NewTabItem("Donation Links", container.NewVScroll(a.donationsDef.draw())),
 		container.NewTabItem("Always Install", container.NewVScroll(a.alwaysDownload.draw())),
 		container.NewTabItem("Configurations", container.NewVScroll(a.configsDef.draw())))

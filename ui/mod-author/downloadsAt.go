@@ -116,18 +116,23 @@ func (d *downloadsDef) draw() *container.TabItem {
 			widget.NewButton("Add", func() {
 				d.createItem(&mods.Download{}, func(result interface{}) {
 					d.list.AddItem(result)
+					d.kinds.Add(mods.HostedAt)
 				})
 			})),
 			d.list.Draw())))
 }
 
 func (d *downloadsDef) set(downloadables []*mods.Download) {
-	d.list.Clear()
-	for _, i := range downloadables {
-		d.list.AddItem(i)
+	d.clear()
+	if len(downloadables) > 0 {
+		for _, i := range downloadables {
+			d.list.AddItem(i)
+			d.kinds.Add(mods.HostedAt)
+		}
 	}
 }
 
 func (d *downloadsDef) clear() {
 	d.list.Clear()
+	d.kinds.Remove(mods.HostedAt)
 }

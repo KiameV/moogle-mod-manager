@@ -11,7 +11,6 @@ type (
 		CompileDownloads() ([]mods.Download, error)
 	}
 	downloads struct {
-		*container.TabItem
 		kinds *mods.Kinds
 		dld   *downloadsDef
 		ghd   *githubDownloadsDef
@@ -24,7 +23,7 @@ func newDownloads(games *gamesDef, kinds *mods.Kinds) *downloads {
 	return &downloads{
 		kinds: kinds,
 		dld:   newDownloadsDef(kinds),
-		ghd:   newGithubDownloadsDef(),
+		ghd:   newGithubDownloadsDef(kinds),
 		nrd:   newDownloadsRemoteDef(games, mods.Nexus, kinds),
 		cfd:   newDownloadsRemoteDef(games, mods.CurseForge, kinds),
 	}
