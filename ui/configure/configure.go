@@ -12,7 +12,7 @@ import (
 	"os"
 )
 
-func Show(w fyne.Window) {
+func Show(w fyne.Window, done func()) {
 	configs := *config.Get()
 	items := []*widget.FormItem{
 		createSelectRow("Default GameDef", &configs.DefaultGame, config.GameIDs()...),
@@ -55,6 +55,9 @@ func Show(w fyne.Window) {
 				}
 				fyne.CurrentApp().Settings().SetTheme(t)
 			}
+		}
+		if done != nil {
+			done()
 		}
 	}, w)
 	d.Resize(fyne.NewSize(800, 400))

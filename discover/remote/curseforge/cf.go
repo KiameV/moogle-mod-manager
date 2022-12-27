@@ -41,6 +41,9 @@ func IsCurseforge(url string) bool {
 }
 
 func (c *client) GetFromMod(in *mods.Mod) (found bool, mod *mods.Mod, err error) {
+	if config.GetSecrets().CfApiKey == "" {
+		return false, nil, errors.New("no curse forge api key set in File->Secrets")
+	}
 	if len(in.Games) == 0 {
 		err = fmt.Errorf("no games found for mod %s", in.Name)
 		return
@@ -53,10 +56,16 @@ func (c *client) GetFromMod(in *mods.Mod) (found bool, mod *mods.Mod, err error)
 }
 
 func (c *client) GetFromID(_ config.GameDef, id int) (found bool, mod *mods.Mod, err error) {
+	if config.GetSecrets().CfApiKey == "" {
+		return false, nil, errors.New("no curse forge api key set in File->Secrets")
+	}
 	return c.get(fmt.Sprintf(getModDataByModID, id))
 }
 
 func (c *client) GetFromUrl(url string) (found bool, mod *mods.Mod, err error) {
+	if config.GetSecrets().CfApiKey == "" {
+		return false, nil, errors.New("no curse forge api key set in File->Secrets")
+	}
 	// www.curseforge.com/final-fantasy-vi/mods/gau-rage-descriptions-extended-magna-roader-fix/files/4073052
 	url = strings.Replace(url, "https://", "", 1)
 	url = strings.Replace(url, "http://", "", 1)
@@ -99,6 +108,9 @@ func (c *client) get(url string) (found bool, mod *mods.Mod, err error) {
 }
 
 func (c *client) GetNewestMods(game config.GameDef, lastID int) (result []*mods.Mod, err error) {
+	if config.GetSecrets().CfApiKey == "" {
+		return nil, errors.New("no curse forge api key set in File->Secrets")
+	}
 	var (
 		b       []byte
 		dls     fileParent
@@ -322,6 +334,9 @@ func (c *client) Folder(game config.GameDef) string {
 }
 
 func (c *client) GetMods(game config.GameDef, rebuildCache bool) (result []*mods.Mod, err error) {
+	if config.GetSecrets().CfApiKey == "" {
+		return nil, nil
+	}
 	if !rebuildCache {
 		if l, f := cache[game.ID()]; f {
 			result = l

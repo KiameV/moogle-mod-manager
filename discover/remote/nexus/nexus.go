@@ -49,6 +49,9 @@ func IsNexus(url string) bool {
 }
 
 func (c *client) GetFromMod(in *mods.Mod) (found bool, mod *mods.Mod, err error) {
+	if config.GetSecrets().NexusApiKey == "" {
+		return false, nil, errors.New("no nexus api key set in File->Secrets")
+	}
 	if len(in.Games) == 0 {
 		err = fmt.Errorf("no games found for mod %s", in.Name)
 		return
@@ -65,10 +68,16 @@ func (c *client) GetFromMod(in *mods.Mod) (found bool, mod *mods.Mod, err error)
 }
 
 func (c *client) GetFromID(game config.GameDef, id int) (found bool, mod *mods.Mod, err error) {
+	if config.GetSecrets().NexusApiKey == "" {
+		return false, nil, errors.New("no nexus api key set in File->Secrets")
+	}
 	return c.GetFromUrl(fmt.Sprintf(nexusUrl, game.Remote().Nexus.Path, id))
 }
 
 func (c *client) GetFromUrl(url string) (found bool, mod *mods.Mod, err error) {
+	if config.GetSecrets().CfApiKey == "" {
+		return false, nil, errors.New("no nexus api key set in File->Secrets")
+	}
 	var (
 		sp    = strings.Split(url, "/")
 		path  string
@@ -107,6 +116,9 @@ func (c *client) GetFromUrl(url string) (found bool, mod *mods.Mod, err error) {
 }
 
 func (c *client) GetNewestMods(game config.GameDef, lastID int) (result []*mods.Mod, err error) {
+	if config.GetSecrets().NexusApiKey == "" {
+		return nil, errors.New("no nexus api key set in File->Secrets")
+	}
 	var (
 		b       []byte
 		path    = game.Remote().Nexus.Path
@@ -140,6 +152,9 @@ func (c *client) GetNewestMods(game config.GameDef, lastID int) (result []*mods.
 }
 
 func GetDownloads(game config.GameDef, modID string) (dls []*mods.Download, err error) {
+	if config.GetSecrets().NexusApiKey == "" {
+		return nil, errors.New("no nexus api key set in File->Secrets")
+	}
 	var (
 		b    []byte
 		path = game.Remote().Nexus.Path
@@ -300,6 +315,9 @@ func (c *client) Folder(game config.GameDef) string {
 }
 
 func (c *client) GetMods(game config.GameDef, rebuildCache bool) (result []*mods.Mod, err error) {
+	if config.GetSecrets().NexusApiKey == "" {
+		return nil, nil
+	}
 	if !rebuildCache {
 		if l, f := cache[game.ID()]; f {
 			result = l

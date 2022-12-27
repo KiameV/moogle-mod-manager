@@ -17,6 +17,7 @@ import (
 	"github.com/kiamev/moogle-mod-manager/ui/local"
 	"github.com/kiamev/moogle-mod-manager/ui/menu"
 	mod_author "github.com/kiamev/moogle-mod-manager/ui/mod-author"
+	"github.com/kiamev/moogle-mod-manager/ui/secret"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
 	"github.com/kiamev/moogle-mod-manager/ui/state/ui"
 	"github.com/kiamev/moogle-mod-manager/ui/util"
@@ -108,7 +109,9 @@ func main() {
 
 	state.ShowScreen(state.None)
 	if config.Get().FirstTime {
-		configure.Show(ui.Window)
+		configure.Show(ui.Window, func() {
+			secret.Show(ui.Window)
+		})
 	}
 
 	if game, err := config.GameDefFromID(config.GameID(config.Get().DefaultGame)); err == nil {
@@ -137,6 +140,11 @@ func initialize() {
 
 	if configs.Theme == config.LightThemeColor {
 		fyne.CurrentApp().Settings().SetTheme(theme.LightTheme())
+	}
+
+	if err = repo.NewGetter(repo.Read).Pull(); err != nil {
+		util.ShowErrorLong(err)
+		return
 	}
 
 	if err = config.Initialize(repo.Dirs(repo.Read)); err != nil {

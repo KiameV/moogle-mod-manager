@@ -51,18 +51,14 @@ func GetMods(game config.GameDef, rebuildCache bool) (result []*mods.Mod, err er
 }
 
 func GetClients() []Client {
-	return []Client{
-		NewNexusClient(),
-		NewCurseForgeClient(),
-	}
-	/*var c []Client
+	var c []Client
 	if config.GetSecrets().NexusApiKey != "" {
 		c = append(c, NewNexusClient())
 	}
 	if config.GetSecrets().CfApiKey != "" {
 		NewCurseForgeClient()
 	}
-	return c*/
+	return c
 }
 
 func getMods(game config.GameDef, c Client, eg *errgroup.Group, m *sync.Mutex, result *[]*mods.Mod, rebuildCache bool) {

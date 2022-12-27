@@ -41,7 +41,7 @@ func (m *MainMenu) Draw(w fyne.Window) {
 	}
 	file.Items = append(file.Items,
 		fyne.NewMenuItem("Configure", func() {
-			configure.Show(w)
+			configure.Show(w, nil)
 		}),
 		fyne.NewMenuItem("Secrets", func() {
 			secret.Show(w)
