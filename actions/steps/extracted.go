@@ -42,18 +42,14 @@ func newFileToInstallFromFile(relToExtracted map[string]archive.ExtractedFile, f
 func newFileToInstallFromDir(relToExtracted map[string]archive.ExtractedFile, path string, rel string, d *mods.ModDir, installDir string, archive *string) (*FileToInstall, error) {
 	var (
 		af, found = relToExtracted[rel]
-		r, err    = filepath.Rel(d.From, rel)
 	)
 	if !found {
 		return nil, fmt.Errorf("dir %v not found in extracted files", d.From)
 	}
-	if err != nil {
-		return nil, err
-	}
 	return &FileToInstall{
-		Relative:     r,
+		Relative:     af.Relative,
 		AbsoluteFrom: af.From,
-		AbsoluteTo:   filepath.Join(installDir, d.To, r),
+		AbsoluteTo:   filepath.Join(installDir, af.Relative),
 		Skip:         false,
 		archive:      archive,
 	}, nil

@@ -12,7 +12,6 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strconv"
 	"strings"
 )
 
@@ -134,11 +133,6 @@ func (m *Mod) InstallType(game config.GameDef) config.InstallType {
 		i = *m.InstallType_
 	}
 	return i
-}
-
-func (m *Mod) ModIdAsNumber() (uint64, error) {
-	sp := strings.Split(string(m.ModID), ".")
-	return strconv.ParseUint(sp[len(sp)-1], 10, 64)
 }
 
 func (m *Mod) BranchName() string {
@@ -449,20 +443,20 @@ func (m *Mod) Supports(game config.GameDef) error {
 	return fmt.Errorf("%s does not support %s", m.Name, game.Name())
 }
 
-func (m *Mod) Merge(from Mod) {
-	if m.IsManuallyCreated {
-		m.Author = from.Author
-		if m.AuthorLink == "" {
-			m.AuthorLink = from.AuthorLink
-		}
-		from.ModCompatibility = m.ModCompatibility
-		from.Games = m.Games
-		from.Link = m.Link
-	} else if from.IsManuallyCreated {
-		m.Description = from.Description
-		m.ReleaseNotes = from.ReleaseNotes
-	}
-}
+//func (m *Mod) Merge(from Mod) {
+//	if m.IsManuallyCreated {
+//		m.Author = from.Author
+//		if m.AuthorLink == "" {
+//			m.AuthorLink = from.AuthorLink
+//		}
+//		from.ModCompatibility = m.ModCompatibility
+//		from.Games = m.Games
+//		from.Link = m.Link
+//	} else if from.IsManuallyCreated {
+//		m.Description = from.Description
+//		m.ReleaseNotes = from.ReleaseNotes
+//	}
+//}
 
 func NewModForVersion(manual *Mod, remote *Mod) *Mod {
 	var m Mod

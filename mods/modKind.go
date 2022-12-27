@@ -23,8 +23,8 @@ type (
 	Kinds   []Kind
 	ModKind struct {
 		Kinds        Kinds       `json:"Kinds" xml:"Kinds"`
-		NexusID      *NexusModID `json:"NexusID" xml:"NexusID"`
-		CurseForgeID *CfModID    `json:"CurseForgeID" xml:"CurseForgeID"`
+		NexusID      *NexusModID `json:"NexusID,omitempty" xml:"NexusID,omitempty"`
+		CurseForgeID *CfModID    `json:"CurseForgeID,omitempty" xml:"CurseForgeID,omitempty"`
 		GitHub       *GitHub     `json:"Github,omitempty" xml:"Github,omitempty"`
 	}
 )

@@ -13,7 +13,7 @@ type Client interface {
 	GetFromID(game config.GameDef, id int) (found bool, mod *mods.Mod, err error)
 	GetFromUrl(url string) (found bool, mod *mods.Mod, err error)
 	GetNewestMods(game config.GameDef, lastID int) (result []*mods.Mod, err error)
-	GetMods(game config.GameDef) (result []*mods.Mod, err error)
+	GetMods(game config.GameDef, rebuildCache bool) (result []*mods.Mod, err error)
 	Folder(game config.GameDef) string
 }
 

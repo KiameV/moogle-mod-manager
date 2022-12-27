@@ -29,7 +29,10 @@ const (
 	NexusFileDownload = "https://www.nexusmods.com/Core/Libs/Common/Widgets/DownloadPopUp?id=%d&game_id=%v"
 )
 
-var bbcodeRegex *regexp.Regexp = regexp.MustCompile(`\[\/?[a-zA-Z0-9=\[\]_ ]+\]`)
+var (
+	bbcodeRegex *regexp.Regexp = regexp.MustCompile(`\[\/?[a-zA-Z0-9=\[\]_ ]+\]`)
+	cache                      = make(map[config.GameID][]*mods.Mod)
+)
 
 type client struct {
 	compiler u.ModCompiler
@@ -50,18 +53,15 @@ func (c *client) GetFromMod(in *mods.Mod) (found bool, mod *mods.Mod, err error)
 		err = fmt.Errorf("no games found for mod %s", in.Name)
 		return
 	}
-	var (
-		id   uint64
-		game config.GameDef
-	)
+	if !in.ModKind.Kinds.Is(mods.Nexus) || in.ModKind.NexusID == nil {
+		err = fmt.Errorf("mod %s is not a nexus mod", in.Name)
+		return
+	}
+	var game config.GameDef
 	if game, err = config.GameDefFromID(in.Games[0].ID); err != nil {
 		return
 	}
-	if id, err = in.ModIdAsNumber(); err != nil {
-		err = fmt.Errorf("could not parse mod id %s for %s", in.ModID, in.Name)
-		return
-	}
-	return c.GetFromUrl(fmt.Sprintf(nexusUrl, game.Remote().Nexus.Path, id))
+	return c.GetFromUrl(fmt.Sprintf(nexusUrl, game.Remote().Nexus.Path, *in.ModKind.NexusID))
 }
 
 func (c *client) GetFromID(game config.GameDef, id int) (found bool, mod *mods.Mod, err error) {
@@ -299,7 +299,13 @@ func (c *client) Folder(game config.GameDef) string {
 	return filepath.Join(config.PWD, "remote", string(game.ID()), string(mods.Nexus))
 }
 
-func (c *client) GetMods(game config.GameDef) (result []*mods.Mod, err error) {
+func (c *client) GetMods(game config.GameDef, rebuildCache bool) (result []*mods.Mod, err error) {
+	if !rebuildCache {
+		if l, f := cache[game.ID()]; f {
+			result = l
+			return
+		}
+	}
 	if game == nil {
 		return nil, errors.New("GetMods called with a nil game")
 	}
@@ -323,7 +329,11 @@ func (c *client) GetMods(game config.GameDef) (result []*mods.Mod, err error) {
 	}); err != nil {
 		return
 	}
-	return c.compiler.AppendNewMods(c.Folder(game), game, result)
+	if result, err = c.compiler.AppendNewMods(c.Folder(game), game, result); err != nil {
+		return
+	}
+	cache[game.ID()] = result
+	return
 }
 
 /*

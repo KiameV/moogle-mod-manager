@@ -86,11 +86,12 @@ func (ui *localUI) Draw(w fyne.Window) {
 	})
 	removeButton := widget.NewButton("Remove", func() {
 		dialog.NewConfirm("Delete?", "Are you sure you want to delete this mod?", func(ok bool) {
-			if ok && ui.selectedMod != nil && ui.selectedMod.Enabled() {
-				if a, err := actions.New(actions.Uninstall, state.CurrentGame, ui.selectedMod, func(r actions.Result) {
+			mod := ui.selectedMod
+			if ok && mod != nil && mod.Enabled() {
+				if a, err := actions.New(actions.Uninstall, state.CurrentGame, mod, func(r actions.Result) {
 					if r.Err != nil {
 						util.ShowErrorLong(r.Err)
-					} else if r.Status == mods.Ok && !ui.selectedMod.Enabled() {
+					} else if r.Status == mods.Ok && !mod.Enabled() {
 						ui.removeSelectedMod()
 					}
 				}); err != nil {

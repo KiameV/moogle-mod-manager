@@ -45,9 +45,9 @@ func GetModsAsLookup(game config.GameDef) (lookup mods.ModLookup[*mods.Mod], err
 	var (
 		remoteMods []*mods.Mod
 		repoMods   []*mods.Mod
-		found      *mods.Mod
-		eg         errgroup.Group
-		ok         bool
+		//found      *mods.Mod
+		eg errgroup.Group
+		ok bool
 	)
 
 	/* TODO is this cache needed?
@@ -67,7 +67,7 @@ func GetModsAsLookup(game config.GameDef) (lookup mods.ModLookup[*mods.Mod], err
 			return
 		})
 		eg.Go(func() (e error) {
-			repoMods, e = repo.NewGetter(repo.Read).GetMods(game)
+			repoMods, e = repo.NewGetter(repo.Read).GetMods(game, false)
 			return
 		})
 		if err = eg.Wait(); err != nil {
@@ -86,11 +86,11 @@ func GetModsAsLookup(game config.GameDef) (lookup mods.ModLookup[*mods.Mod], err
 		}
 	}
 	for _, m := range remoteMods {
-		if found, ok = lookup.Get(m); !ok {
+		if _, ok = lookup.Get(m); !ok {
 			lookup.Set(m)
-		} else {
+		} /* else {
 			found.Mod().Merge(*m)
-		}
+		}*/
 	}
 	lookup.RemoveConditionally(func(m *mods.Mod) bool {
 		return m.Mod().Hide

@@ -53,7 +53,7 @@ func (c *modCompiler) AppendNewMods(folder string, game config.GameDef, ms []*mo
 		for id := lastID; id < newModsLastID; id++ {
 			file = filepath.Join(folder, fmt.Sprintf("%d", id), "mod.json")
 			if _, err = os.Stat(file); err != nil {
-				c.loadNexusMod(file, game, id, &result, mutex, &wg)
+				c.loadMod(file, game, id, &result, mutex, &wg)
 				if count%10 == 0 {
 					time.Sleep(10 * time.Millisecond)
 				} else {
@@ -81,18 +81,26 @@ func (c *modCompiler) AppendNewMods(folder string, game config.GameDef, ms []*mo
 }
 
 func (c *modCompiler) getLastModID(ms []*mods.Mod) (lastID int) {
+	var id int
 	for _, m := range ms {
 		if m.ModKind.Kinds.Is(c.kind) {
-			id, _ := m.ModIdAsNumber()
-			if int(id) > lastID {
-				lastID = int(id)
+			if c.kind == mods.Nexus {
+				id = int(*m.ModKind.NexusID)
+			} else if c.kind == mods.CurseForge {
+				id = int(*m.ModKind.CurseForgeID)
+			} else {
+				panic(fmt.Errorf("invalid kind %v", c.kind))
+			}
+
+			if id > lastID {
+				lastID = id
 			}
 		}
 	}
 	return
 }
 
-func (c *modCompiler) loadNexusMod(file string, game config.GameDef, id int, result *[]*mods.Mod, mutex *sync.Mutex, wg *errgroup.Group) {
+func (c *modCompiler) loadMod(file string, game config.GameDef, id int, result *[]*mods.Mod, mutex *sync.Mutex, wg *errgroup.Group) {
 	wg.Go(func() error {
 		found, mod, e := c.finder.GetFromID(game, id)
 		if found && e == nil {

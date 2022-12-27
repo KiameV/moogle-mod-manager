@@ -12,17 +12,20 @@ import (
 	"time"
 )
 
-type Getter interface {
-	GetMod(*mods.Mod) (*mods.Mod, error)
-	GetMods(game config.GameDef) ([]*mods.Mod, error)
-	GetUtilities() ([]*mods.Mod, error)
-	Pull() error
-	pull(rd repoDef) error
-}
+type (
+	Getter interface {
+		GetMod(*mods.Mod) (*mods.Mod, error)
+		GetMods(game config.GameDef, clearCache bool) ([]*mods.Mod, error)
+		GetUtilities() ([]*mods.Mod, error)
+		Pull() error
+		pull(rd repoDef) error
+	}
+	repo struct {
+		kind UseKind
+	}
+)
 
-type repo struct {
-	kind UseKind
-}
+var cache = mods.NewModLookup[*mods.Mod]()
 
 func NewGetter(kind UseKind) Getter {
 	return &repo{
@@ -83,6 +86,12 @@ func (r *repo) pull(rd repoDef) error {
 }
 
 func (r *repo) GetMod(toGet *mods.Mod) (mod *mods.Mod, err error) {
+	if cache != nil {
+		if m, f := cache.Get(toGet); f {
+			return m, nil
+		}
+	}
+
 	var (
 		dir  string
 		game config.GameDef
@@ -113,7 +122,11 @@ func (r *repo) GetMod(toGet *mods.Mod) (mod *mods.Mod, err error) {
 	return nil, fmt.Errorf("unable to find repo file for %s", toGet.Name)
 }
 
-func (r *repo) GetMods(game config.GameDef) (result []*mods.Mod, err error) {
+func (r *repo) GetMods(game config.GameDef, clearCache bool) (result []*mods.Mod, err error) {
+	if cache.Len() > 0 && !clearCache {
+		return cache.All(), nil
+	}
+
 	var m []string
 	if err = r.Pull(); err != nil {
 		return
@@ -143,6 +156,7 @@ func (r *repo) GetUtilities() ([]*mods.Mod, error) {
 }
 
 func (r *repo) filesToMod(game config.GameDef, m []string) (result []*mods.Mod, err error) {
+	cache.Clear()
 	for _, f := range m {
 		mod := &mods.Mod{}
 		if err = util.LoadFromFile(f, mod); err != nil {
@@ -151,9 +165,11 @@ func (r *repo) filesToMod(game config.GameDef, m []string) (result []*mods.Mod, 
 		if game != nil {
 			if ok := mod.Supports(game); ok == nil {
 				result = append(result, mod)
+				cache.Set(mod)
 			}
 		} else {
 			result = append(result, mod)
+			cache.Set(mod)
 		}
 	}
 	return

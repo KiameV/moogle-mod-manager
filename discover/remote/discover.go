@@ -8,14 +8,15 @@ import (
 	"sync"
 )
 
-var cache = make(map[config.GameID]map[mods.ModID]*mods.Mod)
-
 func GetMod(game config.GameDef, id mods.ModID, rebuildCache bool) (found bool, mod *mods.Mod, err error) {
-	if _, err = GetMods(game, rebuildCache); err != nil {
+	var result []*mods.Mod
+	if result, err = GetMods(game, rebuildCache); err != nil {
 		return
 	}
-	if c, ok := cache[game.ID()]; ok {
-		mod, found = c[id]
+	for _, mod = range result {
+		if found = mod.ID() == id; found {
+			return
+		}
 	}
 	return
 }
@@ -37,32 +38,15 @@ func GetMods(game config.GameDef, rebuildCache bool) (result []*mods.Mod, err er
 	var (
 		eg = errgroup.Group{}
 		m  = sync.Mutex{}
-		c  = cache[game.ID()]
 	)
-
-	if c != nil && len(c) > 0 && !rebuildCache {
-		// Use the cache
-		result = make([]*mods.Mod, 0, len(cache))
-		for _, mod := range c {
-			result = append(result, mod)
-		}
-		return
-	}
 
 	// Get the mods from the remote sources
 	for _, cl := range GetClients() {
-		getMods(game, cl, &eg, &m, &result)
+		getMods(game, cl, &eg, &m, &result, rebuildCache)
 	}
 	if err = eg.Wait(); err != nil {
 		return
 	}
-
-	// Build the cache
-	l := make(map[mods.ModID]*mods.Mod)
-	for _, mod := range result {
-		l[mod.ID()] = mod
-	}
-	cache[game.ID()] = l
 	return
 }
 
@@ -81,9 +65,9 @@ func GetClients() []Client {
 	return c*/
 }
 
-func getMods(game config.GameDef, c Client, eg *errgroup.Group, m *sync.Mutex, result *[]*mods.Mod) {
+func getMods(game config.GameDef, c Client, eg *errgroup.Group, m *sync.Mutex, result *[]*mods.Mod, rebuildCache bool) {
 	eg.Go(func() error {
-		r, e := c.GetMods(game)
+		r, e := c.GetMods(game, rebuildCache)
 		if e != nil {
 			return e
 		}
