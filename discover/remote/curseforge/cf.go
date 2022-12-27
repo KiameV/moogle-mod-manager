@@ -24,6 +24,8 @@ const (
 	getModDescByModID      = "https://api.curseforge.com/v1/mods/%d/description"
 )
 
+var cache = make(map[config.GameID][]*mods.Mod)
+
 type client struct {
 	compiler u.ModCompiler
 }
@@ -43,12 +45,11 @@ func (c *client) GetFromMod(in *mods.Mod) (found bool, mod *mods.Mod, err error)
 		err = fmt.Errorf("no games found for mod %s", in.Name)
 		return
 	}
-	var id uint64
-	if id, err = in.ModIdAsNumber(); err != nil {
-		err = fmt.Errorf("could not parse mod id %s for %s", in.ModID, in.Name)
+	if !in.ModKind.Kinds.Is(mods.CurseForge) || in.ModKind.CurseForgeID == nil {
+		err = fmt.Errorf("mod %s is not a curseforge mod", in.Name)
 		return
 	}
-	return c.get(fmt.Sprintf(getModDataByModID, id))
+	return c.get(fmt.Sprintf(getModDataByModID, in.ModKind.CurseForgeID))
 }
 
 func (c *client) GetFromID(_ config.GameDef, id int) (found bool, mod *mods.Mod, err error) {
@@ -232,7 +233,8 @@ func toMod(m cfMod, desc string, dls []CfFile) (include bool, mod *mods.Mod, err
 			Local: nil,
 		},
 		ModKind: mods.ModKind{
-			Kind: mods.CurseForge,
+			Kinds:        mods.Kinds{mods.CurseForge},
+			CurseForgeID: (*mods.CfModID)(&m.ModID),
 		},
 		Games: []*mods.Game{{
 			ID:       game.ID(),
@@ -259,11 +261,9 @@ func toMod(m cfMod, desc string, dls []CfFile) (include bool, mod *mods.Mod, err
 			Name:    d.Name,
 			Version: d.Version(),
 			CurseForge: &mods.CurseForgeDownloadable{
-				RemoteDownloadable: mods.RemoteDownloadable{
-					FileID:   d.FileID,
-					FileName: d.Name,
-				},
-				Url: d.DownloadUrl,
+				FileID:   d.FileID,
+				FileName: d.Name,
+				Url:      d.DownloadUrl,
 			},
 		}
 		dlf := &mods.DownloadFiles{
@@ -321,7 +321,13 @@ func (c *client) Folder(game config.GameDef) string {
 	return filepath.Join(config.PWD, "remote", string(game.ID()), string(mods.CurseForge))
 }
 
-func (c *client) GetMods(game config.GameDef) (result []*mods.Mod, err error) {
+func (c *client) GetMods(game config.GameDef, rebuildCache bool) (result []*mods.Mod, err error) {
+	if !rebuildCache {
+		if l, f := cache[game.ID()]; f {
+			result = l
+			return
+		}
+	}
 	if game == nil {
 		return nil, errors.New("GetMods called with a nil game")
 	}
@@ -345,5 +351,9 @@ func (c *client) GetMods(game config.GameDef) (result []*mods.Mod, err error) {
 	}); err != nil {
 		return
 	}
-	return c.compiler.AppendNewMods(c.Folder(game), game, result)
+	if result, err = c.compiler.AppendNewMods(c.Folder(game), game, result); err != nil {
+		return
+	}
+	cache[game.ID()] = result
+	return
 }

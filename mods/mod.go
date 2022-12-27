@@ -12,7 +12,6 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strconv"
 	"strings"
 )
 
@@ -124,12 +123,8 @@ func (m *Mod) ID() ModID {
 	return m.ModID
 }
 
-func (m *Mod) Kind() Kind {
-	return m.ModKind.Kind
-}
-
-func (m *Mod) SubKind() SubKind {
-	return m.ModKind.SubKind.Get()
+func (m *Mod) Kinds() Kinds {
+	return m.ModKind.Kinds
 }
 
 func (m *Mod) InstallType(game config.GameDef) config.InstallType {
@@ -138,11 +133,6 @@ func (m *Mod) InstallType(game config.GameDef) config.InstallType {
 		i = *m.InstallType_
 	}
 	return i
-}
-
-func (m *Mod) ModIdAsNumber() (uint64, error) {
-	sp := strings.Split(string(m.ModID), ".")
-	return strconv.ParseUint(sp[len(sp)-1], 10, 64)
 }
 
 func (m *Mod) BranchName() string {
@@ -284,7 +274,7 @@ func (m *Mod) Validate() string {
 	}
 
 	if m.Hide {
-		if m.ModKind.Kind == Hosted {
+		if m.ModKind.Kinds.IsHosted() {
 			sb.WriteString("Cannot Hide hosted mods\n")
 		}
 		return sb.String()
@@ -315,7 +305,7 @@ func (m *Mod) Validate() string {
 		}
 	}*/
 
-	kind := m.ModKind.Kind
+	kinds := m.ModKind.Kinds
 	dlableNames := make(map[string]bool)
 	if len(m.Downloadables) == 0 {
 		sb.WriteString("Must have at least one Downloadables\n")
@@ -327,33 +317,30 @@ func (m *Mod) Validate() string {
 		//if strings.Index(d.Name, " ") != -1 {
 		//	sb.WriteString(fmt.Sprintf("Downloadables [%s]'s name cannot contain spaces\n"))
 		//}
-		if kind == Hosted {
-			if m.ModKind.SubKind == nil || m.ModKind.SubKind.Is(HostedBlank) {
-				sb.WriteString("Kind is required\n")
-			} else if d.Hosted == nil {
-				sb.WriteString(fmt.Sprintf("Downloadables [%s]'s Hosted is required\n", d.Name))
-			} else {
-				if len(d.Hosted.Sources) == 0 {
-					sb.WriteString(fmt.Sprintf("Downloadables [%s]'s Source is required\n", d.Name))
-				}
-				for _, s := range d.Hosted.Sources {
-					u, err := url.Parse(s)
-					if err != nil {
-						sb.WriteString(fmt.Sprintf("Downloadables [%s]'s Source [%s] is not a valid url: %v\n", d.Name, s, err))
-					}
-					i := strings.LastIndex(u.Path, "/")
-					j := strings.LastIndex(u.Path, ".")
-					if i == -1 || j == -1 {
-						sb.WriteString(fmt.Sprintf("Downloadables [%s]'s Source [%s] is not a valid url, maybe missing .zip/.rar/.7z\n", d.Name, s))
-					}
-					s = u.Path[i+1 : j]
-					if d.Name != s {
-						sb.WriteString(fmt.Sprintf("Downloadables [%s]'s Source [%s] must be the same as the name after the extension is removed\n", d.Name, s))
-					}
-					dlableNames[s] = true
-				}
+		if kinds.Is(HostedAt) {
+			sb.WriteString(fmt.Sprintf("Downloadables [%s]'s Hosted is required\n", d.Name))
+		} else { // GitHub
+			if len(d.Hosted.Sources) == 0 {
+				sb.WriteString(fmt.Sprintf("Downloadables [%s]'s Source is required\n", d.Name))
 			}
-		} else if kind == Nexus {
+			for _, s := range d.Hosted.Sources {
+				u, err := url.Parse(s)
+				if err != nil {
+					sb.WriteString(fmt.Sprintf("Downloadables [%s]'s Source [%s] is not a valid url: %v\n", d.Name, s, err))
+				}
+				i := strings.LastIndex(u.Path, "/")
+				j := strings.LastIndex(u.Path, ".")
+				if i == -1 || j == -1 {
+					sb.WriteString(fmt.Sprintf("Downloadables [%s]'s Source [%s] is not a valid url, maybe missing .zip/.rar/.7z\n", d.Name, s))
+				}
+				s = u.Path[i+1 : j]
+				if d.Name != s {
+					sb.WriteString(fmt.Sprintf("Downloadables [%s]'s Source [%s] must be the same as the name after the extension is removed\n", d.Name, s))
+				}
+				dlableNames[s] = true
+			}
+		}
+		if kinds.Is(Nexus) {
 			if d.Nexus == nil {
 				sb.WriteString(fmt.Sprintf("Downloadables [%s]'s Nexus is required\n", d.Name))
 			}
@@ -364,7 +351,8 @@ func (m *Mod) Validate() string {
 				sb.WriteString(fmt.Sprintf("Downloadables [%s]'s Nexus FileName is required\n", d.Name))
 			}
 			dlableNames[d.Name] = true
-		} else if kind == CurseForge {
+		}
+		if kinds.Is(CurseForge) {
 			if d.CurseForge == nil {
 				sb.WriteString(fmt.Sprintf("Downloadables [%s]'s CF is required\n", d.Name))
 			}
@@ -455,20 +443,20 @@ func (m *Mod) Supports(game config.GameDef) error {
 	return fmt.Errorf("%s does not support %s", m.Name, game.Name())
 }
 
-func (m *Mod) Merge(from Mod) {
-	if m.IsManuallyCreated {
-		m.Author = from.Author
-		if m.AuthorLink == "" {
-			m.AuthorLink = from.AuthorLink
-		}
-		from.ModCompatibility = m.ModCompatibility
-		from.Games = m.Games
-		from.Link = m.Link
-	} else if from.IsManuallyCreated {
-		m.Description = from.Description
-		m.ReleaseNotes = from.ReleaseNotes
-	}
-}
+//func (m *Mod) Merge(from Mod) {
+//	if m.IsManuallyCreated {
+//		m.Author = from.Author
+//		if m.AuthorLink == "" {
+//			m.AuthorLink = from.AuthorLink
+//		}
+//		from.ModCompatibility = m.ModCompatibility
+//		from.Games = m.Games
+//		from.Link = m.Link
+//	} else if from.IsManuallyCreated {
+//		m.Description = from.Description
+//		m.ReleaseNotes = from.ReleaseNotes
+//	}
+//}
 
 func NewModForVersion(manual *Mod, remote *Mod) *Mod {
 	var m Mod
@@ -511,7 +499,7 @@ func Sort(mods []*Mod) (sorted []*Mod) {
 
 func NewModID(k Kind, modID string) ModID {
 	prefix := strings.ToLower(string(k))
-	if k == Hosted || strings.HasPrefix(modID, prefix) {
+	if k == HostedAt || k == HostedGitHub || strings.HasPrefix(modID, prefix) {
 		return ModID(modID)
 	}
 	return ModID(fmt.Sprintf("%s.%s", prefix, modID))

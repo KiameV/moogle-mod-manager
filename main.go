@@ -139,10 +139,6 @@ func initialize() {
 		fyne.CurrentApp().Settings().SetTheme(theme.LightTheme())
 	}
 
-	if err = repo.NewGetter(repo.Read).Pull(); err != nil {
-		util.ShowErrorLong(err)
-	}
-
 	if err = config.Initialize(repo.Dirs(repo.Read)); err != nil {
 		util.ShowErrorLong(err)
 	}

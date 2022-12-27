@@ -25,10 +25,11 @@ func NewParams(game config.GameDef, mod mods.TrackedMod, toInstall []*mods.ToIns
 }
 
 func NewConfirmer(params Params) Confirmer {
-	switch params.Mod.Kind() {
-	case mods.Nexus:
+	k := params.Mod.Kinds()
+	if k.Is(mods.Nexus) {
 		return newNexusConfirmer(params)
-	case mods.Hosted:
+	}
+	if k.IsHosted() {
 		return newHostedConfirmer(params)
 	}
 	return newBypassConfirmer(params)

@@ -21,7 +21,7 @@ var (
 	authorName  = "Moogle Modder"
 	authorEmail = "moogle-modder@hotmail.com"
 
-	hostedPrefix     = strings.ToLower(string(mods.Hosted + "."))
+	hostedPrefix     = "hosted."
 	nexusPrefix      = strings.ToLower(string(mods.Nexus + "."))
 	curseforgePrefix = strings.ToLower(string(mods.CurseForge + "."))
 )
@@ -65,7 +65,7 @@ func (c *repoClient) Submit() (url string, err error) {
 		}
 		file = rd.repoGameModDir(Author, game, c.mod)
 	} else if len(c.mod.Games) > 1 {
-		if c.mod.ModKind.Kind != mods.Hosted {
+		if !c.mod.ModKind.Kinds.IsHosted() {
 			err = errors.New("multi-game mods must be hosted")
 			return
 		}

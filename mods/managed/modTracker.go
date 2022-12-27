@@ -13,6 +13,7 @@ import (
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
 	"github.com/kiamev/moogle-mod-manager/util"
+	"os"
 	"path/filepath"
 	"strings"
 )
@@ -166,6 +167,16 @@ func TryGetMod(game config.GameDef, id mods.ModID) (m mods.TrackedMod, found boo
 
 func RemoveMod(game config.GameDef, tm mods.TrackedMod) error {
 	lookup.RemoveMod(game, tm)
+	_ = os.RemoveAll(filepath.Dir(tm.MoogleModFile()))
+	for _, ti := range tm.Mod().Downloadables {
+		if ti.DownloadedArchiveLocation != nil && *ti.DownloadedArchiveLocation != "" {
+			dir := filepath.Dir(string(*ti.DownloadedArchiveLocation))
+			dir = filepath.Dir(dir)
+			if strings.Contains(dir, config.Get().DownloadDir) {
+				_ = os.RemoveAll(dir)
+			}
+		}
+	}
 	return save()
 }
 

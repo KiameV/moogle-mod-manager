@@ -58,7 +58,7 @@ func (d repoDef) repoGameDir(k UseKind, game config.GameDef) string {
 }
 
 func (d repoDef) repoGameModDir(k UseKind, game config.GameDef, mod *mods.Mod) string {
-	return filepath.Join(d.repoGameDir(k, game), strings.ToLower(string(mod.Kind())), d.removeFilePrefixes(strings.ToLower(mod.ID().AsDir())))
+	return filepath.Join(d.repoGameDir(k, game), strings.ToLower(string(mod.Kinds()[0])), d.removeFilePrefixes(strings.ToLower(mod.ID().AsDir())))
 }
 
 func (d repoDef) removeFilePrefixes(s string) string {

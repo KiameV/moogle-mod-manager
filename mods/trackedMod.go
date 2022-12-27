@@ -11,8 +11,7 @@ const moogleModName = "mod.moogle"
 type (
 	TrackedMod interface {
 		ID() ModID
-		Kind() Kind
-		SubKind() SubKind
+		Kinds() Kinds
 		Mod() *Mod
 		SetMod(m *Mod)
 		Enable()
@@ -96,12 +95,8 @@ func (m *TrackedModConc) ID() ModID {
 	return m.Mod_.ID()
 }
 
-func (m *TrackedModConc) Kind() Kind {
-	return m.Mod_.Kind()
-}
-
-func (m *TrackedModConc) SubKind() SubKind {
-	return m.Mod_.SubKind()
+func (m *TrackedModConc) Kinds() Kinds {
+	return m.Mod_.Kinds()
 }
 
 func (m *TrackedModConc) Mod() *Mod {

@@ -1,16 +1,15 @@
 package mods
 
-import "fmt"
-
 type (
 	lookupID string
 	mod      interface {
 		ID() ModID
-		Kind() Kind
+		Kinds() Kinds
 		Mod() *Mod
 	}
 	ModLookup[T mod] interface {
 		All() []T
+		Clear()
 		Get(m T) (found T, ok bool)
 		GetByID(modID ModID) (found T, ok bool)
 		Has(m T) bool
@@ -37,6 +36,10 @@ func (l *ModLookupConc[T]) All() []T {
 		s = append(s, m)
 	}
 	return s
+}
+
+func (l *ModLookupConc[T]) Clear() {
+	l.Lookup = make(map[lookupID]T)
 }
 
 func (l *ModLookupConc[T]) Set(m T) {
@@ -84,5 +87,5 @@ func (l *ModLookupConc[T]) Len() int {
 }
 
 func (l *ModLookupConc[T]) newLookupID(m T) lookupID {
-	return lookupID(fmt.Sprintf("%s.%s", m.Kind(), m.ID()))
+	return lookupID(m.ID())
 }
