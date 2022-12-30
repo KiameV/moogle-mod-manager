@@ -18,6 +18,7 @@ func newMultiLineFormEntry(key string, value any) Entry[string] {
 	}
 	e.bind = binding.BindString(&e.text)
 	e.entry = widget.NewMultiLineEntry()
+	e.entry.Bind(e.bind)
 	e.fi = widget.NewFormItem(key, e.entry)
 	return e
 }

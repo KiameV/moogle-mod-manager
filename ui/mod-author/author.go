@@ -354,8 +354,6 @@ func (a *ModAuthorer) updateEntries(mod *mods.Mod) {
 	a.gamesDef.set(mod.Games)
 	a.alwaysDownload.set(mod.AlwaysDownload)
 	a.configsDef.set(mod.Configurations)
-
-	a.downloads.set(mod)
 }
 
 type As byte

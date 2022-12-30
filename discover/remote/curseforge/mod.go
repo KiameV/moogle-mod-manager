@@ -112,6 +112,18 @@ type description struct {
 	Data string `json:"data"`
 }
 
+func (f CfFile) toDownload() *mods.Download {
+	return &mods.Download{
+		Name:    f.Name,
+		Version: f.Version(),
+		CurseForge: &mods.CurseForgeDownloadable{
+			FileID:   f.FileID,
+			FileName: f.Name,
+			Url:      f.DownloadUrl,
+		},
+	}
+}
+
 /*
 {
    "files":[

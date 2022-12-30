@@ -20,7 +20,7 @@ type downloadsDef struct {
 	kinds *mods.Kinds
 }
 
-func newDownloadsDef(kinds *mods.Kinds) *downloadsDef {
+func newDownloadsDef(kinds *mods.Kinds) dlHoster {
 	d := &downloadsDef{
 		Manager: entry.NewManager(),
 		kinds:   kinds,
@@ -33,7 +33,14 @@ func newDownloadsDef(kinds *mods.Kinds) *downloadsDef {
 	return d
 }
 
-func (d *downloadsDef) compileDownloads() []*mods.Download {
+func (d *downloadsDef) compile(mod *mods.Mod) error {
+	if len(d.list.Items) > 0 {
+		mod.ModKind.Kinds.Add(mods.HostedAt)
+	}
+	return nil
+}
+
+func (d *downloadsDef) compileDownloads() ([]*mods.Download, error) {
 	dls := make([]*mods.Download, len(d.list.Items))
 	for i, item := range d.list.Items {
 		di := item.(*mods.Download)
@@ -45,7 +52,7 @@ func (d *downloadsDef) compileDownloads() []*mods.Download {
 		}
 		dls[i] = di
 	}
-	return dls
+	return dls, nil
 }
 
 func (d *downloadsDef) getItemKey(item interface{}) string {
@@ -122,12 +129,14 @@ func (d *downloadsDef) draw() *container.TabItem {
 			d.list.Draw())))
 }
 
-func (d *downloadsDef) set(downloadables []*mods.Download) {
+func (d *downloadsDef) set(mod *mods.Mod) {
 	d.clear()
-	if len(downloadables) > 0 {
-		for _, i := range downloadables {
-			d.list.AddItem(i)
-			d.kinds.Add(mods.HostedAt)
+	if mod.ModKind.Kinds.Is(mods.HostedAt) {
+		for _, i := range mod.Downloadables {
+			if i.Hosted != nil && len(i.Hosted.Sources) > 0 {
+				d.list.AddItem(i)
+				d.kinds.Add(mods.HostedAt)
+			}
 		}
 	}
 }

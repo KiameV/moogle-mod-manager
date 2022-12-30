@@ -39,17 +39,21 @@ func newFileToInstallFromFile(relToExtracted map[string]archive.ExtractedFile, f
 	}, nil
 }
 
-func newFileToInstallFromDir(relToExtracted map[string]archive.ExtractedFile, path string, rel string, d *mods.ModDir, installDir string, archive *string) (*FileToInstall, error) {
+func newFileToInstallFromDir(relToExtracted map[string]archive.ExtractedFile, rel string, d *mods.ModDir, installDir string, archive *string) (*FileToInstall, error) {
 	var (
 		af, found = relToExtracted[rel]
+		toRel     = rel
 	)
 	if !found {
 		return nil, fmt.Errorf("dir %v not found in extracted files", d.From)
 	}
+	if d.From != "." {
+		toRel = strings.TrimPrefix(rel, d.From)
+	}
 	return &FileToInstall{
 		Relative:     af.Relative,
 		AbsoluteFrom: af.From,
-		AbsoluteTo:   filepath.Join(installDir, af.Relative),
+		AbsoluteTo:   filepath.Join(installDir, d.To, toRel),
 		Skip:         false,
 		archive:      archive,
 	}, nil
@@ -108,7 +112,7 @@ func (e *Extracted) Compile(game config.GameDef, extractedDir string) (err error
 					return err
 				}
 				rel = strings.ReplaceAll(rel, "\\", "/")
-				if fti, err = newFileToInstallFromDir(fromToExtracted, path, rel, d, installDir, d.ToArchive); err != nil {
+				if fti, err = newFileToInstallFromDir(fromToExtracted, rel, d, installDir, d.ToArchive); err != nil {
 					return err
 				}
 				e.filesToInstall = append(e.filesToInstall, fti)

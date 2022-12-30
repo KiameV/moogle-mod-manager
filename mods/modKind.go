@@ -17,8 +17,9 @@ const (
 
 type (
 	GitHub struct {
-		Owner string `json:"Owner"`
-		Repo  string `json:"Repo"`
+		Owner   string `json:"Owner"`
+		Repo    string `json:"Repo"`
+		Version string `json:"Version"`
 	}
 	Kinds   []Kind
 	ModKind struct {

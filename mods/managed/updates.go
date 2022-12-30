@@ -100,13 +100,15 @@ type remoteUpdateChecker struct {
 
 func (c *remoteUpdateChecker) Process() error {
 	defer c.wg.Done()
-	_, mod, err := c.client.GetFromMod(c.tm.Mod())
+	found, mod, err := c.client.GetFromMod(c.tm.Mod())
 	if err != nil {
 		c.err = err
 		return nil
 	}
-	if isVersionNewer(mod.Version, c.tm.Mod().Version) {
-		markForUpdate(c.tm, mod)
+	if found && mod != nil {
+		if isVersionNewer(mod.Version, c.tm.Mod().Version) {
+			markForUpdate(c.tm, mod)
+		}
 	}
 	return nil
 }

@@ -63,18 +63,6 @@ func (ui *configInstallerUI) Setup(mod *mods.Mod, baseDir string, done func(mods
 
 func (ui *configInstallerUI) Draw(w fyne.Window) {
 	state.SetBaseDir(ui.baseDir)
-	c := container.NewVBox(
-		widget.NewLabelWithStyle(ui.currentConfig.Name, fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
-		widget.NewRichTextFromMarkdown(ui.currentConfig.Description),
-		ui.getChoiceSelector(func(name string) {
-			for _, ui.currentChoice = range ui.currentConfig.Choices {
-				if ui.currentChoice.Name == name {
-					ui.choiceContainer.RemoveAll()
-					ui.drawChoiceInfo()
-					break
-				}
-			}
-		}))
 	buttons := container.NewHBox(
 		widget.NewButton("Select", func() {
 			if ui.currentChoice == nil {
@@ -115,7 +103,19 @@ func (ui *configInstallerUI) Draw(w fyne.Window) {
 			ui.Draw(w)
 		}))
 	}
-	c.Add(buttons)
+	c := container.NewVBox(
+		widget.NewLabelWithStyle(ui.currentConfig.Name, fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
+		widget.NewRichTextFromMarkdown(ui.currentConfig.Description),
+		buttons,
+		ui.getChoiceSelector(func(name string) {
+			for _, ui.currentChoice = range ui.currentConfig.Choices {
+				if ui.currentChoice.Name == name {
+					ui.choiceContainer.RemoveAll()
+					ui.drawChoiceInfo()
+					break
+				}
+			}
+		}))
 	if img := ui.currentConfig.Preview.Get(); img != nil {
 		c = container.NewBorder(img, nil, nil, nil, c)
 	}
@@ -143,9 +143,17 @@ func (ui *configInstallerUI) getChoiceSelector(onChange func(choice string)) fyn
 	}
 
 	if st == mods.Radio {
-		return widget.NewRadioGroup(possible, onChange)
+		rg := widget.NewRadioGroup(possible, onChange)
+		if len(rg.Options) > 0 {
+			rg.SetSelected(rg.Options[0])
+		}
+		return rg
 	}
-	return widget.NewSelect(possible, onChange)
+	sg := widget.NewSelect(possible, onChange)
+	if len(sg.Options) > 0 {
+		sg.SetSelected(sg.Options[0])
+	}
+	return sg
 }
 
 func (ui *configInstallerUI) drawChoiceInfo() {

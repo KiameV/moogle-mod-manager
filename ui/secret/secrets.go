@@ -6,7 +6,7 @@ import (
 	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
-	"github.com/kiamev/moogle-mod-manager/config"
+	"github.com/kiamev/moogle-mod-manager/config/secrets"
 	"net/url"
 )
 
@@ -21,10 +21,11 @@ func Show(w fyne.Window) {
 		cfwe   = widget.NewPasswordEntry()
 		nu, _  = url.Parse(nexusVortexApiAccessUrl)
 		cfu, _ = url.Parse(cfApiKeyAccessUrl)
-		sct    = config.GetSecrets()
+		n      = secrets.Get(secrets.NexusApiKey)
+		cf     = secrets.Get(secrets.CfApiKey)
 	)
-	nwe.Bind(binding.BindString(&sct.NexusApiKey))
-	cfwe.Bind(binding.BindString(&sct.CfApiKey))
+	nwe.Bind(binding.BindString(&n))
+	cfwe.Bind(binding.BindString(&cf))
 	d := dialog.NewCustomConfirm("Secrets", "Save", "Cancel", container.NewVBox(
 		widget.NewForm(widget.NewFormItem("Nexus Vortex Api Key", nwe)),
 		widget.NewLabel("To get a key, follow this link and select [REQUEST AN API KEY] for Vortex. Copy what's generated."),
@@ -34,9 +35,9 @@ func Show(w fyne.Window) {
 		widget.NewHyperlink(cfApiKeyAccessUrl, cfu)),
 		func(ok bool) {
 			if ok {
-				sct.NexusApiKey = nwe.Text
-				sct.CfApiKey = cfwe.Text
-				_ = sct.Save()
+				secrets.Set(secrets.NexusApiKey, n)
+				secrets.Set(secrets.CfApiKey, cf)
+				_ = secrets.Save()
 			}
 		}, w)
 	d.Resize(fyne.NewSize(800, 400))

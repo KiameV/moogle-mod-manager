@@ -3,6 +3,7 @@ package remote
 import (
 	"fmt"
 	"github.com/kiamev/moogle-mod-manager/config"
+	"github.com/kiamev/moogle-mod-manager/config/secrets"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"golang.org/x/sync/errgroup"
 	"sync"
@@ -52,10 +53,10 @@ func GetMods(game config.GameDef, rebuildCache bool) (result []*mods.Mod, err er
 
 func GetClients() []Client {
 	var c []Client
-	if config.GetSecrets().NexusApiKey != "" {
+	if secrets.Get(secrets.NexusApiKey) != "" {
 		c = append(c, NewNexusClient())
 	}
-	if config.GetSecrets().CfApiKey != "" {
+	if secrets.Get(secrets.CfApiKey) != "" {
 		NewCurseForgeClient()
 	}
 	return c

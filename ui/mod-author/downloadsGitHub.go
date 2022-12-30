@@ -17,7 +17,7 @@ type githubDownloadsDef struct {
 	kinds  *mods.Kinds
 }
 
-func newGithubDownloadsDef(kinds *mods.Kinds) *githubDownloadsDef {
+func newGithubDownloadsDef(kinds *mods.Kinds) dlHoster {
 	return &githubDownloadsDef{
 		Manager: entry.NewManager(),
 		kinds:   kinds,
@@ -29,15 +29,31 @@ func (d *githubDownloadsDef) version() (string, error) {
 	return github.LatestRelease(entry.Value[string](d, "owner"), entry.Value[string](d, "repo"))
 }
 
-func (d *githubDownloadsDef) compile() (version string, gh *mods.GitHub, err error) {
-	if version, err = d.version(); err != nil {
-		return
+func (d *githubDownloadsDef) compile(mod *mods.Mod) error {
+	gh, err := d.compileGH()
+	if err != nil {
+		return err
 	}
-	gh = &mods.GitHub{
-		Owner: entry.Value[string](d, "owner"),
-		Repo:  entry.Value[string](d, "repo"),
+	if gh.Repo != "" && gh.Owner != "" && gh.Version != "" {
+		mod.ModKind.Kinds.Add(mods.HostedGitHub)
+		mod.ModKind.GitHub = gh
 	}
-	return
+	return nil
+}
+
+func (d *githubDownloadsDef) compileGH() (*mods.GitHub, error) {
+	var (
+		v, err = d.version()
+		gh     = &mods.GitHub{
+			Owner:   entry.Value[string](d, "owner"),
+			Repo:    entry.Value[string](d, "repo"),
+			Version: v,
+		}
+	)
+	if err != nil {
+		return nil, err
+	}
+	return gh, nil
 }
 
 func (d *githubDownloadsDef) compileDownloads() (result []*mods.Download, err error) {
@@ -76,17 +92,21 @@ func (d *githubDownloadsDef) draw() *container.TabItem {
 				entry.FormItem[string](d, "owner"),
 				entry.FormItem[string](d, "repo")),
 			container.NewHBox(widget.NewButton("Load Downloadables", func() {
-				if _, gh, err := d.compile(); err != nil {
+				if gh, err := d.compileGH(); err != nil {
 					util.ShowErrorLong(err)
 					return
 				} else {
-					d.set(gh)
+					d.setGH(gh)
 				}
 			})),
 		))
 }
 
-func (d *githubDownloadsDef) set(gh *mods.GitHub) {
+func (d *githubDownloadsDef) set(mod *mods.Mod) {
+	d.setGH(mod.ModKind.GitHub)
+}
+
+func (d *githubDownloadsDef) setGH(gh *mods.GitHub) {
 	if gh == nil {
 		d.clear()
 	} else {

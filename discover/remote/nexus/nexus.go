@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/kiamev/moogle-mod-manager/config"
+	"github.com/kiamev/moogle-mod-manager/config/secrets"
 	u "github.com/kiamev/moogle-mod-manager/discover/remote/util"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/util"
@@ -49,7 +50,7 @@ func IsNexus(url string) bool {
 }
 
 func (c *client) GetFromMod(in *mods.Mod) (found bool, mod *mods.Mod, err error) {
-	if config.GetSecrets().NexusApiKey == "" {
+	if secrets.Get(secrets.NexusApiKey) == "" {
 		return false, nil, errors.New("no nexus api key set in File->Secrets")
 	}
 	if len(in.Games) == 0 {
@@ -68,15 +69,15 @@ func (c *client) GetFromMod(in *mods.Mod) (found bool, mod *mods.Mod, err error)
 }
 
 func (c *client) GetFromID(game config.GameDef, id int) (found bool, mod *mods.Mod, err error) {
-	if config.GetSecrets().NexusApiKey == "" {
-		return false, nil, errors.New("no nexus api key set in File->Secrets")
+	if secrets.Get(secrets.NexusApiKey) == "" {
+		return false, nil, nil
 	}
 	return c.GetFromUrl(fmt.Sprintf(nexusUrl, game.Remote().Nexus.Path, id))
 }
 
 func (c *client) GetFromUrl(url string) (found bool, mod *mods.Mod, err error) {
-	if config.GetSecrets().CfApiKey == "" {
-		return false, nil, errors.New("no nexus api key set in File->Secrets")
+	if secrets.Get(secrets.NexusApiKey) == "" {
+		return false, nil, nil
 	}
 	var (
 		sp    = strings.Split(url, "/")
@@ -116,7 +117,7 @@ func (c *client) GetFromUrl(url string) (found bool, mod *mods.Mod, err error) {
 }
 
 func (c *client) GetNewestMods(game config.GameDef, lastID int) (result []*mods.Mod, err error) {
-	if config.GetSecrets().NexusApiKey == "" {
+	if secrets.Get(secrets.NexusApiKey) == "" {
 		return nil, errors.New("no nexus api key set in File->Secrets")
 	}
 	var (
@@ -152,7 +153,7 @@ func (c *client) GetNewestMods(game config.GameDef, lastID int) (result []*mods.
 }
 
 func GetDownloads(game config.GameDef, modID string) (dls []*mods.Download, err error) {
-	if config.GetSecrets().NexusApiKey == "" {
+	if secrets.Get(secrets.NexusApiKey) == "" {
 		return nil, errors.New("no nexus api key set in File->Secrets")
 	}
 	var (
@@ -185,7 +186,7 @@ func getDownloads(path config.NexusPath, modID string) (nDls fileParent, err err
 
 func sendRequest(url string) (response []byte, err error) {
 	var (
-		apiKey = config.GetSecrets().NexusApiKey
+		apiKey = secrets.Get(secrets.NexusApiKey)
 		req    *http.Request
 		resp   *http.Response
 	)
@@ -315,7 +316,7 @@ func (c *client) Folder(game config.GameDef) string {
 }
 
 func (c *client) GetMods(game config.GameDef, rebuildCache bool) (result []*mods.Mod, err error) {
-	if config.GetSecrets().NexusApiKey == "" {
+	if secrets.Get(secrets.NexusApiKey) == "" {
 		return nil, nil
 	}
 	if !rebuildCache {

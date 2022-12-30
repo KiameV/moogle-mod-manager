@@ -6,6 +6,7 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"github.com/kiamev/moogle-mod-manager/browser"
 	"github.com/kiamev/moogle-mod-manager/config"
+	"github.com/kiamev/moogle-mod-manager/config/secrets"
 	"github.com/kiamev/moogle-mod-manager/discover/repo"
 	"github.com/kiamev/moogle-mod-manager/files"
 	"github.com/kiamev/moogle-mod-manager/mods/managed"
@@ -124,7 +125,7 @@ func main() {
 
 func initialize() {
 	var err error
-	config.GetSecrets().Initialize()
+	secrets.Initialize()
 
 	if err = repo.Initialize(); err != nil {
 		util.ShowErrorLong(err)

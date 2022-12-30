@@ -1,60 +1,73 @@
 package mod_author
 
 import (
+	"errors"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"github.com/kiamev/moogle-mod-manager/mods"
 )
 
 type (
-	Compileable interface {
-		CompileDownloads() ([]mods.Download, error)
+	dlHoster interface {
+		clear()
+		compile(mod *mods.Mod) error
+		compileDownloads() ([]*mods.Download, error)
+		draw() *container.TabItem
+		set(*mods.Mod)
 	}
 	downloads struct {
-		kinds *mods.Kinds
-		dld   *downloadsDef
-		ghd   *githubDownloadsDef
-		nrd   *downloadsRemoteDef
-		cfd   *downloadsRemoteDef
+		kinds     *mods.Kinds
+		dlHosters []dlHoster
 	}
 )
 
 func newDownloads(games *gamesDef, kinds *mods.Kinds) *downloads {
 	return &downloads{
 		kinds: kinds,
-		dld:   newDownloadsDef(kinds),
-		ghd:   newGithubDownloadsDef(kinds),
-		nrd:   newDownloadsRemoteDef(games, mods.Nexus, kinds),
-		cfd:   newDownloadsRemoteDef(games, mods.CurseForge, kinds),
+		dlHosters: []dlHoster{
+			newDownloadsDef(kinds),
+			newGithubDownloadsDef(kinds),
+			newDownloadsRemoteDef(games, mods.Nexus),
+			newDownloadsRemoteDef(games, mods.CurseForge),
+		},
 	}
 }
 
 func (d *downloads) compileDownloads() (result []*mods.Download, err error) {
 	var (
-		l = make(map[string]*mods.Download)
+		l   = make(map[string]*mods.Download)
+		dls []*mods.Download
 	)
-	if d.kinds.Is(mods.HostedGitHub) {
-		if result, err = d.ghd.compileDownloads(); err != nil {
+	for _, h := range d.dlHosters {
+		if dls, err = h.compileDownloads(); err != nil {
 			return
 		}
-		d.addDlToMap(&l, result)
-	}
-	if d.kinds.Is(mods.HostedAt) {
-		d.addDlToMap(&l, d.dld.compileDownloads())
-	}
-	if d.kinds.Is(mods.Nexus) {
-		if result, err = d.nrd.compileDownloads(); err != nil {
-			return
+		if len(dls) > 0 && len(l) > 0 {
+			if len(dls) != len(l) {
+				err = errors.New("number of downloads must be equal")
+				return
+			}
+			for _, dl := range dls {
+				if _, ok := l[dl.Name]; !ok {
+					err = errors.New("download names must be equal")
+					return
+				}
+			}
+			for k, _ := range l {
+				for _, dl := range dls {
+					found := false
+					if dl.Name == k {
+						found = true
+					}
+					if !found {
+						err = errors.New("download names must be equal")
+						return
+					}
+				}
+			}
 		}
-		d.addDlToMap(&l, result)
+		d.addDlToMap(&l, dls)
 	}
-	if d.kinds.Is(mods.CurseForge) {
-		if result, err = d.cfd.compileDownloads(); err != nil {
-			return
-		}
-		d.addDlToMap(&l, result)
-	}
-
 	result = make([]*mods.Download, 0, len(l))
 	for _, dl := range l {
 		result = append(result, dl)
@@ -69,33 +82,35 @@ func (d *downloads) addDlToMap(l *map[string]*mods.Download, dls []*mods.Downloa
 }
 
 func (d *downloads) compile(mod *mods.Mod) (err error) {
-	if d.kinds.Is(mods.HostedGitHub) {
-		if mod.Version, mod.ModKind.GitHub, err = d.ghd.compile(); err != nil {
+	var dls []*mods.Download
+	for _, h := range d.dlHosters {
+		if err = h.compile(mod); err != nil {
 			return
 		}
-	} else {
-		mod.ModKind.GitHub = nil
 	}
-	mod.Downloadables, err = d.compileDownloads()
+	if dls, err = d.compileDownloads(); err != nil {
+		return
+	}
+	mod.Downloadables = dls
 	return
 }
 
 func (d *downloads) set(mod *mods.Mod) {
-	d.ghd.set(mod.ModKind.GitHub)
-	d.dld.set(mod.Downloadables)
+	for _, h := range d.dlHosters {
+		h.set(mod)
+	}
 }
 
 func (d *downloads) clear() {
-	d.dld.clear()
-	d.ghd.clear()
-	d.nrd.clear()
-	d.cfd.clear()
+	for _, h := range d.dlHosters {
+		h.clear()
+	}
 }
 
 func (d *downloads) draw() fyne.CanvasObject {
-	return container.NewAppTabs(
-		d.nrd.draw(),
-		d.cfd.draw(),
-		d.ghd.draw(),
-		d.dld.draw())
+	t := container.NewAppTabs()
+	for _, h := range d.dlHosters {
+		t.Append(h.draw())
+	}
+	return t
 }

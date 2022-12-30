@@ -6,6 +6,7 @@ import (
 	"fmt"
 	converter "github.com/JohannesKaufmann/html-to-markdown"
 	"github.com/kiamev/moogle-mod-manager/config"
+	"github.com/kiamev/moogle-mod-manager/config/secrets"
 	u "github.com/kiamev/moogle-mod-manager/discover/remote/util"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/util"
@@ -13,6 +14,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -41,7 +43,7 @@ func IsCurseforge(url string) bool {
 }
 
 func (c *client) GetFromMod(in *mods.Mod) (found bool, mod *mods.Mod, err error) {
-	if config.GetSecrets().CfApiKey == "" {
+	if secrets.Get(secrets.CfApiKey) == "" {
 		return false, nil, errors.New("no curse forge api key set in File->Secrets")
 	}
 	if len(in.Games) == 0 {
@@ -56,14 +58,14 @@ func (c *client) GetFromMod(in *mods.Mod) (found bool, mod *mods.Mod, err error)
 }
 
 func (c *client) GetFromID(_ config.GameDef, id int) (found bool, mod *mods.Mod, err error) {
-	if config.GetSecrets().CfApiKey == "" {
+	if secrets.Get(secrets.CfApiKey) == "" {
 		return false, nil, errors.New("no curse forge api key set in File->Secrets")
 	}
 	return c.get(fmt.Sprintf(getModDataByModID, id))
 }
 
 func (c *client) GetFromUrl(url string) (found bool, mod *mods.Mod, err error) {
-	if config.GetSecrets().CfApiKey == "" {
+	if secrets.Get(secrets.CfApiKey) == "" {
 		return false, nil, errors.New("no curse forge api key set in File->Secrets")
 	}
 	// www.curseforge.com/final-fantasy-vi/mods/gau-rage-descriptions-extended-magna-roader-fix/files/4073052
@@ -96,7 +98,7 @@ func (c *client) get(url string) (found bool, mod *mods.Mod, err error) {
 		return
 	}
 
-	if dls, err = getDownloads(result.Data); err != nil {
+	if dls, err = getDownloads(result.Data.ModID); err != nil {
 		return
 	}
 
@@ -108,7 +110,7 @@ func (c *client) get(url string) (found bool, mod *mods.Mod, err error) {
 }
 
 func (c *client) GetNewestMods(game config.GameDef, lastID int) (result []*mods.Mod, err error) {
-	if config.GetSecrets().CfApiKey == "" {
+	if secrets.Get(secrets.CfApiKey) == "" {
 		return nil, errors.New("no curse forge api key set in File->Secrets")
 	}
 	var (
@@ -131,7 +133,7 @@ func (c *client) GetNewestMods(game config.GameDef, lastID int) (result []*mods.
 	result = make([]*mods.Mod, 0, len(data.Mods))
 	for _, m := range data.Mods {
 		if m.ModID > lastID {
-			if dls, err = getDownloads(m); err != nil {
+			if dls, err = getDownloads(m.ModID); err != nil {
 				return
 			}
 			if desc, err = getDescription(m); err != nil {
@@ -148,10 +150,31 @@ func (c *client) GetNewestMods(game config.GameDef, lastID int) (result []*mods.
 	return
 }
 
-func getDownloads(m cfMod) (dls fileParent, err error) {
+func GetDownloads(modID string) (dls []*mods.Download, err error) {
+	if secrets.Get(secrets.CfApiKey) == "" {
+		return nil, errors.New("no curseforge api key set in File->Secrets")
+	}
+	var (
+		fp fileParent
+		id int
+	)
+	if id, err = strconv.Atoi(modID); err != nil {
+		return
+	}
+	if fp, err = getDownloads(id); err != nil {
+		return
+	}
+	dls = make([]*mods.Download, len(fp.Files))
+	for i, f := range fp.Files {
+		dls[i] = f.toDownload()
+	}
+	return
+}
+
+func getDownloads(modID int) (dls fileParent, err error) {
 	var (
 		b   []byte
-		url = fmt.Sprintf(getModFilesByModID, m.ModID)
+		url = fmt.Sprintf(getModFilesByModID, modID)
 	)
 	if b, err = sendRequest(url); err != nil {
 		return
@@ -191,7 +214,7 @@ func httpToMarkdown(s string) (result string) {
 
 func sendRequest(url string) (response []byte, err error) {
 	var (
-		apiKey = config.GetSecrets().CfApiKey
+		apiKey = secrets.Get(secrets.CfApiKey)
 		req    *http.Request
 		resp   *http.Response
 	)
@@ -269,15 +292,7 @@ func toMod(m cfMod, desc string, dls []CfFile) (include bool, mod *mods.Mod, err
 
 	var choices []*mods.Choice
 	for i, d := range dls {
-		mod.Downloadables[i] = &mods.Download{
-			Name:    d.Name,
-			Version: d.Version(),
-			CurseForge: &mods.CurseForgeDownloadable{
-				FileID:   d.FileID,
-				FileName: d.Name,
-				Url:      d.DownloadUrl,
-			},
-		}
+		mod.Downloadables[i] = d.toDownload()
 		dlf := &mods.DownloadFiles{
 			DownloadName: d.Name,
 			Dirs: []*mods.ModDir{
@@ -334,7 +349,7 @@ func (c *client) Folder(game config.GameDef) string {
 }
 
 func (c *client) GetMods(game config.GameDef, rebuildCache bool) (result []*mods.Mod, err error) {
-	if config.GetSecrets().CfApiKey == "" {
+	if secrets.Get(secrets.CfApiKey) == "" {
 		return nil, nil
 	}
 	if !rebuildCache {

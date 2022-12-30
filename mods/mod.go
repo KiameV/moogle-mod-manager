@@ -8,7 +8,6 @@ import (
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
 	"github.com/kiamev/moogle-mod-manager/util"
-	"net/url"
 	"os"
 	"path/filepath"
 	"sort"
@@ -305,18 +304,22 @@ func (m *Mod) Validate() string {
 		}
 	}*/
 
-	kinds := m.ModKind.Kinds
+	//kinds := m.ModKind.Kinds
 	dlableNames := make(map[string]bool)
-	if len(m.Downloadables) == 0 {
+	for _, d := range m.Downloadables {
+		if d.Name == "" {
+			sb.WriteString("Downloadables' name is required\n")
+		}
+		// TODO add more validations
+		dlableNames[d.Name] = true
+	}
+	/*if len(m.Downloadables) == 0 {
 		sb.WriteString("Must have at least one Downloadables\n")
 	}
 	for _, d := range m.Downloadables {
 		if d.Name == "" {
 			sb.WriteString("Downloadables' name is required\n")
 		}
-		//if strings.Index(d.Name, " ") != -1 {
-		//	sb.WriteString(fmt.Sprintf("Downloadables [%s]'s name cannot contain spaces\n"))
-		//}
 		if kinds.Is(HostedAt) {
 			sb.WriteString(fmt.Sprintf("Downloadables [%s]'s Hosted is required\n", d.Name))
 		} else { // GitHub
@@ -367,7 +370,7 @@ func (m *Mod) Validate() string {
 		//if d.InstallType == "" {
 		//	sb.WriteString(fmt.Sprintf("Downloadables [%s]'s Install Type is required\n", d.Name))
 		//}
-	}
+	}*/
 
 	if len(m.AlwaysDownload) == 0 && len(m.Configurations) == 0 {
 		sb.WriteString("One \"Always Download\", at least one \"Configuration\" or both are required\n")

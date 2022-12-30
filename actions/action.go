@@ -64,17 +64,19 @@ var (
 		steps.EnableMod,
 		steps.PostInstall,
 	}
-	updateSteps = []steps.Step{
+	updateMoveSteps = []steps.Step{
 		steps.VerifyEnable,
 		steps.ShowWorkingDialog,
 		steps.DisableMod,
 		steps.UninstallMove,
-		steps.Install,
-		steps.PostInstall,
 	}
 	running = false
 	mutex   = sync.Mutex{}
 )
+
+func init() {
+	updateMoveSteps = append(updateMoveSteps, installMoveSteps...)
+}
 
 func New(kind ActionKind, game config.GameDef, mod mods.TrackedMod, done Done) (Action, error) {
 	mutex.Lock()
@@ -140,7 +142,7 @@ func createUninstallSteps(game config.GameDef, tm mods.TrackedMod) (s []steps.St
 func createUpdateSteps(game config.GameDef, tm mods.TrackedMod) (s []steps.Step, err error) {
 	switch tm.InstallType(game) {
 	case config.Move, config.ImmediateDecompress:
-		s = updateSteps
+		s = updateMoveSteps
 	case config.MoveToArchive:
 		err = errors.New("not implemented")
 	default:

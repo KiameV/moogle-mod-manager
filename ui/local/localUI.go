@@ -304,6 +304,8 @@ func (ui *localUI) updateMod(tm mods.TrackedMod) {
 		} else {
 			tm.SetDisplayName(string(tm.Mod().Name))
 			ui.split.Leading.Refresh()
+			tm.SetUpdatedMod(nil)
+			_ = tm.Save()
 		}
 	}); err != nil {
 		util.ShowErrorLong(err)
