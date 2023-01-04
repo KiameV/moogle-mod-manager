@@ -16,21 +16,22 @@ func Download(game config.GameDef, mod mods.TrackedMod, toInstall []*mods.ToInst
 			// Success
 			return
 		}
-	}
-	if k.Is(mods.CurseForge) {
+	} else if k.Is(mods.CurseForge) {
 		if err = curseForge(game, mod, toInstall); err == nil {
 			// Success
 			return
 		}
-	}
-	if k.Is(mods.Nexus) {
+	} else if k.Is(mods.Nexus) {
 		if err = nexus(game, mod, toInstall); err == nil {
 			// Success
 			return
 		}
-	}
-	if err != nil {
+	} else {
 		return fmt.Errorf("unknown kind %s", k.String())
+	}
+
+	if err != nil {
+		err = fmt.Errorf("failed to install %s: %w", mod.DisplayName(), err)
 	}
 	return
 }

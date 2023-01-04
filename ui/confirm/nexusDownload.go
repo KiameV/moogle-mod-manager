@@ -9,7 +9,7 @@ import (
 	"github.com/kiamev/moogle-mod-manager/discover/remote/nexus"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/ui/state/ui"
-	"net/url"
+	"github.com/kiamev/moogle-mod-manager/ui/util"
 	"os"
 	"path/filepath"
 )
@@ -55,23 +55,16 @@ func (c *nexusConfirmer) Downloads(done func(mods.Result)) (err error) {
 }
 
 func (c *nexusConfirmer) showDialog(toDl []toDownload, done func(mods.Result)) (err error) {
-	var (
-		u  *url.URL
-		vb = container.NewVBox(widget.NewLabelWithStyle("Download the following file from Nexus", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}))
-	)
+	vb := container.NewVBox(widget.NewLabelWithStyle("Download the following file from Nexus", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}))
+
 	for _, td := range toDl {
-		if u, err = url.Parse(td.uri); err != nil {
-			return
-		}
-		vb.Add(widget.NewHyperlink(td.uri, u))
+		vb.Add(util.CreateUrlRow(td.uri))
 
 		vb.Add(widget.NewLabelWithStyle("Place download in:", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}))
 
-		if u, err = url.Parse(td.dir); err != nil {
-			return
-		}
-		vb.Add(widget.NewHyperlink(td.dir, u))
+		vb.Add(util.CreateUrlRow(td.dir))
 	}
+	vb.Add(widget.NewLabelWithStyle("Once the files are done downloading press Done", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}))
 	d := dialog.NewCustomConfirm("Download Files", "Done", "Cancel", container.NewVScroll(vb), func(ok bool) {
 		result := mods.Ok
 		if !ok {

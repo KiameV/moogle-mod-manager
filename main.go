@@ -49,58 +49,6 @@ func main() {
 	ui.Window = ui.App.NewWindow("Moogle Mod Manager " + browser.Version)
 	initialize()
 
-	// Mod versions
-	// \Steam\steamapps\appmanifest_1173820.acf
-	// FF1:1173770
-	// FF2:1173780
-	// FF3:1173790
-	// FF4:1173800
-	// FF5:1173810
-	// FF6:1173820
-	/*
-			var tag language.Tag
-			if tag, err = locale.Detect(); err != nil {
-				util.ShowErrorLong(err)
-			} else {
-				// TODO
-				println(tag.String())
-				//https://github.com/nicksnyder/go-i18n/
-				//https://en.wikipedia.org/wiki/IETF_language_tag
-				//en-US
-			}
-
-
-
-		  setup: async (discovery, context) => {
-		    await checkForRequiredToolStat({
-		      context,
-		      discovery,
-		      name: 'Memoria FF6',
-		      url: 'https://github.com/Albeoris/Memoria.FFPR',
-		      paths: [path.join('BepInEx', 'plugins', 'Memoria.FF6.dll')],
-		    })
-
-		    await checkForRequiredToolStat({
-		      context,
-		      discovery,
-		      name: 'BepInEx',
-		      url: 'https://github.com/Albeoris/Memoria.FFPR',
-		      paths: [path.join('BepInEx', 'core', 'BepInEx.Core.dll')],
-		    })
-
-		    await checkForRequiredToolSha256({
-		      context,
-		      discovery,
-		      name: 'UnityPlayer.dll',
-		      path: 'UnityPlayer.dll',
-		      url: 'https://www.dropbox.com/s/pyqpoxpl7i4i67a/UnityPlayer.7z',
-		      hashes: [
-		        'F1B5D1110914CEBEF9D31A935239262342DEBDE78115D90F48C640CD39673CBE',
-		      ],
-		    })
-		  },
-	*/
-
 	state.RegisterMainMenu(menu.New())
 	state.RegisterScreen(state.None, game_select.New())
 	state.RegisterScreen(state.ModAuthor, mod_author.New())
