@@ -6,6 +6,7 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
+	"github.com/atotto/clipboard"
 	"github.com/kiamev/moogle-mod-manager/discover/remote/nexus"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/ui/state/ui"
@@ -60,7 +61,14 @@ func (c *nexusConfirmer) showDialog(toDl []toDownload, done func(mods.Result)) (
 	for _, td := range toDl {
 		vb.Add(util.CreateUrlRow(td.uri))
 
-		vb.Add(widget.NewLabelWithStyle("Place download in:", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}))
+		text := "Place download in:"
+		if len(toDl) == 1 {
+			if err = clipboard.WriteAll(td.dir); err == nil {
+				text += " (copied to clipboard)"
+			}
+			err = nil
+		}
+		vb.Add(widget.NewLabelWithStyle(text, fyne.TextAlignLeading, fyne.TextStyle{Bold: true}))
 
 		vb.Add(util.CreateUrlRow(td.dir))
 	}

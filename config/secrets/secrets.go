@@ -43,8 +43,8 @@ func Get(k Key) (v string) {
 
 func Set(k Key, v string) {
 	if k == NexusApiKey {
-		v = secret.NexusApiKey
+		secret.NexusApiKey = v
 	} else if k == CfApiKey {
-		v = secret.CfApiKey
+		secret.CfApiKey = v
 	}
 }

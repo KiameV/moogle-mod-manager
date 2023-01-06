@@ -32,7 +32,16 @@ import (
 func main() {
 	defer func() {
 		if err := recover(); err != nil {
-			_ = os.WriteFile("log.txt", []byte(err.(string)), 0644)
+			var msg string
+			switch e := err.(type) {
+			case string:
+				msg = e
+			case error:
+				msg = e.Error()
+			}
+			if msg != "" {
+				_ = os.WriteFile("log.txt", []byte(msg), 0644)
+			}
 		}
 	}()
 

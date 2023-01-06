@@ -68,6 +68,10 @@ func Get() *Configs {
 	return configs
 }
 
+func Set(c Configs) {
+	*configs = c
+}
+
 func (c *Configs) Size() fyne.Size {
 	size := fyne.NewSize(WindowWidth, WindowHeight)
 	if x := configs.WindowX; x != 0 {

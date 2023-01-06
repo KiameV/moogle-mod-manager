@@ -36,17 +36,16 @@ func Show(w fyne.Window, done func()) {
 
 	d := dialog.NewForm("Configure", "Save", "Cancel", items, func(ok bool) {
 		if ok {
-			c := config.Get()
-			*c = configs
-			c.FirstTime = false
-			_ = os.MkdirAll(c.ModsDir, 0777)
-			_ = os.MkdirAll(c.BackupDir, 0777)
-			_ = os.MkdirAll(c.DownloadDir, 0777)
-			_ = os.MkdirAll(c.ImgCacheDir, 0777)
-			if err := c.Save(); err != nil {
+			configs.FirstTime = false
+			_ = os.MkdirAll(configs.ModsDir, 0777)
+			_ = os.MkdirAll(configs.BackupDir, 0777)
+			_ = os.MkdirAll(configs.DownloadDir, 0777)
+			_ = os.MkdirAll(configs.ImgCacheDir, 0777)
+			if err := configs.Save(); err != nil {
 				dialog.ShowError(err, w)
 				return
 			}
+			config.Set(configs)
 		} else {
 			if configs.Theme != config.Get().Theme {
 				t := theme.DarkTheme()
