@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/go-git/go-git/v5"
 	"github.com/kiamev/moogle-mod-manager/config"
@@ -25,7 +26,7 @@ type (
 	}
 )
 
-var cache = mods.NewModLookup[*mods.Mod]()
+var cache = make(map[config.GameID]mods.ModLookup[*mods.Mod])
 
 func NewGetter(kind UseKind) Getter {
 	return &repo{
@@ -86,9 +87,12 @@ func (r *repo) pull(rd repoDef) error {
 }
 
 func (r *repo) GetMod(toGet *mods.Mod) (mod *mods.Mod, err error) {
-	if cache != nil {
-		if m, f := cache.Get(toGet); f {
-			return m, nil
+	if toGet == nil {
+		return nil, errors.New("mod is nil")
+	}
+	if gm, f := cache[toGet.Games[0].ID]; f && gm.Len() > 0 {
+		if mod, f = gm.Get(toGet); f {
+			return
 		}
 	}
 
@@ -123,8 +127,10 @@ func (r *repo) GetMod(toGet *mods.Mod) (mod *mods.Mod, err error) {
 }
 
 func (r *repo) GetMods(game config.GameDef, clearCache bool) (result []*mods.Mod, err error) {
-	if cache.Len() > 0 && !clearCache {
-		return cache.All(), nil
+	if !clearCache {
+		if gm, f := cache[game.ID()]; f && gm.Len() > 0 {
+			return gm.All(), nil
+		}
 	}
 
 	var m []string
@@ -156,20 +162,27 @@ func (r *repo) GetUtilities() ([]*mods.Mod, error) {
 }
 
 func (r *repo) filesToMod(game config.GameDef, m []string) (result []*mods.Mod, err error) {
-	cache.Clear()
-	for _, f := range m {
+	gm, f := cache[game.ID()]
+	if f {
+		gm.Clear()
+	} else {
+		gm = mods.NewModLookup[*mods.Mod]()
+		cache[game.ID()] = gm
+	}
+
+	for _, file := range m {
 		mod := &mods.Mod{}
-		if err = util.LoadFromFile(f, mod); err != nil {
+		if err = util.LoadFromFile(file, mod); err != nil {
 			return
 		}
 		if game != nil {
 			if ok := mod.Supports(game); ok == nil {
 				result = append(result, mod)
-				cache.Set(mod)
+				gm.Set(mod)
 			}
 		} else {
 			result = append(result, mod)
-			cache.Set(mod)
+			gm.Set(mod)
 		}
 	}
 	return
