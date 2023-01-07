@@ -7,7 +7,6 @@ import (
 	"github.com/go-git/go-git/v5"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
-	"github.com/kiamev/moogle-mod-manager/util"
 	"os"
 	"path/filepath"
 	"time"
@@ -114,11 +113,11 @@ func (r *repo) GetMod(toGet *mods.Mod) (mod *mods.Mod, err error) {
 			return nil, fmt.Errorf("%s has no games", toGet.Name)
 		}
 
-		if err = util.LoadFromFile(filepath.Join(dir, "mod.json"), &mod); err == nil {
+		if err = mod.LoadFromFile(filepath.Join(dir, "mod.json")); err == nil {
 			// Success
 			return
 		}
-		if err = util.LoadFromFile(filepath.Join(dir, "mod.xml"), &mod); err == nil {
+		if err = mod.LoadFromFile(filepath.Join(dir, "mod.xml")); err == nil {
 			// Success
 			return
 		}
@@ -172,7 +171,7 @@ func (r *repo) filesToMod(game config.GameDef, m []string) (result []*mods.Mod, 
 
 	for _, file := range m {
 		mod := &mods.Mod{}
-		if err = util.LoadFromFile(file, mod); err != nil {
+		if err = mod.LoadFromFile(file); err != nil {
 			return
 		}
 		if game != nil {

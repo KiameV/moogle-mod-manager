@@ -45,11 +45,11 @@ func Initialize(games []config.GameDef) (err error) {
 
 	for _, game := range games {
 		for _, tm := range lookup.GetMods(game) {
-			var mod *mods.Mod
-			if err = util.LoadFromFile(tm.MoogleModFile(), &mod); err != nil {
+			var mod mods.Mod
+			if err = mod.LoadFromFile(tm.MoogleModFile()); err != nil {
 				return
 			}
-			tm.SetMod(mod)
+			tm.SetMod(&mod)
 		}
 	}
 	return
@@ -57,7 +57,7 @@ func Initialize(games []config.GameDef) (err error) {
 
 func AddModFromFile(game config.GameDef, file string) (mods.TrackedMod, error) {
 	var mod *mods.Mod
-	if err := util.LoadFromFile(file, &mod); err != nil {
+	if err := mod.LoadFromFile(file); err != nil {
 		return nil, err
 	}
 	if s := mod.Validate(); s != "" {

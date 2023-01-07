@@ -34,7 +34,7 @@ func New() state.Screen {
 	a := &ModAuthorer{
 		kinds:        &mods.Kinds{},
 		Manager:      entry.NewManager(),
-		previewDef:   newPreviewDef(),
+		previewsDef:  newpPreviewsDef(),
 		donationsDef: newDonationsDef(),
 		description:  newRichTextEditor(),
 		releaseNotes: newRichTextEditor(),
@@ -63,7 +63,7 @@ type ModAuthorer struct {
 	kinds        *mods.Kinds
 	editCallback func(*mods.Mod)
 
-	previewDef *previewDef
+	previewsDef *previewsDef
 	//modKindDef     *modKindDef
 	modCompatsDef  *modCompatabilityDef
 	donationsDef   *donationsDef
@@ -345,7 +345,7 @@ func (a *ModAuthorer) updateEntries(mod *mods.Mod) {
 		entry.NewEntry[string](a, entry.KindString, "Working Dir", dir)
 	}
 
-	a.previewDef.set(mod.Preview)
+	a.previewsDef.set(mod.Previews)
 
 	a.modCompatsDef.set(mod.ModCompatibility)
 	//a.modKindDef.set(&mod.ModKind)
@@ -434,7 +434,7 @@ func (a *ModAuthorer) compileMod() (m *mods.Mod, err error) {
 		ModKind: mods.ModKind{
 			Kinds: *a.kinds,
 		},
-		Preview: a.previewDef.compile(),
+		Previews: a.previewsDef.compile(),
 		//ModKind:      *a.modKindDef.compile(),
 		ConfigSelectionType: mods.SelectType(a.selectType.Value()),
 		//ConfigSelectionType: mods.Auto,
@@ -531,7 +531,7 @@ func (a *ModAuthorer) submitForReview() {
 
 	if mod.Hide {
 		mod.Description = ""
-		mod.Preview = nil
+		mod.Previews = mod.Previews[:0]
 		mod.Category = ""
 		mod.Downloadables = nil
 		mod.AlwaysDownload = nil
@@ -635,11 +635,11 @@ func (a *ModAuthorer) createHostedInputs() *container.AppTabs {
 		a.selectType.FormItem(),
 		entry.FormItem[string](a, "Release Date"),
 		entry.FormItem[string](a, "Link"))
-	entries = append(entries, a.previewDef.getFormItems()...)
 
 	return container.NewAppTabs(
 		container.NewTabItem("Mod", container.NewVScroll(widget.NewForm(entries...))),
 		container.NewTabItem("Description", a.description.Draw()),
+		container.NewTabItem("Preview Images", a.previewsDef.draw()),
 		container.NewTabItem("Games", container.NewVScroll(a.gamesDef.draw())),
 		container.NewTabItem("Compatibility", container.NewVScroll(a.modCompatsDef.draw())),
 		container.NewTabItem("Release Notes", a.releaseNotes.Draw()),

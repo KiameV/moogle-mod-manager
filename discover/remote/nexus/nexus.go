@@ -8,7 +8,6 @@ import (
 	"github.com/kiamev/moogle-mod-manager/config/secrets"
 	u "github.com/kiamev/moogle-mod-manager/discover/remote/util"
 	"github.com/kiamev/moogle-mod-manager/mods"
-	"github.com/kiamev/moogle-mod-manager/util"
 	"io"
 	"net/http"
 	"os"
@@ -238,11 +237,10 @@ func toMod(n nexusMod, dls []NexusFile) (include bool, mod *mods.Mod, err error)
 		ReleaseDate:  n.CreatedTime.Format("Jan 2, 2006"),
 		ReleaseNotes: "",
 		Link:         fmt.Sprintf(nexusUrl, n.GamePath, n.ModID),
-		Preview: &mods.Preview{
+		Previews: []*mods.Preview{{
 			Url:   &n.PictureUrl,
 			Local: nil,
-			//Size:  nil,
-		},
+		}},
 		ModKind: mods.ModKind{
 			Kinds:   mods.Kinds{mods.Nexus},
 			NexusID: (*mods.NexusModID)(&n.ModID),
@@ -339,7 +337,7 @@ func (c *client) GetMods(game config.GameDef, rebuildCache bool) (result []*mods
 		}
 		if d.Name() == "mod.json" || d.Name() == "mod.xml" {
 			m := &mods.Mod{}
-			if err = util.LoadFromFile(path, m); err != nil {
+			if err = m.LoadFromFile(path); err != nil {
 				return err
 			}
 			result = append(result, m)

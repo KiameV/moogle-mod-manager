@@ -59,8 +59,10 @@ func CreatePreview(mod *mods.Mod, options ...ModPreviewOptions) fyne.CanvasObjec
 	}
 
 	c = container.NewBorder(c, nil, nil, nil, tabs)
-	if img := mod.Preview.Get(); img != nil {
-		c = container.NewBorder(img, nil, nil, nil, c)
+	if len(mod.Previews) > 0 {
+		if img := mod.Previews[0].Get(); img != nil {
+			c = container.NewBorder(img, nil, nil, nil, c)
+		}
 	}
 	return container.NewScroll(c)
 }

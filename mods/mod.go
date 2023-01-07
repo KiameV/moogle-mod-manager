@@ -95,6 +95,7 @@ type (
 		Version             string              `json:"Version" xml:"Version"`
 		InstallType_        *config.InstallType `json:"InstallType,omitempty" xml:"InstallType,omitempty"`
 		Preview             *Preview            `json:"Preview,omitempty" xml:"Preview,omitempty"`
+		Previews            []*Preview          `json:"Previews,omitempty" xml:"Previews,omitempty"`
 		ModKind             ModKind             `json:"ModKind" xml:"ModKind"`
 		ModCompatibility    *ModCompatibility   `json:"Compatibility,omitempty" xml:"ModCompatibility,omitempty"`
 		Downloadables       []*Download         `json:"Downloadable" xml:"Downloadables"`
@@ -475,6 +476,15 @@ func NewModForVersion(manual *Mod, remote *Mod) *Mod {
 
 func (m *Mod) Mod() *Mod {
 	return m
+}
+
+func (m *Mod) LoadFromFile(file string) (err error) {
+	if err = util.LoadFromFile(file, m); err == nil {
+		if m.Preview != nil && len(m.Previews) == 0 {
+			m.Previews = []*Preview{m.Preview}
+		}
+	}
+	return
 }
 
 func Sort(mods []*Mod) (sorted []*Mod) {

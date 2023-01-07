@@ -29,11 +29,11 @@ func newDonationsDef() *donationsDef {
 }
 
 func (d *donationsDef) compile() []*mods.DonationLink {
-	downloads := make([]*mods.DonationLink, len(d.list.Items))
+	dls := make([]*mods.DonationLink, len(d.list.Items))
 	for i, item := range d.list.Items {
-		downloads[i] = item.(*mods.DonationLink)
+		dls[i] = item.(*mods.DonationLink)
 	}
-	return downloads
+	return dls
 }
 
 func (d *donationsDef) getItemKey(item interface{}) string {

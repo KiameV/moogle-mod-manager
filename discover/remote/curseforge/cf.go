@@ -9,7 +9,6 @@ import (
 	"github.com/kiamev/moogle-mod-manager/config/secrets"
 	u "github.com/kiamev/moogle-mod-manager/discover/remote/util"
 	"github.com/kiamev/moogle-mod-manager/mods"
-	"github.com/kiamev/moogle-mod-manager/util"
 	"io"
 	"net/http"
 	"os"
@@ -263,10 +262,10 @@ func toMod(m cfMod, desc string, dls []CfFile) (include bool, mod *mods.Mod, err
 		ReleaseDate:  m.CreatedTime.Format("Jan 2, 2006"),
 		ReleaseNotes: "",
 		Link:         m.Links.WebsiteUrl,
-		Preview: &mods.Preview{
+		Previews: []*mods.Preview{{
 			Url:   &m.Logo.Url,
 			Local: nil,
-		},
+		}},
 		ModKind: mods.ModKind{
 			Kinds:        mods.Kinds{mods.CurseForge},
 			CurseForgeID: (*mods.CfModID)(&m.ModID),
@@ -372,7 +371,7 @@ func (c *client) GetMods(game config.GameDef, rebuildCache bool) (result []*mods
 		}
 		if d.Name() == "mod.json" || d.Name() == "mod.xml" {
 			m := &mods.Mod{}
-			if err = util.LoadFromFile(path, m); err != nil {
+			if err = m.LoadFromFile(path); err != nil {
 				return err
 			}
 			result = append(result, m)
