@@ -46,9 +46,11 @@ func (e *SelectFormEntry) Value() string {
 }
 
 func (e *SelectFormEntry) DataChanged() {
-	if v, err := e.bind.Get(); err == nil {
-		if e.Entry.Selected != v {
-			e.Entry.Selected = v
+	if e != nil && e.bind != nil {
+		if v, err := e.bind.Get(); err == nil {
+			if e.Entry != nil && e.Entry.Selected != v {
+				e.Entry.Selected = v
+			}
 		}
 	}
 }

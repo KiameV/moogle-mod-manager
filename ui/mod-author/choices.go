@@ -89,7 +89,6 @@ func (d *choicesDef) createItem(item interface{}, done ...func(interface{})) {
 
 	form := []*widget.FormItem{
 		entry.FormItem[string](d, "Name"),
-		entry.FormItem[string](d, "Name"),
 		entry.FormItem[string](d, "Description"),
 		entry.FormItem[string](d, "Next Configuration"),
 	}

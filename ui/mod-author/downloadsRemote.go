@@ -35,21 +35,18 @@ func newDownloadsRemoteDef(games *gamesDef, kind mods.Kind) dlHoster {
 }
 
 func (d *downloadsRemoteDef) compile(mod *mods.Mod) (err error) {
-	var (
-		id int64
-		mk = mod.ModKind
-	)
+	var id int64
 	if d.idEntry.Value() != "" {
 		if id, err = strconv.ParseInt(d.idEntry.Value(), 10, 64); err != nil {
 			return
 		}
 		i := int(id)
 		if d.kind.Is(mods.Nexus) {
-			mk.Kinds.Add(mods.Nexus)
-			mk.NexusID = (*mods.NexusModID)(&i)
+			mod.ModKind.Kinds.Add(mods.Nexus)
+			mod.ModKind.NexusID = (*mods.NexusModID)(&i)
 		} else if d.kind.Is(mods.CurseForge) {
-			mk.Kinds.Add(mods.CurseForge)
-			mk.CurseForgeID = (*mods.CfModID)(&i)
+			mod.ModKind.Kinds.Add(mods.CurseForge)
+			mod.ModKind.CurseForgeID = (*mods.CfModID)(&i)
 		}
 	}
 	return

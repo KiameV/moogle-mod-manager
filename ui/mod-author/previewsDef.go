@@ -73,7 +73,10 @@ func (d *previewsDef) createItem(item interface{}, done ...func(interface{})) {
 		entry.FormItem[string](d, "Image URL"),
 	}, func(ok bool) {
 		if ok {
-			u = entry.Value[string](d, "Image URL")
+			if m.Url == nil {
+				m.Url = new(string)
+			}
+			*m.Url = entry.Value[string](d, "Image URL")
 			if len(done) > 0 {
 				done[0](m)
 			}

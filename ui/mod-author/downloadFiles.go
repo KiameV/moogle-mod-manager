@@ -52,7 +52,7 @@ func (d *downloadFilesDef) compile() *mods.DownloadFiles {
 
 func (d *downloadFilesDef) getFormItems() ([]*widget.FormItem, error) {
 	var (
-		possible []string
+		possible = []string{""}
 		dls, err = d.downloads.compileDownloads()
 	)
 	if err != nil {

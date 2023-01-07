@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	Version = "v0.8.6"
+	Version = "v0.8.7"
 
 	tagUrl = `https://api.github.com/repos/KiameV/ffprModManager/tags`
 	relUrl = `https://github.com/KiameV/ffprModManager/releases/%s`

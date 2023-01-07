@@ -107,7 +107,7 @@ func NewSelectEntry(m Manager, key string, value string, possible []string) Entr
 		m.set(key, e)
 	} else {
 		e.(*SelectFormEntry).Entry.Options = possible
-		e.(*SelectFormEntry).selected = value
+		e.(*SelectFormEntry).Set(value)
 	}
 	return e.(Entry[string])
 }

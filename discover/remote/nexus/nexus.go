@@ -296,19 +296,6 @@ func toMod(n nexusMod, dls []NexusFile) (include bool, mod *mods.Mod, err error)
 	return
 }
 
-func removeFont(s string) string {
-	var i, j int
-	for i = 0; i < len(s)-10; i++ {
-		if s[i] == '[' && s[i+1] == 'f' && s[i+2] == 'o' && s[i+3] == 'n' && s[i+4] == 't' && s[i+5] == '=' {
-			for j = i; j < len(s) && s[j] != ']'; j++ {
-			}
-			s = s[:i] + s[j+1:]
-		}
-	}
-	s = strings.ReplaceAll(s, "[/font]", "")
-	return s
-}
-
 func (c *client) Folder(game config.GameDef) string {
 	return filepath.Join(config.PWD, "remote", string(game.ID()), string(mods.Nexus))
 }
@@ -352,55 +339,3 @@ func (c *client) GetMods(game config.GameDef, rebuildCache bool) (result []*mods
 	cache[game.ID()] = result
 	return
 }
-
-/*
-function convert() {
-  var left = document.getElementById('left_ta');
-  var right = document.getElementById('right_ta');
-
-  var left_value = left.value;
-
-  //preprocessing for tf2toolbox BBCode
-  if(left_value.search(/TF2Toolbox/gmi) != -1) {
-    left_value = left_value
-    .replace(/(\(List generated at .+?\[\/URL\]\))((?:.|\n)+)/gmi, '$2\n\n\n$1') //Move TF2Toolbox link to bottom
-    .replace('(List generated at', '(List generated from')
-    .replace(/[^\S\n]+\(List/gmi,'(List')
-    .replace(/\[b\]\[u\](.+?)\[\/u\]\[\/b\]/gmi,'[b]$1[/b]\n') //Fix double emphasized titles
-    .replace(/(\n)\[\*\]\[b\](.+?)\[\/b\]/gmi, '$1\[\*\] $2');
-  }
-
-  //general BBcode conversion
-  left_value = left_value
-    .replace(/\[b\]((?:.|\n)+?)\[\/b\]/gmi, '**$1**') //bold; replace [b] $1 [/b] with ** $1 **
-    .replace(/\[\i\]((?:.|\n)+?)\[\/\i\]/gmi, '*$1*')  //italics; replace [i] $1 [/u] with * $1 *
-    .replace(/\[\u\]((?:.|\n)+?)\[\/\u\]/gmi, '$1')  //remove underline;
-    .replace(/\[s\]((?:.|\n)+?)\[\/s\]/gmi, '~~ $1~~') //strikethrough; replace [s] $1 [/s] with ~~ $1 ~~
-    .replace(/\[center\]((?:.|\n)+?)\[\/center\]/gmi, '$1') //remove center;
-    .replace(/\[quote\=.+?\]((?:.|\n)+?)\[\/quote\]/gmi, '$1') //remove [quote=] tags
-    .replace(/\[size\=.+?\]((?:.|\n)+?)\[\/size\]/gmi, '## $1') //Size [size=] tags
-    .replace(/\[color\=.+?\]((?:.|\n)+?)\[\/color\]/gmi, '$1') //remove [color] tags
-    .replace(/\[list\=1\]((?:.|\n)+?)\[\/list\]/gmi, function (match, p1, offset, string) {return p1.replace(/\[\*\]/gmi, '1. ');})
-    .replace(/(\n)\[\*\]/gmi, '$1* ') //lists; replcae lists with + unordered lists.
-    .replace(/\[\/*list\]/gmi, '')
-    .replace(/\[img\]((?:.|\n)+?)\[\/img\]/gmi,'![$1]($1)')
-    .replace(/\[url=(.+?)\]((?:.|\n)+?)\[\/url\]/gmi,'[$2]($1)')
-    .replace(/\[code\](.*?)\[\/code\]/gmi, '`$1`')
-    .replace(/\[code\]((?:.|\n)+?)\[\/code\]/gmi, function (match, p1, offset, string) {return p1.replace(/^/gmi, '    ');})
-    .replace(/\[php\](.*?)\[\/php\]/gmi, '`$1`')
-    .replace(/\[php\]((?:.|\n)+?)\[\/php\]/gmi, function (match, p1, offset, string) {return p1.replace(/^/gmi, '    ');})
-    .replace(/\[pawn\](.*?)\[\/pawn\]/gmi, '`$1`')
-    .replace(/\[pawn\]((?:.|\n)+?)\[\/pawn\]/gmi, function (match, p1, offset, string) {return p1.replace(/^/gmi, '    ');});
-
-  //post processing for tf2toolbox BBCode
-  if(left_value.search(/TF2Toolbox/gmi) != -1) {
-    left_value = left_value
-    .replace('/bbcode_lookup.php))', '/bbcode_lookup.php) and converted to /r/tf2trade ready Markdown by Dum\'s [converter](http://jondum.github.com/BBCode-To-Markdown-Converter/)).') //add a linkback
-    .replace(/\*\*.+?\*\*[\s]+?None[\s]{2}/gmi, ''); //remove empty sections
-
-  }
-
-  right.value = left_value;
-
-}
-*/
