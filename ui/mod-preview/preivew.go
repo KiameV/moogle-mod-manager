@@ -39,9 +39,9 @@ func CreatePreview(mod *mods.Mod, options ...ModPreviewOptions) fyne.CanvasObjec
 
 	text := widget.NewRichTextFromMarkdown(strings.ReplaceAll(mod.Description, "\r", ""))
 	text.Wrapping = fyne.TextWrapWord
-	tabs := container.NewAppTabs(
+	tabItems := []*container.TabItem{
 		container.NewTabItem("Description", text),
-	)
+	}
 	if mod.ReleaseNotes != "" {
 		text = widget.NewRichTextFromMarkdown(strings.ReplaceAll(mod.ReleaseNotes, "\r", ""))
 		text.Wrapping = fyne.TextWrapWord
@@ -50,20 +50,27 @@ func CreatePreview(mod *mods.Mod, options ...ModPreviewOptions) fyne.CanvasObjec
 	if mod.ModCompatibility != nil && mod.ModCompatibility.HasItems() {
 		if len(mod.Games) > 0 {
 			if game, err := config.GameDefFromID(mod.Games[0].ID); err == nil {
-				tabs.Append(container.NewTabItem("Compatibility", createCompatibility(game, mod.ModCompatibility)))
+				tabItems = append(tabItems, container.NewTabItem("Compatibility", createCompatibility(game, mod.ModCompatibility)))
 			}
 		}
 	}
 	if mod.DonationLinks != nil && len(mod.DonationLinks) > 0 {
-		tabs.Append(container.NewTabItem("Donations", createDonationLinks(mod.DonationLinks)))
+		tabItems = append(tabItems, container.NewTabItem("Donations", createDonationLinks(mod.DonationLinks)))
 	}
 
+	tabs := container.NewAppTabs(tabItems...)
 	c = container.NewBorder(c, nil, nil, nil, tabs)
-	if len(mod.Previews) > 0 {
-		if img := mod.Previews[0].Get(); img != nil {
-			c = container.NewBorder(img, nil, nil, nil, c)
-		}
+
+	var img *fyne.Container
+	if len(mod.Previews) == 1 {
+		img = mod.Previews[0].GetAsEnlargeOnClick()
+	} else if len(mod.Previews) > 1 {
+		img = mod.Previews[0].GetAsImageGallery(0, mod.Previews, true)
 	}
+	if img != nil {
+		c = container.NewBorder(img, nil, nil, nil, c)
+	}
+
 	return container.NewScroll(c)
 }
 
@@ -75,13 +82,13 @@ func createField(name, value string) *fyne.Container {
 }
 
 func createLink(name, value string) *fyne.Container {
-	url, err := url.ParseRequestURI(value)
+	u, err := url.ParseRequestURI(value)
 	if err != nil {
 		return createField(name, value)
 	}
 	return container.NewHBox(
 		widget.NewLabelWithStyle(name, fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
-		widget.NewHyperlink(value, url),
+		widget.NewHyperlink(value, u),
 	)
 }
 

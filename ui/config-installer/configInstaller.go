@@ -116,7 +116,7 @@ func (ui *configInstallerUI) Draw(w fyne.Window) {
 				}
 			}
 		}))
-	if img := ui.currentConfig.Preview.Get(); img != nil {
+	if img := ui.currentConfig.Preview.GetAsEnlargeOnClick(); img != nil {
 		c = container.NewBorder(img, nil, nil, nil, c)
 	}
 	cnlButton := widget.NewButton("Cancel", func() {
@@ -162,7 +162,7 @@ func (ui *configInstallerUI) drawChoiceInfo() {
 	if ui.currentChoice.Description != "" {
 		c.Add(widget.NewRichTextFromMarkdown(ui.currentChoice.Description))
 	}
-	if img := ui.currentChoice.Preview.Get(); img != nil {
+	if img := ui.currentChoice.Preview.GetAsEnlargeOnClick(); img != nil {
 		c = container.NewBorder(img, nil, nil, nil, c)
 	}
 	ui.choiceContainer.Add(c)
