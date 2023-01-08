@@ -33,8 +33,8 @@ func (s *GameSelect) Draw(w fyne.Window) {
 }
 
 func (s *GameSelect) createInput(g config.GameDef) *fyne.Container {
-	return container.NewMax(g.Logo(), widget.NewButton("", func() {
+	return container.NewMax(widget.NewButton("", func() {
 		state.CurrentGame = g
 		state.ShowScreen(state.LocalMods)
-	}))
+	}), g.Logo())
 }

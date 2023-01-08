@@ -50,6 +50,7 @@ type (
 		SteamID_            SteamID           `json:"steamID"`
 		Versions_           []Version         `json:"versions"`
 		BaseDir_            BaseDir           `json:"baseDir"`
+		AuthorHintDir_      string            `json:"authorHintDir"`
 		Remote_             Remote            `json:"remote"`
 		DefaultInstallType_ InstallType       `json:"defaultInstallType"`
 		LogoPath_           string            `json:"-"`
@@ -62,6 +63,7 @@ type (
 		SteamID() SteamID
 		Versions() []Version
 		BaseDir() BaseDir
+		AuthorHintDir() string
 		Remote() Remote
 		DefaultInstallType() InstallType
 		LogoPath() string
@@ -90,6 +92,10 @@ func (g *gameDef) Versions() []Version {
 
 func (g *gameDef) BaseDir() BaseDir {
 	return g.BaseDir_
+}
+
+func (g *gameDef) AuthorHintDir() string {
+	return fmt.Sprintf("To %s/", g.AuthorHintDir_)
 }
 
 func (g *gameDef) Remote() Remote {

@@ -2,6 +2,8 @@ package steps
 
 import (
 	"archive/zip"
+	"fmt"
+	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"io"
 	"os"
@@ -54,8 +56,9 @@ func (z *zipWriter) close() {
 
 func backupArchivedFiles(state *State, backupDir string) error {
 	var (
-		zr    map[string]*zipReader
+		zr    = make(map[string]*zipReader)
 		r     *zipReader
+		dir   string
 		found bool
 		err   error
 	)
@@ -66,12 +69,18 @@ func backupArchivedFiles(state *State, backupDir string) error {
 	}()
 	for _, e := range state.ExtractedFiles {
 		for _, ti := range e.FilesToInstall() {
+			if ti.archive == nil {
+				return fmt.Errorf("archive not set for file %s", ti.AbsoluteTo)
+			}
 			// Read all archives
 			if ti.Skip {
 				continue
 			}
 			if r, found = zr[*ti.archive]; !found {
-				if r, err = newZipReader(*ti.archive); err != nil {
+				if dir, err = config.Get().GetDir(state.Game, config.GameDirKind); err != nil {
+					return err
+				}
+				if r, err = newZipReader(filepath.Join(dir, *ti.archive)); err != nil {
 					return err
 				}
 				zr[*ti.archive] = r
@@ -113,38 +122,37 @@ func backupArchiveFile(r *zipReader, backupDir string, ti *FileToInstall) error 
 }
 
 func installDirectMoveToArchive(state *State, backupDir string) (mods.Result, error) {
-	/*	var (
-			dir   string
-			zw    map[string]*zipWriter
-			w     *zipWriter
-			found bool
-			err   error
-		)
-		defer func() {
-			for _, w = range zw {
-				w.close()
-			}
-		}()
-
-		if err = backupArchivedFiles(state, backupDir); err != nil {
-			return mods.Error, err
+	var (
+		zw map[string]*zipWriter
+		w  *zipWriter
+		//found bool
+		err error
+	)
+	defer func() {
+		for _, w = range zw {
+			w.close()
 		}
+	}()
 
-		for _, e := range state.ExtractedFiles {
-			for _, ti := range e.FilesToInstall() {
-				if ti.Skip {
-					continue
-				}
-				if w, found = zw[*ti.archive]; !found {
-					if w, err = newZipWriter(*ti.archive); err != nil {
-						return mods.Error, err
-					}
-					zw[*ti.archive] = w
-				}
-				if err = copyFileToArchive(w, ti); err != nil {
-					return
-				}
+	if err = backupArchivedFiles(state, backupDir); err != nil {
+		return mods.Error, err
+	}
+
+	/*for _, e := range state.ExtractedFiles {
+		for _, ti := range e.FilesToInstall() {
+			if ti.Skip {
+				continue
 			}
-		}*/
+			if w, found = zw[*ti.archive]; !found {
+				if w, err = newZipWriter(*ti.archive); err != nil {
+					return mods.Error, err
+				}
+				zw[*ti.archive] = w
+			}
+			if err = copyFileToArchive(w, ti); err != nil {
+				return
+			}
+		}
+	}*/
 	return mods.Ok, nil
 }

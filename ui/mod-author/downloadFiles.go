@@ -15,12 +15,12 @@ type downloadFilesDef struct {
 	dirs        *dirsDef
 }
 
-func newDownloadFilesDef(downloads *downloads, installType *config.InstallType) *downloadFilesDef {
+func newDownloadFilesDef(downloads *downloads, installType *config.InstallType, gamesDef *gamesDef) *downloadFilesDef {
 	d := &downloadFilesDef{
 		Manager:   entry.NewManager(),
 		downloads: downloads,
-		files:     newFilesDef(installType),
-		dirs:      newDirsDef(installType),
+		files:     newFilesDef(installType, gamesDef),
+		dirs:      newDirsDef(installType, gamesDef),
 	}
 	var i any = entry.NewSelectEntry(d, "Download Name", "", nil)
 	d.selectEntry = i.(*entry.SelectFormEntry)

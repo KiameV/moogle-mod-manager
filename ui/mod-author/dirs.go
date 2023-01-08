@@ -19,12 +19,14 @@ type dirsDef struct {
 	entry.Manager
 	list        *cw.DynamicList
 	installType *config.InstallType
+	gamesDef    *gamesDef
 }
 
-func newDirsDef(installType *config.InstallType) *dirsDef {
+func newDirsDef(installType *config.InstallType, gamesDef *gamesDef) *dirsDef {
 	d := &dirsDef{
 		Manager:     entry.NewManager(),
 		installType: installType,
+		gamesDef:    gamesDef,
 	}
 	d.list = cw.NewDynamicList(cw.Callbacks{
 		GetItemKey:    d.getItemKey,
@@ -62,7 +64,7 @@ func (d *dirsDef) onEditItem(item interface{}) {
 func (d *dirsDef) createItem(item interface{}, done ...func(interface{})) {
 	f := item.(*mods.ModDir)
 	entry.CreateFileDialog(d, "From", f.From, state.GetBaseDirBinding(), true, true)
-	entry.NewEntry[string](d, entry.KindString, "To FF PR/", f.To)
+	entry.NewEntry[string](d, entry.KindString, d.toDirHint(), f.To)
 	entry.NewEntry[bool](d, entry.KindBool, "Recursive", f.Recursive)
 	s := ""
 	if f.ToArchive != nil {
@@ -72,7 +74,7 @@ func (d *dirsDef) createItem(item interface{}, done ...func(interface{})) {
 
 	items := []*widget.FormItem{
 		entry.GetFileDialog(d, "From"),
-		entry.FormItem[string](d, "To FF PR/"),
+		entry.FormItem[string](d, d.toDirHint()),
 		entry.FormItem[bool](d, "Recursive"),
 	}
 	if d.installType.Is(config.MoveToArchive) {
@@ -83,7 +85,7 @@ func (d *dirsDef) createItem(item interface{}, done ...func(interface{})) {
 		func(ok bool) {
 			if ok {
 				f.From = cleanPath(entry.DialogValue(d, "From"))
-				f.To = cleanPath(entry.Value[string](d, "To FF PR/"))
+				f.To = cleanPath(entry.Value[string](d, d.toDirHint()))
 				f.Recursive = entry.Value[bool](d, "Recursive")
 				if s = entry.Value[string](d, "To Archive"); s == "" {
 					f.ToArchive = nil
@@ -129,4 +131,11 @@ func (d *dirsDef) populate(dirs []*mods.ModDir) {
 func cleanPath(s string) string {
 	s = strings.ReplaceAll(s, "\\", "/")
 	return strings.ReplaceAll(s, "//", "/")
+}
+
+func (d *dirsDef) toDirHint() (dir string) {
+	if gd, err := d.gamesDef.gameDefs(); len(gd) > 0 && err == nil {
+		return gd[0].AuthorHintDir()
+	}
+	return ""
 }

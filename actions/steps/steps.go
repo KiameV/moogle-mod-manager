@@ -223,7 +223,7 @@ func Extract(state *State) (mods.Result, error) {
 				ToInstall: ti,
 				Files:     ef,
 			}
-			if err = e.Compile(state.Game, to); err != nil {
+			if err = e.Compile(state.Game, it, to); err != nil {
 				return mods.Error, err
 			}
 			state.ExtractedFiles = append(state.ExtractedFiles, e)

@@ -20,10 +20,10 @@ type choicesDef struct {
 	previewDef *previewDef
 }
 
-func newChoicesDef(dlDef *downloads, configDef *configurationsDef, installType *config.InstallType) *choicesDef {
+func newChoicesDef(dlDef *downloads, configDef *configurationsDef, installType *config.InstallType, gamesDef *gamesDef) *choicesDef {
 	d := &choicesDef{
 		Manager:    entry.NewManager(),
-		dlfDef:     newDownloadFilesDef(dlDef, installType),
+		dlfDef:     newDownloadFilesDef(dlDef, installType, gamesDef),
 		configDef:  configDef,
 		previewDef: newPreviewDef(),
 	}
