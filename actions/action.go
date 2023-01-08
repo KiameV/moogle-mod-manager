@@ -82,7 +82,7 @@ func New(kind ActionKind, game config.GameDef, mod mods.TrackedMod, done Done) (
 	mutex.Lock()
 	defer mutex.Unlock()
 	if running {
-		return nil, errors.New("another action is running")
+		return nil, errors.New("Another action is running. Please wait for the current mod to finish installing or uninstalling.")
 	}
 	a, err := new(kind, game, mod, done)
 	if err != nil {
@@ -155,7 +155,7 @@ func (a action) Run() (err error) {
 	if !a.isInternalAction {
 		mutex.Lock()
 		if running {
-			err = errors.New("another action is running")
+			err = errors.New("Another action is running. Please wait for the current mod to finish installing or uninstalling.")
 		} else {
 			running = true
 		}
