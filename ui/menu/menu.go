@@ -3,6 +3,7 @@ package menu
 import (
 	"fmt"
 	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/cmd/fyne_settings/settings"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
@@ -45,6 +46,14 @@ func (m *MainMenu) Draw(w fyne.Window) {
 		}),
 		fyne.NewMenuItem("Secrets", func() {
 			secret.Show(w)
+		}),
+		fyne.NewMenuItemSeparator(),
+		fyne.NewMenuItem("Appearance", func() {
+			s := settings.NewSettings()
+			sd := s.LoadAppearanceScreen(w)
+			d := dialog.NewCustom("Appearance", "Close", sd, w)
+			d.Resize(fyne.NewSize(500, 500))
+			d.Show()
 		}),
 		fyne.NewMenuItemSeparator(),
 		fyne.NewMenuItem("Check For App Updates", func() {

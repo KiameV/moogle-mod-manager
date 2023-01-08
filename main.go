@@ -1,9 +1,7 @@
 package main
 
 import (
-	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
-	"fyne.io/fyne/v2/theme"
 	"github.com/kiamev/moogle-mod-manager/browser"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/config/secrets"
@@ -95,10 +93,6 @@ func initialize() {
 
 	ui.Window.Resize(config.Get().Size())
 	ui.Window.SetMaster()
-
-	if configs.Theme == config.LightThemeColor {
-		fyne.CurrentApp().Settings().SetTheme(theme.LightTheme())
-	}
 
 	if err = repo.NewGetter(repo.Read).Pull(); err != nil {
 		util.ShowErrorLong(err)

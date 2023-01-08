@@ -69,11 +69,11 @@ func (p *Preview) GetAsEnlargeOnClick() *fyne.Container {
 	if i == nil {
 		return nil
 	}
-	return container.NewMax(i, widget.NewButton("", func() {
+	return container.NewBorder(nil, container.NewCenter(widget.NewButton("Enlarge", func() {
 		d := dialog.NewCustom("", "Close", p.GetUncachedImage(), ui.ActiveWindow())
 		d.Resize(config.Get().Size())
 		d.Show()
-	}))
+	})), nil, nil, i)
 }
 
 func (p *Preview) GetAsImageGallery(index int, previews []*Preview, enlarge bool) *fyne.Container {

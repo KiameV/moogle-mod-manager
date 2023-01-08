@@ -57,7 +57,6 @@ type (
 		ImgCacheDir                string              `json:"imgCacheDir"`
 		DownloadDir                string              `json:"downloadDir"`
 		BackupDir                  string              `json:"backupDir"`
-		Theme                      ThemeColor          `json:"theme"`
 		DefaultGame                string              `json:"openTo"`
 		GameDirs                   map[string]*GameDir `json:"gameDirs"`
 		DeleteDownloadAfterInstall bool                `json:"deleteDownloadAfterInstall"`
@@ -161,7 +160,6 @@ func (c *Configs) Initialize() (err error) {
 	}
 	if err = util.LoadFromFile(filepath.Join(PWD, configsFile), c); err != nil {
 		c.FirstTime = true
-		c.Theme = DarkThemeColor
 	}
 	c.setDefaults()
 	return nil
