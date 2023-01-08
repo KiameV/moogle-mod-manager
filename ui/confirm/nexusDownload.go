@@ -3,6 +3,7 @@ package confirm
 import (
 	"fmt"
 	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 	"github.com/atotto/clipboard"
@@ -83,6 +84,15 @@ func (c *nexusConfirmer) showDialog(toDl []toDownload, done func(mods.Result)) (
 		fi = append(fi, widget.NewFormItem("",
 			util.CreateUrlRow(td.dir)))
 	}
+
+	fi = append(fi, widget.NewFormItem("", container.NewCenter(widget.NewButton("Check", func() {
+		for _, r := range rows {
+			if e := r.Validate(); e != nil {
+				util.ShowErrorLong(e)
+				return
+			}
+		}
+	}))))
 	d := dialog.NewForm("Download Files", "Done", "Cancel", fi, func(ok bool) {
 		result := mods.Ok
 		if !ok {
@@ -151,7 +161,7 @@ func (r *downloadRow) Found() bool {
 
 func (r *downloadRow) Validate() error {
 	if !r.Found() {
-		return fmt.Errorf("[%s] not found", r.fileNeeded)
+		return fmt.Errorf("The following file was not found:\n%s", r.fileNeeded)
 	}
 	return nil
 }
