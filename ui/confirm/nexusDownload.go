@@ -67,7 +67,7 @@ func (c *nexusConfirmer) showDialog(toDl []toDownload, done func(mods.Result)) (
 	)
 
 	for i, td := range toDl {
-		r := newDownloadRow(&td, len(toDl) == 1)
+		r := newDownloadRow(&td)
 		rows = append(rows, r)
 		text := "Place download in:"
 		if len(toDl) == 1 && clipboard.WriteAll(td.dir) == nil {
@@ -104,6 +104,9 @@ func (c *nexusConfirmer) showDialog(toDl []toDownload, done func(mods.Result)) (
 		for _, r := range rows {
 			r.stop = true
 		}
+		for _, r := range rows {
+			r.SetOnValidationChanged(nil)
+		}
 	})
 	d.Resize(fyne.NewSize(500, 450))
 	d.Show()
@@ -118,7 +121,7 @@ type downloadRow struct {
 	validatedCallback func(error)
 }
 
-func newDownloadRow(td *toDownload, isOnly bool) *downloadRow {
+func newDownloadRow(td *toDownload) *downloadRow {
 	r := &downloadRow{
 		fileNeeded: filepath.Join(td.dir, td.fileName),
 		Widget:     widget.NewLabel("Found"),
