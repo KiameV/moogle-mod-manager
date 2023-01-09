@@ -1,6 +1,7 @@
 package remote
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/config/secrets"
@@ -66,7 +67,12 @@ func getMods(game config.GameDef, c Client, eg *errgroup.Group, m *sync.Mutex, r
 	eg.Go(func() error {
 		r, e := c.GetMods(game, rebuildCache)
 		if e != nil {
-			return e
+			switch e.(type) {
+			case *json.SyntaxError:
+				return nil
+			default:
+				return e
+			}
 		}
 		m.Lock()
 		*result = append(*result, r...)

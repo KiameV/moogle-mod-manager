@@ -78,12 +78,7 @@ func (b *filterButton) Tapped(e *fyne.PointEvent) {
 */
 
 func newCategoryFilter(onChange func()) fyne.CanvasObject {
-	categories := state.CurrentGame.Categories()
-	options := make([]string, len(categories)+1)
-	options[0] = ""
-	for i, c := range state.CurrentGame.CategoriesForSelect() {
-		options[i+1] = c
-	}
+	options := state.CurrentGame.CategoriesForSelect()
 	category := widget.NewSelect(options, func(s string) {
 		if s == "" {
 			filters.category = nil
