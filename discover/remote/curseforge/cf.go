@@ -280,9 +280,9 @@ func toMod(m cfMod, desc string, dls []CfFile) (include bool, mod *mods.Mod, err
 		Configurations: nil,
 	})
 	if len(m.Category) > 0 {
-		if mod.Category, err = m.Category[0].toCategory(); err != nil {
-			return
-		}
+		//if mod.Category, err = m.Category[0].toCategory(); err != nil {
+		//	return
+		//}
 	}
 	if len(m.Author) > 0 {
 		mod.Author = m.Author[0].Name

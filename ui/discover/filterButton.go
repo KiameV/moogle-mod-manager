@@ -3,7 +3,8 @@ package discover
 import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/widget"
-	"github.com/kiamev/moogle-mod-manager/mods"
+	"github.com/kiamev/moogle-mod-manager/config"
+	"github.com/kiamev/moogle-mod-manager/ui/state"
 )
 
 type supportedKind string
@@ -23,7 +24,7 @@ var filters = findFilter{
 
 type findFilter struct {
 	supportedKind supportedKind
-	category      *mods.Category
+	category      *config.Category
 }
 
 /*
@@ -77,16 +78,17 @@ func (b *filterButton) Tapped(e *fyne.PointEvent) {
 */
 
 func newCategoryFilter(onChange func()) fyne.CanvasObject {
-	options := make([]string, len(mods.Categories)+1)
+	categories := state.CurrentGame.Categories()
+	options := make([]string, len(categories)+1)
 	options[0] = ""
-	for i, c := range mods.Categories {
+	for i, c := range state.CurrentGame.CategoriesForSelect() {
 		options[i+1] = c
 	}
 	category := widget.NewSelect(options, func(s string) {
 		if s == "" {
 			filters.category = nil
 		} else {
-			c := mods.Category(s)
+			c := config.Category(s)
 			filters.category = &c
 		}
 		onChange()

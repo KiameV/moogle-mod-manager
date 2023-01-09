@@ -10,7 +10,6 @@ import (
 
 type (
 	SelectType string
-	Category   string
 	ModID      string
 	ModName    string
 )
@@ -26,43 +25,6 @@ const (
 )
 
 var SelectTypes = []string{string(Auto), string(Select), string(Radio)}
-
-const (
-	BattleScene        Category = "Battle Scene"
-	EnemySprite        Category = "Enemy Sprite"
-	GameOverhauls      Category = "GameDef Overhauls"
-	Gameplay           Category = "Gameplay"
-	General            Category = "General"
-	Fonts              Category = "Fonts"
-	PlayerNpcSprites   Category = "Player/NPC Sprite"
-	ScriptText         Category = "Script/Text"
-	Soundtrack         Category = "Soundtrack"
-	TileSet            Category = "Tile Set"
-	TitleScreen        Category = "Title Screen"
-	UIGeneral          Category = "UI: General"
-	UiMenuPortraits    Category = "UI: Menu Portraits"
-	UiTextBoxPortraits Category = "UI: Textbox Portraits"
-	UiWindowFrames     Category = "UI: Window Frames"
-	Utility            Category = "Utility"
-)
-
-var Categories = []string{
-	string(BattleScene),
-	string(EnemySprite),
-	string(GameOverhauls),
-	string(Gameplay),
-	string(Fonts),
-	string(PlayerNpcSprites),
-	string(ScriptText),
-	string(Soundtrack),
-	string(TileSet),
-	string(TitleScreen),
-	string(UIGeneral),
-	string(UiMenuPortraits),
-	string(UiWindowFrames),
-	string(UiTextBoxPortraits),
-	string(Utility),
-}
 
 const (
 	BugKindCosmetic Kind = "Cosmetic"
@@ -82,7 +44,7 @@ type (
 		Author              string              `json:"Author" xml:"Author"`
 		AuthorLink          string              `json:"AuthorLink" xml:"AuthorLink"`
 		ReleaseDate         string              `json:"ReleaseDate" xml:"ReleaseDate"`
-		Category            Category            `json:"Category" xml:"Category"`
+		Category            config.Category     `json:"Category" xml:"Category"`
 		Description         string              `json:"Description" xml:"Description"`
 		ReleaseNotes        string              `json:"ReleaseNotes" xml:"ReleaseNotes"`
 		Link                string              `json:"Link" xml:"Link"`

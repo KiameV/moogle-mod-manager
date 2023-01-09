@@ -24,6 +24,7 @@ type (
 	CfGameID    int
 	CfPath      string
 	VersionID   string
+	Category    string
 	Nexus       struct {
 		ID   NexusGameID `json:"id"`
 		Path NexusPath   `json:"path"`
@@ -52,6 +53,7 @@ type (
 		BaseDir_            BaseDir           `json:"baseDir"`
 		Remote_             Remote            `json:"remote"`
 		DefaultInstallType_ InstallType       `json:"defaultInstallType"`
+		Categories_         []Category        `json:"categories"`
 		LogoPath_           string            `json:"-"`
 		Logo_               fyne.CanvasObject `json:"-"`
 		InstallDir_         string            `json:"-"`
@@ -64,12 +66,18 @@ type (
 		BaseDir() BaseDir
 		Remote() Remote
 		DefaultInstallType() InstallType
+		Categories() []Category
+		CategoriesForSelect() []string
 		LogoPath() string
 		SetLogoPath(path string)
 		Logo() fyne.CanvasObject
 		SetLogo(logo fyne.CanvasObject)
 		SteamDirFromRegistry() string
 	}
+)
+
+const (
+	Utility Category = "Utility"
 )
 
 func (g *gameDef) ID() GameID {
@@ -98,6 +106,19 @@ func (g *gameDef) Remote() Remote {
 
 func (g *gameDef) DefaultInstallType() InstallType {
 	return g.DefaultInstallType_
+}
+
+func (g *gameDef) Categories() []Category {
+	return g.Categories_
+}
+
+func (g *gameDef) CategoriesForSelect() []string {
+	s := make([]string, 0, len(g.Categories_)+1)
+	s = append(s, "")
+	for _, c := range g.Categories() {
+		s = append(s, string(c))
+	}
+	return s
 }
 
 func (g *gameDef) LogoPath() string {

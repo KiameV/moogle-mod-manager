@@ -100,7 +100,7 @@ func (r *repo) GetMod(toGet *mods.Mod) (mod *mods.Mod, err error) {
 		game config.GameDef
 	)
 	for _, rd := range repoDefs {
-		if toGet.Category == mods.Utility && len(toGet.Games) > 1 {
+		if toGet.Category == config.Utility && len(toGet.Games) > 1 {
 			dir = filepath.Join(rd.repoUtilDir(r.kind), toGet.ID().AsDir())
 		} else if len(toGet.Games) == 1 {
 			if game, err = config.GameDefFromID(toGet.Games[0].ID); err != nil {

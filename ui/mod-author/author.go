@@ -41,7 +41,7 @@ func New() state.Screen {
 	}
 	a.gamesDef = newGamesDef(a.gameAdded)
 	//a.modKindDef = newModKindDef(a.kind)
-	a.categorySelect = entry.NewSelectEntry(a, "Category", "", mods.Categories)
+	a.categorySelect = entry.NewSelectEntry(a, "Category", "", []string{})
 
 	a.modCompatsDef = newModCompatibilityDef(a.gamesDef)
 
@@ -426,7 +426,7 @@ func (a *ModAuthorer) compileMod() (m *mods.Mod, err error) {
 		Name:         mods.ModName(entry.Value[string](a, "Name")),
 		Author:       entry.Value[string](a, "Author"),
 		ReleaseDate:  entry.Value[string](a, "Release Date"),
-		Category:     mods.Category(a.categorySelect.Value()),
+		Category:     config.Category(a.categorySelect.Value()),
 		Version:      a.version.Value(),
 		Description:  a.description.String(),
 		ReleaseNotes: a.releaseNotes.String(),
@@ -673,12 +673,14 @@ func (a *ModAuthorer) createHostedInputs() *container.AppTabs {
 //}
 
 func (a *ModAuthorer) gameAdded(id config.GameID) {
-	if a != nil && a.installType == config.BlankInstallType {
-		if game, err := config.GameDefFromID(id); game != nil && err == nil {
+	game, err := config.GameDefFromID(id)
+	if game != nil && err == nil {
+		if a != nil && a.installType == config.BlankInstallType {
 			a.installType = game.DefaultInstallType()
 			a.installTypeSelect.Set(string(a.installType))
 		}
 	}
+	entry.NewSelectEntry(a, "Category", "", game.CategoriesForSelect())
 }
 
 type installTypeListener struct {

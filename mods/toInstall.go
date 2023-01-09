@@ -59,7 +59,7 @@ func (ti *ToInstall) getHostedDownloadLocation(game config.GameDef, tm TrackedMo
 	if v == "" {
 		v = "nv"
 	}
-	if len(m.Games) > 0 && m.Category == Utility {
+	if len(m.Games) > 0 && m.Category == config.Utility {
 		ti.downloadDir = config.Get().GetDownloadFullPathForUtility()
 	} else {
 		ti.downloadDir = config.Get().GetDownloadFullPathForGame(game)

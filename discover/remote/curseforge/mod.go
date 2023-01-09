@@ -1,7 +1,6 @@
 package curseforge
 
 import (
-	"fmt"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"time"
@@ -45,7 +44,7 @@ type category struct {
 	Name string `json:"name"`
 }
 
-func (c *category) toCategory() (r mods.Category, err error) {
+/*func (c *category) toCategory() (r mods.Category, err error) {
 	switch c.Name {
 	case "Script/Text":
 		r = mods.ScriptText
@@ -83,7 +82,7 @@ func (c *category) toCategory() (r mods.Category, err error) {
 		err = fmt.Errorf("unknown category: " + c.Name)
 	}
 	return
-}
+}*/
 
 type links struct {
 	WebsiteUrl string `json:"websiteUrl"`
