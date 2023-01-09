@@ -9,7 +9,6 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/config"
 	cw "github.com/kiamev/moogle-mod-manager/ui/custom-widgets"
-	"os"
 )
 
 func Show(w fyne.Window, done func()) {
@@ -29,17 +28,17 @@ func Show(w fyne.Window, done func()) {
 		}
 		items = append(items, createDirRow(string(g.ID()+" Dir"), &gd.Dir))
 	}
-	items = append(items, createDirRow("Download Dir", &configs.DownloadDir))
-	items = append(items, createDirRow("Backup Dir", &configs.BackupDir))
-	items = append(items, createDirRow("Image Cache Dir", &configs.ImgCacheDir))
+	//items = append(items, createDirRow("Download Dir", &configs.DownloadDir))
+	//items = append(items, createDirRow("Backup Dir", &configs.BackupDir))
+	//items = append(items, createDirRow("Image Cache Dir", &configs.ImgCacheDir))
 
 	d := dialog.NewForm("Configure", "Save", "Cancel", items, func(ok bool) {
 		if ok {
 			configs.FirstTime = false
-			_ = os.MkdirAll(configs.ModsDir, 0777)
-			_ = os.MkdirAll(configs.BackupDir, 0777)
-			_ = os.MkdirAll(configs.DownloadDir, 0777)
-			_ = os.MkdirAll(configs.ImgCacheDir, 0777)
+			//_ = os.MkdirAll(configs.ModsDir, 0777)
+			//_ = os.MkdirAll(configs.BackupDir, 0777)
+			//_ = os.MkdirAll(configs.DownloadDir, 0777)
+			//_ = os.MkdirAll(configs.ImgCacheDir, 0777)
 			if err := configs.Save(); err != nil {
 				dialog.ShowError(err, w)
 				return

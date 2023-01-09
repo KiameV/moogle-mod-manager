@@ -16,12 +16,16 @@ type (
 		Files          []archive.ExtractedFile
 		filesToInstall []*FileToInstall
 	}
+	Archive struct {
+		Name string
+		Path string
+	}
 	FileToInstall struct {
 		Relative     string
 		AbsoluteFrom string
 		AbsoluteTo   string
 		Skip         bool
-		archive      *string
+		archive      *Archive
 	}
 )
 
@@ -30,32 +34,48 @@ func newFileToInstallFromFile(relToExtracted map[string]archive.ExtractedFile, f
 	if !found {
 		return nil, fmt.Errorf("file %v not found in extracted files", f)
 	}
+	if archive != nil {
+		// TODO
+	}
 	return &FileToInstall{
 		Relative:     f.To,
 		AbsoluteFrom: af.From,
 		AbsoluteTo:   filepath.Join(installDir, f.To),
 		Skip:         false,
-		archive:      archive,
+		archive:      nil,
 	}, nil
 }
 
-func newFileToInstallFromDir(relToExtracted map[string]archive.ExtractedFile, rel string, d *mods.ModDir, installDir string, archive *string) (*FileToInstall, error) {
+func newFileToInstallFromDir(relToExtracted map[string]archive.ExtractedFile, fromRel string, d *mods.ModDir, installDir string, archive *string) (*FileToInstall, error) {
 	var (
-		af, found = relToExtracted[rel]
-		toRel     = rel
+		af, found = relToExtracted[fromRel]
+		to        string
+		a         *Archive
+		err       error
 	)
 	if !found {
 		return nil, fmt.Errorf("dir %v not found in extracted files", d.From)
 	}
 	if d.From != "." {
-		toRel = strings.TrimPrefix(rel, d.From)
+		if to, err = filepath.Rel(d.From, fromRel); err != nil {
+			return nil, err
+		}
+		to = filepath.Join(d.To, to)
+	}
+	if archive == nil {
+		to = filepath.Join(installDir, to)
+	} else {
+		a = &Archive{
+			Name: *archive,
+			Path: strings.ReplaceAll(filepath.Join(installDir, *archive), "\\", "/"),
+		}
 	}
 	return &FileToInstall{
 		Relative:     af.Relative,
 		AbsoluteFrom: af.From,
-		AbsoluteTo:   filepath.Join(installDir, d.To, toRel),
+		AbsoluteTo:   strings.ReplaceAll(to, "\\", "/"),
 		Skip:         false,
-		archive:      archive,
+		archive:      a,
 	}, nil
 }
 
@@ -96,14 +116,14 @@ func (e *Extracted) compileForMove(game config.GameDef, extractedDir string) (er
 			e.filesToInstall = append(e.filesToInstall, fti)
 		}
 		for _, d := range df.Dirs {
-			if err = filepath.WalkDir(filepath.Join(extractedDir, d.From), func(path string, de fs.DirEntry, err error) error {
+			if err = filepath.WalkDir(filepath.Join(extractedDir, d.From), func(p string, de fs.DirEntry, err error) error {
 				if err != nil {
 					return err
 				}
 				if de.IsDir() {
 					return nil
 				}
-				path = filepath.ToSlash(path)
+				path := filepath.ToSlash(p)
 				if rel, err = filepath.Rel(extractedDir, path); err != nil {
 					return err
 				}

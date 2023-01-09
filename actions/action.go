@@ -16,6 +16,7 @@ type (
 	Done   func(result Result)
 	Action interface {
 		Run() error
+		Close()
 	}
 	Result struct {
 		Status       mods.Result
@@ -84,7 +85,7 @@ func New(kind ActionKind, game config.GameDef, mod mods.TrackedMod, done Done) (
 	if running {
 		return nil, errors.New("Another action is running. Please wait for the current mod to finish installing or uninstalling.")
 	}
-	a, err := new(kind, game, mod, done)
+	a, err := newAction(kind, game, mod, done)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +93,7 @@ func New(kind ActionKind, game config.GameDef, mod mods.TrackedMod, done Done) (
 	return a, nil
 }
 
-func new(kind ActionKind, game config.GameDef, mod mods.TrackedMod, done Done) (*action, error) {
+func newAction(kind ActionKind, game config.GameDef, mod mods.TrackedMod, done Done) (*action, error) {
 	var (
 		s   []steps.Step
 		err error
@@ -145,7 +146,8 @@ func createUpdateSteps(game config.GameDef, tm mods.TrackedMod) (s []steps.Step,
 	return
 }
 
-func (a action) Run() (err error) {
+func (a *action) Run() (err error) {
+	defer a.Close()
 	if !a.isInternalAction {
 		mutex.Lock()
 		if running {
@@ -164,7 +166,7 @@ func (a action) Run() (err error) {
 	return
 }
 
-func (a action) run() {
+func (a *action) run() {
 	var (
 		result mods.Result
 		err    error
@@ -221,7 +223,7 @@ func installRequiredMod(state *steps.State) (result mods.Result, err error) {
 			*err = e
 			return
 		}
-		if a, e = new(Install, state.Game, tm, func(r Result) {
+		if a, e = newAction(Install, state.Game, tm, func(r Result) {
 			// Done running install
 			*result = r.Status
 			*err = r.Err
@@ -247,7 +249,7 @@ func installRequiredMod(state *steps.State) (result mods.Result, err error) {
 	return
 }
 
-func (a action) newResult(r mods.Result, err error) Result {
+func (a *action) newResult(r mods.Result, err error) Result {
 	if err != nil {
 		r = mods.Error
 	}
@@ -256,6 +258,10 @@ func (a action) newResult(r mods.Result, err error) Result {
 		Err:          err,
 		RequiredMods: a.state.Added,
 	}
+}
+
+func (a *action) Close() {
+	a.state.Close()
 }
 
 // TODO Update

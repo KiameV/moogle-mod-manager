@@ -3,6 +3,7 @@ package steps
 import (
 	"errors"
 	"fmt"
+	aio "github.com/kiamev/moogle-mod-manager/actions/archive-io"
 	"github.com/kiamev/moogle-mod-manager/archive"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/discover"
@@ -30,14 +31,22 @@ type (
 		ExtractedFiles []Extracted
 		Requires       *mods.Mod
 		Added          []mods.TrackedMod
+		ZipIO          map[string]aio.ZipIO
 	}
 	Step func(state *State) (result mods.Result, err error)
 )
 
 func NewState(game config.GameDef, mod mods.TrackedMod) *State {
 	return &State{
-		Game: game,
-		Mod:  mod,
+		Game:  game,
+		Mod:   mod,
+		ZipIO: make(map[string]aio.ZipIO),
+	}
+}
+
+func (s *State) Close() {
+	for _, z := range s.ZipIO {
+		z.Close()
 	}
 }
 
@@ -196,7 +205,7 @@ func Extract(state *State) (mods.Result, error) {
 				return mods.Error, err
 			}
 		} else {
-			to = ti.Download.DownloadedArchiveLocation.ExtractDir(string(ti.Download.Name))
+			to = ti.Download.DownloadedArchiveLocation.ExtractDir(ti.Download.Name)
 		}
 		if state.Mod.InstallType(state.Game) == config.ImmediateDecompress {
 			if to, err = config.Get().GetDir(state.Game, config.GameDirKind); err != nil {

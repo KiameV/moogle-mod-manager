@@ -56,7 +56,7 @@ func Initialize(games []config.GameDef) (err error) {
 }
 
 func AddModFromFile(game config.GameDef, file string) (mods.TrackedMod, error) {
-	var mod *mods.Mod
+	mod := &mods.Mod{}
 	if err := mod.LoadFromFile(file); err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func AddModFromFile(game config.GameDef, file string) (mods.TrackedMod, error) {
 
 func AddModFromUrl(game config.GameDef, url string) (mods.TrackedMod, error) {
 	var (
-		mod *mods.Mod
+		mod = &mods.Mod{}
 		b   []byte
 		err error
 	)
