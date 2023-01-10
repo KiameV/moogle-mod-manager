@@ -18,10 +18,10 @@ type alwaysDownloadDef struct {
 	downloadFilesDef *downloadFilesDef
 }
 
-func newAlwaysDownloadDef(downloads *downloads, installType *config.InstallType) *alwaysDownloadDef {
+func newAlwaysDownloadDef(downloads *downloads, installType *config.InstallType, gamesDef *gamesDef) *alwaysDownloadDef {
 	d := &alwaysDownloadDef{
 		Manager:          entry.NewManager(),
-		downloadFilesDef: newDownloadFilesDef(downloads, installType),
+		downloadFilesDef: newDownloadFilesDef(downloads, installType, gamesDef),
 	}
 	d.list = cw.NewDynamicList(cw.Callbacks{
 		GetItemKey:    d.getItemKey,

@@ -52,6 +52,7 @@ type (
 		Versions_           []Version         `json:"versions"`
 		BaseDir_            BaseDir           `json:"baseDir"`
 		Remote_             Remote            `json:"remote"`
+		AuthorHintDir_      string            `json:"authorHintDir"`
 		DefaultInstallType_ InstallType       `json:"defaultInstallType"`
 		Categories_         []Category        `json:"categories"`
 		LogoPath_           string            `json:"-"`
@@ -65,6 +66,7 @@ type (
 		Versions() []Version
 		BaseDir() BaseDir
 		Remote() Remote
+		AuthorHintDir() string
 		DefaultInstallType() InstallType
 		Categories() []Category
 		CategoriesForSelect() []string
@@ -127,6 +129,10 @@ func (g *gameDef) LogoPath() string {
 
 func (g *gameDef) SetLogoPath(path string) {
 	g.LogoPath_ = path
+}
+
+func (g *gameDef) AuthorHintDir() string {
+	return g.AuthorHintDir_
 }
 
 func (g *gameDef) Logo() fyne.CanvasObject {

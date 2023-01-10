@@ -51,8 +51,8 @@ func New() state.Screen {
 	a.selectType = entry.NewSelectEntry(a, "Selection Type", "", mods.SelectTypes)
 
 	a.downloads = newDownloads(a.gamesDef, a.kinds)
-	a.alwaysDownload = newAlwaysDownloadDef(a.downloads, &a.installType)
-	a.configsDef = newConfigurationsDef(a.downloads, &a.installType)
+	a.alwaysDownload = newAlwaysDownloadDef(a.downloads, &a.installType, a.gamesDef)
+	a.configsDef = newConfigurationsDef(a.downloads, &a.installType, a.gamesDef)
 	a.version = entry.NewEntry[string](a, entry.KindString, "Version", "")
 	return a
 }

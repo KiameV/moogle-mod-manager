@@ -18,12 +18,14 @@ type filesDef struct {
 	entry.Manager
 	list        *cw.DynamicList
 	installType *config.InstallType
+	gamesDef    *gamesDef
 }
 
-func newFilesDef(installType *config.InstallType) *filesDef {
+func newFilesDef(installType *config.InstallType, gamesDef *gamesDef) *filesDef {
 	d := &filesDef{
 		Manager:     entry.NewManager(),
 		installType: installType,
+		gamesDef:    gamesDef,
 	}
 	d.list = cw.NewDynamicList(cw.Callbacks{
 		GetItemKey:    d.getItemKey,
@@ -61,7 +63,7 @@ func (d *filesDef) onEditItem(item interface{}) {
 func (d *filesDef) createItem(item interface{}, done ...func(interface{})) {
 	f := item.(*mods.ModFile)
 	entry.CreateFileDialog(d, "From", f.From, state.GetBaseDirBinding(), false, true)
-	entry.NewEntry[string](d, entry.KindString, "To FF PR/", f.To)
+	entry.NewEntry[string](d, entry.KindString, d.gamesDef.AuthorHintDir(), f.To)
 	s := ""
 	if f.ToArchive != nil {
 		s = *f.ToArchive
@@ -70,7 +72,7 @@ func (d *filesDef) createItem(item interface{}, done ...func(interface{})) {
 
 	items := []*widget.FormItem{
 		entry.GetFileDialog(d, "From"),
-		entry.FormItem[string](d, "To FF PR/"),
+		entry.FormItem[string](d, d.gamesDef.AuthorHintDir()),
 	}
 
 	if d.installType.Is(config.MoveToArchive) {
@@ -81,7 +83,7 @@ func (d *filesDef) createItem(item interface{}, done ...func(interface{})) {
 		func(ok bool) {
 			if ok {
 				f.From = cleanPath(entry.DialogValue(d, "From"))
-				f.To = cleanPath(entry.Value[string](d, "To FF PR/"))
+				f.To = cleanPath(entry.Value[string](d, d.gamesDef.AuthorHintDir()))
 				if s = entry.Value[string](d, "To Archive"); s == "" {
 					f.ToArchive = nil
 				} else {
