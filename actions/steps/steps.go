@@ -284,7 +284,7 @@ func Install(state *State) (result mods.Result, err error) {
 		return mods.Error, err
 	}
 	if result, err = install(state, backupDir); err != nil {
-		_, _ = UninstallMove(state)
+		_, _ = Uninstall(state)
 	}
 	return
 }
@@ -346,7 +346,18 @@ func installDirectMove(state *State, backupDir string) (mods.Result, error) {
 	return mods.Ok, nil
 }
 
-func UninstallMove(state *State) (mods.Result, error) {
+func Uninstall(state *State) (mods.Result, error) {
+	switch state.Mod.InstallType(state.Game) {
+	case config.Move, config.ImmediateDecompress:
+		return uninstallMove(state)
+	case config.MoveToArchive:
+		// TODO
+		return mods.Ok, nil //uninstallDirectMoveToArchive(state)
+	}
+	return mods.Error, fmt.Errorf("unknown uninstall type: %v", state.Mod.InstallType(state.Game))
+}
+
+func uninstallMove(state *State) (mods.Result, error) {
 	var (
 		i         = files.Files(state.Game, state.Mod.ID())
 		gameDir   string

@@ -23,7 +23,8 @@ type (
 		//Backups collections.Set[string]     `json:"backup"`
 	}
 	fileTracker struct {
-		Files collections.Set[string] `json:"files"`
+		Files        collections.Set[string]            `json:"files,omitempty"`
+		ArchiveFiles map[string]collections.Set[string] `json:"archive_files,omitempty"`
 	}
 )
 
@@ -68,9 +69,17 @@ func Files(game config.GameDef, modID mods.ModID) collections.Set[string] {
 	return modFiles(game, modID).Files
 }
 
+func ArchiveFiles(game config.GameDef, modID mods.ModID, archive string) (files collections.Set[string], found bool) {
+	m := modFiles(game, modID).ArchiveFiles
+	if m != nil {
+		files, found = m[archive]
+	}
+	return
+}
+
 func EmptyMods(game config.GameDef) (result []mods.ModID) {
 	for id, ft := range ModTracker(game).Mods {
-		if ft.Files.Len() == 0 {
+		if ft.Files.Len() == 0 && len(ft.ArchiveFiles) == 0 {
 			result = append(result, id)
 		}
 	}
@@ -91,6 +100,18 @@ func HasFile(game config.GameDef, file string) (modID mods.ModID, found bool) {
 	return
 }
 
+func HasArchiveFile(game config.GameDef, archive string, file string) (modID mods.ModID, found bool) {
+	var ft *fileTracker
+	for modID, ft = range ModTracker(game).Mods {
+		if m := ft.ArchiveFiles; m != nil {
+			if files, ok := m[archive]; ok && files.Contains(file) {
+				return modID, true
+			}
+		}
+	}
+	return
+}
+
 //func HasBackup(game config.GameDef, file string) bool {
 //	return ModTracker(game).Backups.Contains(file)
 //}
@@ -102,6 +123,26 @@ func SetFiles(game config.GameDef, modID mods.ModID, files ...string) {
 	for _, f := range files {
 		ft.Files.Set(f)
 	}
+	tracker.save()
+}
+
+func AppendArchiveFiles(game config.GameDef, modID mods.ModID, archive string, files ...string) {
+	var (
+		ft = modFiles(game, modID)
+		m  = ft.ArchiveFiles
+	)
+	if m == nil {
+		m = make(map[string]collections.Set[string])
+	}
+	for _, f := range files {
+		s, found := m[archive]
+		if !found {
+			s = collections.NewSet[string]()
+		}
+		s.Set(f)
+		m[archive] = s
+	}
+	ft.ArchiveFiles = m
 	tracker.save()
 }
 
@@ -125,6 +166,24 @@ func RemoveFiles(game config.GameDef, modID mods.ModID, files ...string) {
 	for _, f := range files {
 		modFiles(game, modID).Files.Remove(f)
 	}
+	tracker.save()
+}
+
+func RemoveArchiveFiles(game config.GameDef, modID mods.ModID, archive string, files ...string) {
+	var (
+		ft = modFiles(game, modID)
+		m  = ft.ArchiveFiles
+	)
+	if m == nil {
+		m = make(map[string]collections.Set[string])
+	}
+	for _, f := range files {
+		if s, found := m[archive]; found {
+			s.Remove(f)
+			m[archive] = s
+		}
+	}
+	ft.ArchiveFiles = m
 	tracker.save()
 }
 

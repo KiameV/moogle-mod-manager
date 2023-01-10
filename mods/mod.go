@@ -12,31 +12,50 @@ type (
 	SelectType string
 	ModID      string
 	ModName    string
-)
-
-func (n ModName) Contains(text string) bool {
-	return strings.Contains(strings.ToLower(string(n)), strings.ToLower(text))
-}
-
-const (
-	Auto   SelectType = "Auto"
-	Select SelectType = "Select"
-	Radio  SelectType = "Radio"
-)
-
-var SelectTypes = []string{string(Auto), string(Select), string(Radio)}
-
-const (
-	BugKindCosmetic Kind = "Cosmetic"
-	BugKindAnnoying Kind = "Annoying"
-	BugKindCrash    Kind = "Critical"
-)
-
-type (
-	BugKind   string
-	BugReport struct {
+	BugKind    string
+	BugReport  struct {
 		Kind        BugKind `json:"Kind" xml:"Kind"`
 		Description string  `json:"Description" xml:"Description"`
+	}
+	Size struct {
+		X int `json:"X" xml:"X"`
+		Y int `json:"Y" xml:"Y"`
+	}
+	Game struct {
+		ID       config.GameID    `json:"Name" xml:"Name"`
+		Versions []config.Version `json:"Version,omitempty" xml:"GameVersions,omitempty"`
+	}
+	ModFile struct {
+		From      string  `json:"From" xml:"From"`
+		To        string  `json:"To" xml:"To"`
+		ToArchive *string `json:"ToArchive,omitempty" xml:"ToArchive,omitempty"`
+	}
+	ModDir struct {
+		From      string  `json:"From" xml:"From"`
+		To        string  `json:"To" xml:"To"`
+		Recursive bool    `json:"Recursive" xml:"Recursive"`
+		ToArchive *string `json:"ToArchive,omitempty" xml:"ToArchive,omitempty"`
+	}
+	Configuration struct {
+		Name        string    `json:"Name" xml:"Name"`
+		Description string    `json:"Description" xml:"Description"`
+		Preview     *Preview  `json:"Preview,omitempty" xml:"Preview,omitempty"`
+		Root        bool      `json:"Root" xml:"Root"`
+		Choices     []*Choice `json:"Choice" xml:"Choices"`
+
+		NextConfigurationName *string `json:"NextConfigurationName,omitempty" xml:"NextConfigurationName"`
+	}
+	Choice struct {
+		Name          string         `json:"Name" xml:"Name"`
+		Description   string         `json:"Description" xml:"Description"`
+		Preview       *Preview       `json:"Preview,omitempty" xml:"Preview,omitempty"`
+		DownloadFiles *DownloadFiles `json:"DownloadFiles,omitempty" xml:"DownloadFiles,omitempty"`
+
+		NextConfigurationName *string `json:"NextConfigurationName,omitempty" xml:"NextConfigurationName"`
+	}
+	DonationLink struct {
+		Name string `json:"Name" xml:"Name"`
+		Link string `json:"Link" xml:"Link"`
 	}
 	ModDef struct {
 		ModID               ModID               `json:"ID" xml:"ID"`
@@ -65,14 +84,34 @@ type (
 		Bugs                []BugReport         `json:"Bugs,omitempty" xml:"Bugs,omitempty"`
 		IsManuallyCreated   bool                `json:"IsManuallyCreated" xml:"IsManuallyCreated"`
 	}
+	Mod struct {
+		*ModDef
+	}
 )
+
+const (
+	Auto   SelectType = "Auto"
+	Select SelectType = "Select"
+	Radio  SelectType = "Radio"
+)
+
+var (
+	SelectTypes  = []string{string(Auto), string(Select), string(Radio)}
+	InstallTypes = []string{string(config.Move), string(config.MoveToArchive)}
+)
+
+const (
+	BugKindCosmetic Kind = "Cosmetic"
+	BugKindAnnoying Kind = "Annoying"
+	BugKindCrash    Kind = "Critical"
+)
+
+func (n ModName) Contains(text string) bool {
+	return strings.Contains(strings.ToLower(string(n)), strings.ToLower(text))
+}
 
 func NewMod(def *ModDef) *Mod {
 	return &Mod{ModDef: def}
-}
-
-type Mod struct {
-	*ModDef
 }
 
 func (m *Mod) ID() ModID {
@@ -97,91 +136,6 @@ func (m *Mod) BranchName() string {
 
 func (m *Mod) Save(to string) error {
 	return util.SaveToFile(to, m.ModDef, '\n')
-}
-
-type Size struct {
-	X int `json:"X" xml:"X"`
-	Y int `json:"Y" xml:"Y"`
-}
-
-type ModCompatibility struct {
-	Requires []*ModCompat `json:"Require" xml:"Requires"`
-	Forbids  []*ModCompat `json:"Forbid" xml:"Forbids"`
-	//OrderConstraints []ModCompat `json:"OrderConstraint"`
-}
-
-func (c *ModCompatibility) HasItems() bool {
-	return c != nil && (len(c.Requires) > 0 || len(c.Forbids) > 0)
-}
-
-var InstallTypes = []string{string(config.Move), string(config.MoveToArchive)}
-
-type Game struct {
-	ID       config.GameID    `json:"Name" xml:"Name"`
-	Versions []config.Version `json:"Version,omitempty" xml:"GameVersions,omitempty"`
-}
-
-type DownloadFiles struct {
-	DownloadName string `json:"DownloadName" xml:"DownloadName"`
-	// IsInstallAll is used by nexus mods when a mod.xml is not used
-	Files []*ModFile `json:"File,omitempty" xml:"Files,omitempty"`
-	Dirs  []*ModDir  `json:"Dir,omitempty" xml:"Dirs,omitempty"`
-}
-
-func (f *DownloadFiles) IsEmpty() bool {
-	return len(f.Files) == 0 && len(f.Dirs) == 0
-}
-
-func (f *DownloadFiles) HasArchive() []string {
-	var s []string
-	for _, file := range f.Files {
-		if file.ToArchive == nil {
-			s = append(s, file.From)
-		}
-	}
-	for _, dir := range f.Dirs {
-		if dir.ToArchive == nil {
-			s = append(s, dir.From)
-		}
-	}
-	return s
-}
-
-type ModFile struct {
-	From      string  `json:"From" xml:"From"`
-	To        string  `json:"To" xml:"To"`
-	ToArchive *string `json:"ToArchive,omitempty" xml:"ToArchive,omitempty"`
-}
-
-type ModDir struct {
-	From      string  `json:"From" xml:"From"`
-	To        string  `json:"To" xml:"To"`
-	Recursive bool    `json:"Recursive" xml:"Recursive"`
-	ToArchive *string `json:"ToArchive,omitempty" xml:"ToArchive,omitempty"`
-}
-
-type Configuration struct {
-	Name        string    `json:"Name" xml:"Name"`
-	Description string    `json:"Description" xml:"Description"`
-	Preview     *Preview  `json:"Preview,omitempty" xml:"Preview,omitempty"`
-	Root        bool      `json:"Root" xml:"Root"`
-	Choices     []*Choice `json:"Choice" xml:"Choices"`
-
-	NextConfigurationName *string `json:"NextConfigurationName,omitempty" xml:"NextConfigurationName"`
-}
-
-type Choice struct {
-	Name          string         `json:"Name" xml:"Name"`
-	Description   string         `json:"Description" xml:"Description"`
-	Preview       *Preview       `json:"Preview,omitempty" xml:"Preview,omitempty"`
-	DownloadFiles *DownloadFiles `json:"DownloadFiles,omitempty" xml:"DownloadFiles,omitempty"`
-
-	NextConfigurationName *string `json:"NextConfigurationName,omitempty" xml:"NextConfigurationName"`
-}
-
-type DonationLink struct {
-	Name string `json:"Name" xml:"Name"`
-	Link string `json:"Link" xml:"Link"`
 }
 
 func (m *Mod) Validate() string {
@@ -367,21 +321,7 @@ func (m *Mod) Supports(game config.GameDef) error {
 	return fmt.Errorf("%s does not support %s", m.Name, game.Name())
 }
 
-//func (m *Mod) Merge(from Mod) {
-//	if m.IsManuallyCreated {
-//		m.Author = from.Author
-//		if m.AuthorLink == "" {
-//			m.AuthorLink = from.AuthorLink
-//		}
-//		from.ModCompatibility = m.ModCompatibility
-//		from.Games = m.Games
-//		from.Link = m.Link
-//	} else if from.IsManuallyCreated {
-//		m.Description = from.Description
-//		m.ReleaseNotes = from.ReleaseNotes
-//	}
-//}
-
+// NewModForVersion is used for specifying an updated mod with a version.
 func NewModForVersion(manual *Mod, remote *Mod) *Mod {
 	var m Mod
 	if manual != nil && manual.IsManuallyCreated {

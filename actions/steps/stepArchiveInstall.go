@@ -1,14 +1,17 @@
 package steps
 
 import (
-	"archive/zip"
+	"fmt"
+	"github.com/kiamev/moogle-mod-manager/config"
+	"github.com/kiamev/moogle-mod-manager/files"
 	"github.com/kiamev/moogle-mod-manager/mods"
-	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strings"
 )
 
-type zipReader struct {
+/*type zipReader struct {
 	Reader *zip.ReadCloser
 	Files  map[string]*zip.File
 }
@@ -27,28 +30,6 @@ func newZipReader(s string) (z *zipReader, err error) {
 func (z *zipReader) close() {
 	if z.Reader != nil {
 		_ = z.Reader.Close()
-	}
-}
-
-type zipWriter struct {
-	File   *os.File
-	Writer *zip.Writer
-}
-
-func newZipWriter(s string) (z *zipWriter, err error) {
-	z = &zipWriter{}
-	if z.File, err = os.OpenFile(s, os.O_RDWR, 0644); err == nil {
-		z.Writer = zip.NewWriter(z.File)
-	}
-	return
-}
-
-func (z *zipWriter) close() {
-	if z.Writer != nil {
-		_ = z.Writer.Close()
-	}
-	if z.File != nil {
-		_ = z.File.Close()
 	}
 }
 
@@ -110,41 +91,87 @@ func backupArchiveFile(r *zipReader, backupDir string, ti *FileToInstall) error 
 		}
 	}
 	return nil
-}
+}*/
 
 func installDirectMoveToArchive(state *State, backupDir string) (mods.Result, error) {
-	/*	var (
-			dir   string
-			zw    map[string]*zipWriter
-			w     *zipWriter
-			found bool
-			err   error
-		)
-		defer func() {
-			for _, w = range zw {
-				w.close()
-			}
-		}()
+	var (
+		archive, rel, name, bu string
+		installDir, err        = config.Get().GetDir(state.Game, config.GameDirKind)
+		z7                     = config.PWD + "\\7z"
+	)
+	if err != nil {
+		return mods.Error, err
+	} else if installDir == "" {
+		return mods.Error, fmt.Errorf("install directory not found")
+	}
 
-		if err = backupArchivedFiles(state, backupDir); err != nil {
-			return mods.Error, err
+	for _, e := range state.ExtractedFiles {
+		for _, ti := range e.FilesToInstall() {
+			archive = filepath.Join(installDir, *ti.archive)
+			if rel, err = filepath.Rel(installDir, ti.AbsoluteTo); err != nil {
+				return mods.Error, err
+			}
+			rel = filepath.Dir(rel)
+			name = filepath.Base(ti.Relative)
+			// Check if file already exists in the zip file
+			cmd := exec.Command(z7, "l", archive, fmt.Sprintf("%s/%s", rel, name))
+			if err = cmd.Run(); err == nil {
+				// Extract file and move to backup directory
+				bu = filepath.Join(backupDir, *ti.archive, rel)
+				if err = extractFile(z7, archive, rel, name, bu); err != nil {
+					return mods.Error, err
+				}
+			}
+			if err = archiveFile(state, z7, archive, ti.AbsoluteFrom, rel, name); err != nil {
+				return mods.Error, err
+			}
 		}
-
-		for _, e := range state.ExtractedFiles {
-			for _, ti := range e.FilesToInstall() {
-				if ti.Skip {
-					continue
-				}
-				if w, found = zw[*ti.archive]; !found {
-					if w, err = newZipWriter(*ti.archive); err != nil {
-						return mods.Error, err
-					}
-					zw[*ti.archive] = w
-				}
-				if err = copyFileToArchive(w, ti); err != nil {
-					return
-				}
-			}
-		}*/
+	}
 	return mods.Ok, nil
+}
+
+func extractFile(z7, archive, rel, name string, backupDir string) error {
+	// Create the target directory
+	if err := os.MkdirAll(backupDir, 0755); err != nil {
+		return err
+	}
+	_ = os.Remove(filepath.Join(backupDir, name))
+	// Extract the file to the target directory
+	cmd := exec.Command(z7, "e", archive, "-o"+backupDir, fmt.Sprintf("%s/%s", rel, name))
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+	// Remove the file from the zip file
+	//cmd = exec.Command(z7, "d", archive, fmt.Sprintf("%s/%s", rel, name))
+	//if err := cmd.Run(); err != nil {
+	//	return err
+	//}
+	return nil
+}
+
+func archiveFile(state *State, z7 string, archive, absoluteFrom string, rel, name string) (err error) {
+	// Modify File Structure
+	workingDir := filepath.Dir(absoluteFrom)
+	workingDir = filepath.Join(workingDir, "aexta")
+	if err = os.MkdirAll(filepath.Join(workingDir, rel), 0755); err != nil {
+		return
+	}
+	defer func() { _ = os.RemoveAll(workingDir) }()
+
+	// Move the file to its new relative location
+	to := filepath.Join(workingDir, rel, name)
+	if err = os.Rename(absoluteFrom, to); err != nil {
+		return
+	}
+
+	rel = strings.ReplaceAll(rel, "//", "/")
+	workingDir += "\\"
+
+	// Update the zip file
+	cmd := exec.Command(z7, "u", archive, workingDir, "-r", "-y")
+	if err = cmd.Run(); err != nil {
+		return
+	}
+	files.AppendArchiveFiles(state.Game, state.Mod.ID(), archive, filepath.Join(rel, name))
+	return
 }

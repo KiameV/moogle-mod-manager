@@ -64,7 +64,9 @@ func (m *MainMenu) Draw(w fyne.Window) {
 					"Update Available",
 					fmt.Sprintf("Version %s is available.\nWould you like to update?", newerVersion),
 					func(ok bool) {
-						_ = browser.Update(newerVersion)
+						if ok {
+							_ = browser.Update(newerVersion)
+						}
 					}, w)
 			} else {
 				dialog.ShowInformation("No Updates Available", "You are running the latest version.", w)
