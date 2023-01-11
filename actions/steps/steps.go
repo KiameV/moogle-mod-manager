@@ -235,20 +235,33 @@ func Extract(state *State) (mods.Result, error) {
 func Conflicts(state *State) (result mods.Result, err error) {
 	var (
 		mod            = state.Mod.Mod()
+		conflicts      []*files.Conflict
 		tos            []string
 		tosToToInstall = make(map[string]*FileToInstall)
 		wg             sync.WaitGroup
 		ti             *FileToInstall
 		found          bool
 	)
-	for _, e := range state.ExtractedFiles {
-		for _, ti = range e.FilesToInstall() {
-			tos = append(tos, ti.AbsoluteTo)
-			tosToToInstall[ti.AbsoluteTo] = ti
-		}
-	}
 
-	conflicts := files.FindConflicts(state.Game, tos)
+	if state.Mod.InstallType(state.Game) == config.MoveToArchive {
+		m := make(map[string][]string)
+		for _, e := range state.ExtractedFiles {
+			for _, ti = range e.FilesToInstall() {
+				m[*ti.archive] = append(m[*ti.archive], ti.AbsoluteTo)
+			}
+		}
+		for a, v := range m {
+			conflicts = append(conflicts, files.FindConflictsWithArchive(state.Game, a, v)...)
+		}
+	} else {
+		for _, e := range state.ExtractedFiles {
+			for _, ti = range e.FilesToInstall() {
+				tos = append(tos, ti.AbsoluteTo)
+				tosToToInstall[ti.AbsoluteTo] = ti
+			}
+		}
+		conflicts = files.FindConflicts(state.Game, tos)
+	}
 
 	result = mods.Ok
 	if len(conflicts) > 0 {
@@ -351,8 +364,7 @@ func Uninstall(state *State) (mods.Result, error) {
 	case config.Move, config.ImmediateDecompress:
 		return uninstallMove(state)
 	case config.MoveToArchive:
-		// TODO
-		return mods.Ok, nil //uninstallDirectMoveToArchive(state)
+		return uninstallDirectMoveToArchive(state)
 	}
 	return mods.Error, fmt.Errorf("unknown uninstall type: %v", state.Mod.InstallType(state.Game))
 }

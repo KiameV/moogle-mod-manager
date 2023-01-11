@@ -69,12 +69,8 @@ func Files(game config.GameDef, modID mods.ModID) collections.Set[string] {
 	return modFiles(game, modID).Files
 }
 
-func ArchiveFiles(game config.GameDef, modID mods.ModID, archive string) (files collections.Set[string], found bool) {
-	m := modFiles(game, modID).ArchiveFiles
-	if m != nil {
-		files, found = m[archive]
-	}
-	return
+func Archives(game config.GameDef, modID mods.ModID) map[string]collections.Set[string] {
+	return modFiles(game, modID).ArchiveFiles
 }
 
 func EmptyMods(game config.GameDef) (result []mods.ModID) {

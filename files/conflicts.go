@@ -35,3 +35,23 @@ func FindConflicts(game config.GameDef, files []string) (conflicts []*Conflict) 
 	}
 	return
 }
+
+func FindConflictsWithArchive(game config.GameDef, archive string, files []string) (conflicts []*Conflict) {
+	var (
+		owner mods.ModID
+		tm    mods.TrackedMod
+		found bool
+	)
+	for _, f := range files {
+		if owner, found = HasArchiveFile(game, archive, f); found {
+			if tm, found = managed.TryGetMod(game, owner); found {
+				conflicts = append(conflicts, &Conflict{
+					Owner: tm.Mod(),
+					Name:  filepath.Base(f),
+					Path:  f,
+				})
+			}
+		}
+	}
+	return
+}

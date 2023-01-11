@@ -25,6 +25,13 @@ type (
 	}
 )
 
+func ArchiveAsDir(archive *string) string {
+	if archive != nil {
+		return strings.ReplaceAll(*archive, ".", "_")
+	}
+	return ""
+}
+
 func newFileToInstallFromFile(relToExtracted map[string]archive.ExtractedFile, f *mods.ModFile, installDir string, archive *string) (*FileToInstall, error) {
 	af, found := relToExtracted[f.From]
 	if !found {

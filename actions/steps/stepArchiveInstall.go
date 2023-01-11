@@ -95,9 +95,11 @@ func backupArchiveFile(r *zipReader, backupDir string, ti *FileToInstall) error 
 
 func installDirectMoveToArchive(state *State, backupDir string) (mods.Result, error) {
 	var (
-		archive, rel, name, bu string
-		installDir, err        = config.Get().GetDir(state.Game, config.GameDirKind)
-		z7                     = config.PWD + "\\7z"
+		rel, name, bu   string
+		absArch         string
+		ai              = newArchiveInjector()
+		installDir, err = config.Get().GetDir(state.Game, config.GameDirKind)
+		z7              = config.PWD + "\\7z"
 	)
 	if err != nil {
 		return mods.Error, err
@@ -107,25 +109,63 @@ func installDirectMoveToArchive(state *State, backupDir string) (mods.Result, er
 
 	for _, e := range state.ExtractedFiles {
 		for _, ti := range e.FilesToInstall() {
-			archive = filepath.Join(installDir, *ti.archive)
 			if rel, err = filepath.Rel(installDir, ti.AbsoluteTo); err != nil {
 				return mods.Error, err
 			}
 			rel = filepath.Dir(rel)
 			name = filepath.Base(ti.Relative)
+			absArch = filepath.Join(installDir, *ti.archive)
 			// Check if file already exists in the zip file
-			cmd := exec.Command(z7, "l", archive, fmt.Sprintf("%s/%s", rel, name))
+			cmd := exec.Command(z7, "l", absArch, fmt.Sprintf("%s/%s", rel, name))
 			if err = cmd.Run(); err == nil {
 				// Extract file and move to backup directory
-				bu = filepath.Join(backupDir, *ti.archive, rel)
-				if err = extractFile(z7, archive, rel, name, bu); err != nil {
+				bu = filepath.Join(backupDir, ArchiveAsDir(ti.archive), rel)
+				if err = extractFile(z7, absArch, rel, name, bu); err != nil {
 					return mods.Error, err
 				}
 			}
-			if err = archiveFile(state, z7, archive, ti.AbsoluteFrom, rel, name); err != nil {
+			if err = ai.add(*ti.archive, ti.AbsoluteFrom, rel, name); err != nil {
 				return mods.Error, err
 			}
 		}
+	}
+	if err = ai.updateArchives(state, z7, installDir, archiveUpdate); err != nil {
+		return mods.Error, err
+	}
+	return mods.Ok, nil
+}
+
+func uninstallDirectMoveToArchive(state *State) (mods.Result, error) {
+	var (
+		z7 = config.PWD + "\\7z"
+		ai = newArchiveInjector()
+
+		absBackup string
+		gameDir   string
+		backupDir string
+		rel, name string
+		err       error
+	)
+	if gameDir, err = config.Get().GetDir(state.Game, config.GameDirKind); err != nil {
+		return mods.Error, err
+	}
+	if backupDir, err = config.Get().GetDir(state.Game, config.BackupDirKind); err != nil {
+		return mods.Error, err
+	}
+	for a, i := range files.Archives(state.Game, state.Mod.ID()) {
+		for _, f := range i.Keys() {
+			absBackup = filepath.Join(backupDir, ArchiveAsDir(&a), f)
+			rel = filepath.Dir(f)
+			name = filepath.Base(f)
+			if err = ai.add(a, absBackup, rel, name); err != nil {
+				ai.revertFileMoves()
+				return mods.Error, err
+			}
+		}
+	}
+	if err = ai.updateArchives(state, z7, gameDir, archiveRestoreBackup); err != nil {
+		ai.revertFileMoves()
+		return mods.Error, err
 	}
 	return mods.Ok, nil
 }
@@ -149,29 +189,87 @@ func extractFile(z7, archive, rel, name string, backupDir string) error {
 	return nil
 }
 
-func archiveFile(state *State, z7 string, archive, absoluteFrom string, rel, name string) (err error) {
-	// Modify File Structure
-	workingDir := filepath.Dir(absoluteFrom)
-	workingDir = filepath.Join(workingDir, "aexta")
-	if err = os.MkdirAll(filepath.Join(workingDir, rel), 0755); err != nil {
-		return
+type (
+	archiveAction byte
+	archiveFile   string
+	archiveFiles  struct {
+		dirToInject string
+		files       []string
 	}
-	defer func() { _ = os.RemoveAll(workingDir) }()
+	archiveInjector struct {
+		archives map[archiveFile]*archiveFiles
+		files    []string
+		renames  []fromTo
+	}
+	fromTo struct {
+		from, to string
+	}
+)
+
+const (
+	_ archiveAction = iota
+	archiveUpdate
+	archiveRestoreBackup
+)
+
+func newArchiveInjector() *archiveInjector {
+	return &archiveInjector{
+		archives: make(map[archiveFile]*archiveFiles),
+	}
+}
+
+func (i *archiveInjector) add(archive, absoluteFrom string, rel, name string) (err error) {
+	af, ok := i.archives[archiveFile(archive)]
+	rel = strings.ReplaceAll(rel, "\\", "/")
+	if !ok {
+		// Modify File Structure
+		dir := filepath.Dir(absoluteFrom)
+		dir = filepath.Join(dir, "aexta")
+		if err = os.MkdirAll(filepath.Join(dir, rel), 0755); err != nil {
+			return
+		}
+		if rel != "" && rel != "." {
+			if strings.Contains(rel, "/") {
+				sp := strings.Split(rel, "/")
+				dir = filepath.Join(dir, sp[0])
+			} else {
+				dir = filepath.Join(dir, rel)
+			}
+		}
+		af = &archiveFiles{dirToInject: dir}
+		i.archives[archiveFile(archive)] = af
+	}
 
 	// Move the file to its new relative location
-	to := filepath.Join(workingDir, rel, name)
+	to := filepath.Join(filepath.Dir(af.dirToInject), rel, name)
+	i.renames = append(i.renames, fromTo{from: absoluteFrom, to: to})
 	if err = os.Rename(absoluteFrom, to); err != nil {
 		return
 	}
 
-	rel = strings.ReplaceAll(rel, "//", "/")
-	workingDir += "\\"
-
-	// Update the zip file
-	cmd := exec.Command(z7, "u", archive, workingDir, "-r", "-y")
-	if err = cmd.Run(); err != nil {
-		return
-	}
-	files.AppendArchiveFiles(state.Game, state.Mod.ID(), archive, filepath.Join(rel, name))
+	af.files = append(af.files, filepath.Join(rel, name))
 	return
+}
+
+func (i *archiveInjector) updateArchives(state *State, z7 string, gameDir string, action archiveAction) (err error) {
+	// Update the zip file
+	for archive, af := range i.archives {
+		cmd := exec.Command(z7, "a", filepath.Join(gameDir, string(archive)), af.dirToInject, "-r", "-y")
+		if err = cmd.Run(); err != nil {
+			return
+		}
+		if action == archiveRestoreBackup {
+			files.RemoveArchiveFiles(state.Game, state.Mod.ID(), string(archive), af.files...)
+		} else {
+			files.AppendArchiveFiles(state.Game, state.Mod.ID(), string(archive), af.files...)
+		}
+		_ = os.RemoveAll(af.dirToInject)
+	}
+	return
+}
+
+func (i *archiveInjector) revertFileMoves() {
+	for _, ft := range i.renames {
+		_ = os.Rename(ft.to, ft.from)
+	}
 }
