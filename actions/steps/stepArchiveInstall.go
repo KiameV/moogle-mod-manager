@@ -2,6 +2,7 @@ package steps
 
 import (
 	"fmt"
+	"github.com/kiamev/moogle-mod-manager/browser"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/files"
 	"github.com/kiamev/moogle-mod-manager/mods"
@@ -93,15 +94,28 @@ func backupArchiveFile(r *zipReader, backupDir string, ti *FileToInstall) error 
 	return nil
 }*/
 
+const z7url = "https://github.com/KiameV/moogle-mod-manager/releases/download/zip/7z.exe"
+
+func checkFor7zip() (file string, err error) {
+	if _, err = os.Stat(config.PWD + "\\7z"); err != nil {
+		file, err = browser.Download(z7url, config.PWD)
+	}
+	return
+}
+
 func installDirectMoveToArchive(state *State, backupDir string) (mods.Result, error) {
 	var (
-		rel, name, bu   string
-		absArch         string
-		ai              = newArchiveInjector()
-		installDir, err = config.Get().GetDir(state.Game, config.GameDirKind)
-		z7              = config.PWD + "\\7z"
+		rel, name, bu string
+		absArch       string
+		installDir    string
+		ai            = newArchiveInjector()
+		z7, err       = checkFor7zip()
 	)
 	if err != nil {
+		return mods.Error, err
+	}
+
+	if installDir, err = config.Get().GetDir(state.Game, config.GameDirKind); err != nil {
 		return mods.Error, err
 	} else if installDir == "" {
 		return mods.Error, fmt.Errorf("install directory not found")
@@ -137,15 +151,16 @@ func installDirectMoveToArchive(state *State, backupDir string) (mods.Result, er
 
 func uninstallDirectMoveToArchive(state *State) (mods.Result, error) {
 	var (
-		z7 = config.PWD + "\\7z"
-		ai = newArchiveInjector()
-
 		absBackup string
 		gameDir   string
 		backupDir string
 		rel, name string
-		err       error
+		ai        = newArchiveInjector()
+		z7, err   = checkFor7zip()
 	)
+	if err != nil {
+		return mods.Error, err
+	}
 	if gameDir, err = config.Get().GetDir(state.Game, config.GameDirKind); err != nil {
 		return mods.Error, err
 	}

@@ -247,6 +247,10 @@ func Conflicts(state *State) (result mods.Result, err error) {
 		m := make(map[string][]string)
 		for _, e := range state.ExtractedFiles {
 			for _, ti = range e.FilesToInstall() {
+				if ti.archive == nil {
+					err = errors.New("no archive specified for " + ti.Relative)
+					return mods.Error, err
+				}
 				m[*ti.archive] = append(m[*ti.archive], ti.AbsoluteTo)
 			}
 		}
