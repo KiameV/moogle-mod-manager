@@ -187,3 +187,15 @@ func save() error {
 func saveMoogle(tm mods.TrackedMod) (err error) {
 	return tm.Save()
 }
+
+func ForceDisableAll(game config.GameDef) {
+	for _, tm := range lookup.GetMods(game) {
+		tm.Disable()
+	}
+	_ = save()
+}
+
+func ForceDisable(tm mods.TrackedMod) {
+	tm.Disable()
+	_ = save()
+}

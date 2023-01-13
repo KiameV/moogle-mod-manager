@@ -184,50 +184,25 @@ func Download(state *State) (result mods.Result, err error) {
 
 func Extract(state *State) (mods.Result, error) {
 	var (
-		it       = state.Mod.InstallType(state.Game)
-		to       string
-		override bool
-		ef       []archive.ExtractedFile
-		err      error
+		to  string
+		ef  []archive.ExtractedFile
+		err error
 	)
 	for _, ti := range state.ToInstall {
-		if it == config.ImmediateDecompress {
-			if to, err = config.Get().GetDir(state.Game, config.GameDirKind); err != nil {
-				return mods.Error, err
-			}
-		} else {
-			to = ti.Download.DownloadedArchiveLocation.ExtractDir(string(ti.Download.Name))
-		}
-		if state.Mod.InstallType(state.Game) == config.ImmediateDecompress {
-			if to, err = config.Get().GetDir(state.Game, config.GameDirKind); err != nil {
-				return mods.Error, err
-			}
-			override = true
-		} else {
-			//override = false
-			override = true
-		}
+		to = ti.Download.DownloadedArchiveLocation.ExtractDir(string(ti.Download.Name))
 
-		if ef, err = archive.Decompress(string(*ti.Download.DownloadedArchiveLocation), to, override); err != nil {
+		if ef, err = archive.Decompress(string(*ti.Download.DownloadedArchiveLocation), to, true, ti); err != nil {
 			return mods.Error, err
 		}
 
-		if state.Mod.InstallType(state.Game) == config.ImmediateDecompress {
-			installed := make([]string, len(ef))
-			for i, f := range ef {
-				installed[i] = f.From
-			}
-			files.SetFiles(state.Game, state.Mod.ID(), installed...)
-		} else {
-			e := Extracted{
-				ToInstall: ti,
-				Files:     ef,
-			}
-			if err = e.Compile(state.Game, to); err != nil {
-				return mods.Error, err
-			}
-			state.ExtractedFiles = append(state.ExtractedFiles, e)
+		e := Extracted{
+			ToInstall: ti,
+			Files:     ef,
 		}
+		if err = e.Compile(state.Game, to); err != nil {
+			return mods.Error, err
+		}
+		state.ExtractedFiles = append(state.ExtractedFiles, e)
 	}
 	return mods.Ok, nil
 }
@@ -318,7 +293,7 @@ func install(state *State, backupDir string) (mods.Result, error) {
 
 func installDirectMove(state *State, backupDir string) (mods.Result, error) {
 	var (
-		dir string
+		fi  os.FileInfo
 		err error
 	)
 	for _, e := range state.ExtractedFiles {
@@ -327,13 +302,7 @@ func installDirectMove(state *State, backupDir string) (mods.Result, error) {
 				continue
 			}
 
-			dir = filepath.Dir(ti.AbsoluteTo)
-			if _, err = os.Stat(dir); err != nil {
-				// Create the directory structure
-				if err = os.MkdirAll(dir, 0755); err != nil {
-					return mods.Error, err
-				}
-			} else if _, err = os.Stat(ti.AbsoluteTo); err == nil {
+			if fi, err = os.Stat(ti.AbsoluteTo); err == nil && !fi.IsDir() {
 				// File Exists
 				// See if there's a file backup
 				absBackup := filepath.Join(backupDir, ti.Relative)
@@ -365,7 +334,7 @@ func installDirectMove(state *State, backupDir string) (mods.Result, error) {
 
 func Uninstall(state *State) (mods.Result, error) {
 	switch state.Mod.InstallType(state.Game) {
-	case config.Move, config.ImmediateDecompress:
+	case config.Move:
 		return uninstallMove(state)
 	case config.MoveToArchive:
 		return uninstallDirectMoveToArchive(state)

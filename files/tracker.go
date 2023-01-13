@@ -165,6 +165,16 @@ func RemoveFiles(game config.GameDef, modID mods.ModID, files ...string) {
 	tracker.save()
 }
 
+func RemoveAllFilesForGame(game config.GameDef) {
+	delete(tracker.Games, game.ID())
+	tracker.save()
+}
+
+func RemoveAllFilesForMod(game config.GameDef, modID mods.ModID) {
+	delete(ModTracker(game).Mods, modID)
+	tracker.save()
+}
+
 func RemoveArchiveFiles(game config.GameDef, modID mods.ModID, archive string, files ...string) {
 	var (
 		ft = modFiles(game, modID)

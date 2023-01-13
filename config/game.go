@@ -156,10 +156,9 @@ const (
 )
 
 const (
-	BlankInstallType    InstallType = ""
-	MoveToArchive       InstallType = "MoveToArchive"
-	Move                InstallType = "Move"
-	ImmediateDecompress InstallType = "ImmediateDecompress"
+	BlankInstallType InstallType = ""
+	MoveToArchive    InstallType = "MoveToArchive"
+	Move             InstallType = "Move"
 )
 
 func GameDefs() []GameDef {

@@ -55,15 +55,6 @@ var (
 		steps.Uninstall,
 		steps.DisableMod,
 	}
-	installImmediateDecompressSteps = []steps.Step{
-		steps.VerifyEnable,
-		steps.PreDownload,
-		steps.ShowWorkingDialog,
-		steps.Download,
-		steps.Extract,
-		steps.EnableMod,
-		steps.PostInstall,
-	}
 	updateMoveSteps = []steps.Step{
 		steps.VerifyEnable,
 		steps.ShowWorkingDialog,
@@ -117,8 +108,6 @@ func createInstallSteps(game config.GameDef, tm mods.TrackedMod) (s []steps.Step
 	switch tm.InstallType(game) {
 	case config.Move, config.MoveToArchive:
 		s = installMoveSteps
-	case config.ImmediateDecompress:
-		s = installImmediateDecompressSteps
 	default:
 		err = fmt.Errorf("unknown install %s for mod %s", tm.InstallType(game), tm.Mod().Name)
 	}
@@ -127,7 +116,7 @@ func createInstallSteps(game config.GameDef, tm mods.TrackedMod) (s []steps.Step
 
 func createUninstallSteps(game config.GameDef, tm mods.TrackedMod) (s []steps.Step, err error) {
 	switch tm.InstallType(game) {
-	case config.Move, config.ImmediateDecompress, config.MoveToArchive:
+	case config.Move, config.MoveToArchive:
 		s = uninstallMoveSteps
 	default:
 		err = fmt.Errorf("unknown install %s for mod %s", tm.InstallType(game), tm.Mod().Name)
@@ -137,10 +126,8 @@ func createUninstallSteps(game config.GameDef, tm mods.TrackedMod) (s []steps.St
 
 func createUpdateSteps(game config.GameDef, tm mods.TrackedMod) (s []steps.Step, err error) {
 	switch tm.InstallType(game) {
-	case config.Move, config.ImmediateDecompress:
+	case config.Move, config.MoveToArchive:
 		s = updateMoveSteps
-	case config.MoveToArchive:
-		err = errors.New("not implemented")
 	default:
 		err = fmt.Errorf("unknown install %s for mod %s", tm.InstallType(game), tm.Mod().Name)
 	}

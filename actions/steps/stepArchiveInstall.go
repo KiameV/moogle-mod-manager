@@ -108,6 +108,7 @@ func installDirectMoveToArchive(state *State, backupDir string) (mods.Result, er
 		rel, name, bu string
 		absArch       string
 		installDir    string
+		b             []byte
 		ai            = newArchiveInjector()
 		z7, err       = checkFor7zip()
 	)
@@ -131,7 +132,7 @@ func installDirectMoveToArchive(state *State, backupDir string) (mods.Result, er
 			absArch = filepath.Join(installDir, *ti.archive)
 			// Check if file already exists in the zip file
 			cmd := exec.Command(z7, "l", absArch, fmt.Sprintf("%s/%s", rel, name))
-			if err = cmd.Run(); err == nil {
+			if b, err = cmd.Output(); err == nil && !strings.Contains(string(b), "0 files") {
 				// Extract file and move to backup directory
 				bu = filepath.Join(backupDir, ArchiveAsDir(ti.archive), rel)
 				if err = extractFile(z7, absArch, rel, name, bu); err != nil {
@@ -172,10 +173,9 @@ func uninstallDirectMoveToArchive(state *State) (mods.Result, error) {
 			absBackup = filepath.Join(backupDir, ArchiveAsDir(&a), f)
 			rel = filepath.Dir(f)
 			name = filepath.Base(f)
-			if err = ai.add(a, absBackup, rel, name); err != nil {
-				ai.revertFileMoves()
-				return mods.Error, err
-			}
+			_ = ai.add(a, absBackup, rel, name)
+			// Ignore this error, in this case the file was not overridden
+			// TODO May need to change archive files as whether they were added or removed
 		}
 	}
 	if err = ai.updateArchives(state, z7, gameDir, archiveRestoreBackup); err != nil {
