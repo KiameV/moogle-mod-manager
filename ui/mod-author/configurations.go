@@ -19,12 +19,12 @@ type configurationsDef struct {
 	previewDef *previewDef
 }
 
-func newConfigurationsDef(dlDef *downloads, installType *config.InstallType) *configurationsDef {
+func newConfigurationsDef(dlDef *downloads, installType *config.InstallType, gamesDef *gamesDef) *configurationsDef {
 	d := &configurationsDef{
 		Manager:    entry.NewManager(),
 		previewDef: newPreviewDef(),
 	}
-	d.choicesDef = newChoicesDef(dlDef, d, installType)
+	d.choicesDef = newChoicesDef(dlDef, d, installType, gamesDef)
 	d.list = cw.NewDynamicList(cw.Callbacks{
 		GetItemKey:    d.getItemKey,
 		GetItemFields: d.getItemFields,

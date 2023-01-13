@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	Version = "v0.8.8"
+	Version = "v0.9.0"
 
 	tagUrl = `https://api.github.com/repos/KiameV/ffprModManager/tags`
 	relUrl = `https://github.com/KiameV/ffprModManager/releases/%s`
@@ -92,7 +92,7 @@ func CheckForUpdate() (hasNewer bool, version string, err error) {
 	}
 
 	for _, t := range tags {
-		if strings.Contains(t.Name, ".") {
+		if t.Name != Version && strings.Contains(t.Name, ".") {
 			i := newComparer(t.Name)
 			if !highestVersion.isGreaterThan(i) {
 				hasNewer = true

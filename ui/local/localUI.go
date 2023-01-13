@@ -55,7 +55,7 @@ func (ui *localUI) Draw(w fyne.Window) {
 	ui.ModList = widget.NewListWithData(
 		ui.data,
 		func() fyne.CanvasObject {
-			return container.NewBorder(nil, nil, widget.NewLabel(""), widget.NewCheck("", func(b bool) {}), NewUpdateButton(ui.updateMod))
+			return container.NewHBox(widget.NewCheck("", func(b bool) {}), NewUpdateButton(ui.updateMod), widget.NewLabel(""))
 		},
 		func(item binding.DataItem, co fyne.CanvasObject) {
 			var tm mods.TrackedMod
@@ -65,13 +65,20 @@ func (ui *localUI) Draw(w fyne.Window) {
 						tm.SetDisplayName(string(tm.Mod().Name))
 					}
 					c := co.(*fyne.Container)
-					c.Objects[0].(*UpdateButton).SetTrackedMod(tm)
-					c.Objects[1].(*widget.Label).Bind(binding.BindString(tm.DisplayNamePtr()))
-					c.Objects[2].(*widget.Check).Bind(newEnableBind(ui, tm, ui.startEnableDisableCallback, func(r actions.Result) {
-						for _, tm := range r.RequiredMods {
-							ui.addModToList(tm)
+					for _, o := range c.Objects {
+						switch t := o.(type) {
+						case *UpdateButton:
+							t.SetTrackedMod(tm)
+						case *widget.Check:
+							t.Bind(newEnableBind(ui, tm, ui.startEnableDisableCallback, func(r actions.Result) {
+								for _, tm := range r.RequiredMods {
+									ui.addModToList(tm)
+								}
+							}))
+						case *widget.Label:
+							t.Bind(binding.BindString(tm.DisplayNamePtr()))
 						}
-					}))
+					}
 				}
 			}
 		})

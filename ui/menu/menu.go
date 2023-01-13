@@ -8,7 +8,9 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/browser"
+	"github.com/kiamev/moogle-mod-manager/files"
 	"github.com/kiamev/moogle-mod-manager/mods"
+	"github.com/kiamev/moogle-mod-manager/mods/managed"
 	"github.com/kiamev/moogle-mod-manager/ui/configure"
 	"github.com/kiamev/moogle-mod-manager/ui/local"
 	a "github.com/kiamev/moogle-mod-manager/ui/mod-author"
@@ -64,12 +66,56 @@ func (m *MainMenu) Draw(w fyne.Window) {
 					"Update Available",
 					fmt.Sprintf("Version %s is available.\nWould you like to update?", newerVersion),
 					func(ok bool) {
-						_ = browser.Update(newerVersion)
+						if ok {
+							_ = browser.Update(newerVersion)
+						}
 					}, w)
 			} else {
 				dialog.ShowInformation("No Updates Available", "You are running the latest version.", w)
 			}
 		}))
+	if state.GetCurrentGUI() == state.LocalMods {
+		file.Items = append(file.Items,
+			fyne.NewMenuItemSeparator(),
+			fyne.NewMenuItem("Force Disable All Mods (Debug)", func() {
+				dialog.ShowConfirm(
+					"Force Disable All Mods",
+					"This will mark all mods as disabled but will not uninstall them. Are you sure you want to continue?",
+					func(ok bool) {
+						if ok {
+							game := state.CurrentGame
+							state.ShowScreen(state.None)
+
+							managed.ForceDisableAll(game)
+							files.RemoveAllFilesForGame(game)
+
+							state.CurrentGame = game
+							state.ShowScreen(state.LocalMods)
+						}
+					}, w)
+			}),
+			fyne.NewMenuItem("Force Disable Current Mod (Debug)", func() {
+				tm := state.GetScreen(state.LocalMods).(local.LocalUI).GetSelected()
+				if tm == nil || !tm.Enabled() {
+					return
+				}
+				dialog.ShowConfirm(
+					"Force Disable Current Mod",
+					"This will mark the current mods as disabled but will not uninstall them. Are you sure you want to continue?",
+					func(ok bool) {
+						if ok {
+							game := state.CurrentGame
+							state.ShowScreen(state.None)
+
+							managed.ForceDisable(tm)
+							files.RemoveAllFilesForMod(game, tm.ID())
+
+							state.CurrentGame = game
+							state.ShowScreen(state.LocalMods)
+						}
+					}, w)
+			}))
+	}
 	menus = append(menus, file)
 
 	author := fyne.NewMenu("Author")

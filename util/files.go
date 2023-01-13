@@ -72,7 +72,13 @@ func SaveToFile(file string, i interface{}, endFileChar ...byte) (err error) {
 }
 
 func MoveFile(from, to string) (err error) {
-	var b []byte
+	var (
+		b   []byte
+		dir = filepath.Dir(to)
+	)
+	if err = os.MkdirAll(dir, 0755); err != nil {
+		return err
+	}
 	if err = os.Rename(from, to); err != nil {
 		if b, err = os.ReadFile(from); err != nil {
 			return

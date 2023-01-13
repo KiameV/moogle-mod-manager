@@ -1,6 +1,7 @@
 package mod_author
 
 import (
+	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
@@ -124,4 +125,13 @@ func (d *gamesDef) set(games []*mods.Game) {
 	for _, g := range games {
 		d.list.AddItem(g)
 	}
+}
+
+func (d *gamesDef) AuthorHintDir() string {
+	for _, g := range d.compile() {
+		if gd, err := config.GameDefFromID(g.ID); err == nil {
+			return fmt.Sprintf("To %s/", gd.AuthorHintDir())
+		}
+	}
+	return "To"
 }
