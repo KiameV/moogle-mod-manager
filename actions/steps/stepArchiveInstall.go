@@ -2,105 +2,46 @@ package steps
 
 import (
 	"fmt"
-	"github.com/kiamev/moogle-mod-manager/browser"
+	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/files"
 	"github.com/kiamev/moogle-mod-manager/mods"
+	"github.com/kiamev/moogle-mod-manager/ui/state/ui"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 )
 
-/*type zipReader struct {
-	Reader *zip.ReadCloser
-	Files  map[string]*zip.File
-}
+const (
+	z7url = "https://www.7-zip.org/download.html"
+	z7cmd = "7z"
+)
 
-func newZipReader(s string) (z *zipReader, err error) {
-	z = &zipReader{Files: make(map[string]*zip.File)}
-	if z.Reader, err = zip.OpenReader(s); err != nil {
-		return
+func checkFor7zip() (mods.Result, error) {
+	if _, err := exec.Command("where", z7cmd).Output(); err != nil {
+		wg := sync.WaitGroup{}
+		wg.Add(1)
+		d := dialog.NewCustom(
+			"7-Zip not found",
+			"Ok",
+			container.NewCenter(widget.NewRichTextFromMarkdown(fmt.Sprintf(
+				"Please download 7-Zip from [%s](%s) and install it.\n\n"+
+					"Make sure to include it on the system path when installing.\n\n"+
+					"Restart Moogle Mod Manager once 7-zip is installed.", z7url, z7url),
+			)),
+			ui.ActiveWindow())
+		d.SetOnClosed(func() {
+			wg.Done()
+		})
+		d.Show()
+		wg.Wait()
+		return mods.Cancel, nil
 	}
-	for _, f := range z.Reader.File {
-		z.Files[f.Name] = f
-	}
-	return
-}
-
-func (z *zipReader) close() {
-	if z.Reader != nil {
-		_ = z.Reader.Close()
-	}
-}
-
-func backupArchivedFiles(state *State, backupDir string) error {
-	var (
-		zr    map[string]*zipReader
-		r     *zipReader
-		found bool
-		err   error
-	)
-	defer func() {
-		for _, r = range zr {
-			r.close()
-		}
-	}()
-	for _, e := range state.ExtractedFiles {
-		for _, ti := range e.FilesToInstall() {
-			// Read all archives
-			if ti.Skip {
-				continue
-			}
-			if r, found = zr[*ti.archive]; !found {
-				if r, err = newZipReader(*ti.archive); err != nil {
-					return err
-				}
-				zr[*ti.archive] = r
-			}
-			if err = backupArchiveFile(r, backupDir, ti); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-func backupArchiveFile(r *zipReader, backupDir string, ti *FileToInstall) error {
-	var (
-		zf    *zip.File
-		zfr   io.ReadCloser
-		buf   *os.File
-		found bool
-		err   error
-	)
-	if zf, found = r.Files[ti.AbsoluteTo]; found {
-		dir := filepath.Join(backupDir, *ti.archive, filepath.Dir(ti.AbsoluteTo))
-		if err = os.MkdirAll(dir, 0755); err != nil {
-			return err
-		}
-		if zfr, err = zf.Open(); err != nil {
-			return err
-		}
-		defer func() { _ = zfr.Close() }()
-		if buf, err = os.Create(dir); err != nil {
-			return err
-		}
-		defer func() { _ = buf.Close() }()
-		if _, err = io.Copy(buf, zfr); err != nil {
-			return err
-		}
-	}
-	return nil
-}*/
-
-const z7url = "https://github.com/KiameV/moogle-mod-manager/releases/download/zip/7z.exe"
-
-func checkFor7zip() (file string, err error) {
-	if _, err = os.Stat(config.PWD + "\\7z"); err != nil {
-		file, err = browser.Download(z7url, config.PWD)
-	}
-	return
+	return mods.Ok, nil
 }
 
 func installDirectMoveToArchive(state *State, backupDir string) (mods.Result, error) {
@@ -110,10 +51,10 @@ func installDirectMoveToArchive(state *State, backupDir string) (mods.Result, er
 		installDir    string
 		b             []byte
 		ai            = newArchiveInjector()
-		z7, err       = checkFor7zip()
+		r, err        = checkFor7zip()
 	)
-	if err != nil {
-		return mods.Error, err
+	if r != mods.Ok {
+		return r, err
 	}
 
 	if installDir, err = config.Get().GetDir(state.Game, config.GameDirKind); err != nil {
@@ -124,18 +65,22 @@ func installDirectMoveToArchive(state *State, backupDir string) (mods.Result, er
 
 	for _, e := range state.ExtractedFiles {
 		for _, ti := range e.FilesToInstall() {
+			absArch = filepath.Join(installDir, *ti.archive)
+			if _, err = os.Stat(absArch); err != nil {
+				return mods.Error, fmt.Errorf("archive not found: %s", absArch)
+			}
 			if rel, err = filepath.Rel(installDir, ti.AbsoluteTo); err != nil {
 				return mods.Error, err
 			}
 			rel = filepath.Dir(rel)
 			name = filepath.Base(ti.Relative)
-			absArch = filepath.Join(installDir, *ti.archive)
 			// Check if file already exists in the zip file
-			cmd := exec.Command(z7, "l", absArch, fmt.Sprintf("%s/%s", rel, name))
-			if b, err = cmd.Output(); err == nil && !strings.Contains(string(b), "0 files") {
+			cmd := exec.Command("l", absArch, fmt.Sprintf("%s/%s", rel, name))
+			b, err = cmd.Output()
+			if err == nil && !strings.Contains(string(b), "0 files") {
 				// Extract file and move to backup directory
 				bu = filepath.Join(backupDir, ArchiveAsDir(ti.archive), rel)
-				if err = extractFile(z7, absArch, rel, name, bu); err != nil {
+				if err = extractFile(absArch, rel, name, bu); err != nil {
 					return mods.Error, err
 				}
 			}
@@ -144,7 +89,7 @@ func installDirectMoveToArchive(state *State, backupDir string) (mods.Result, er
 			}
 		}
 	}
-	if err = ai.updateArchives(state, z7, installDir, archiveUpdate); err != nil {
+	if err = ai.updateArchives(state, installDir, archiveUpdate); err != nil {
 		return mods.Error, err
 	}
 	return mods.Ok, nil
@@ -157,10 +102,10 @@ func uninstallDirectMoveToArchive(state *State) (mods.Result, error) {
 		backupDir string
 		rel, name string
 		ai        = newArchiveInjector()
-		z7, err   = checkFor7zip()
+		r, err    = checkFor7zip()
 	)
-	if err != nil {
-		return mods.Error, err
+	if r != mods.Ok {
+		return r, err
 	}
 	if gameDir, err = config.Get().GetDir(state.Game, config.GameDirKind); err != nil {
 		return mods.Error, err
@@ -178,29 +123,24 @@ func uninstallDirectMoveToArchive(state *State) (mods.Result, error) {
 			// TODO May need to change archive files as whether they were added or removed
 		}
 	}
-	if err = ai.updateArchives(state, z7, gameDir, archiveRestoreBackup); err != nil {
+	if err = ai.updateArchives(state, gameDir, archiveRestoreBackup); err != nil {
 		ai.revertFileMoves()
 		return mods.Error, err
 	}
 	return mods.Ok, nil
 }
 
-func extractFile(z7, archive, rel, name string, backupDir string) error {
+func extractFile(archive, rel, name string, backupDir string) error {
 	// Create the target directory
 	if err := os.MkdirAll(backupDir, 0755); err != nil {
 		return err
 	}
 	_ = os.Remove(filepath.Join(backupDir, name))
 	// Extract the file to the target directory
-	cmd := exec.Command(z7, "e", archive, "-o"+backupDir, fmt.Sprintf("%s/%s", rel, name))
-	if err := cmd.Run(); err != nil {
-		return err
+	cmd := exec.Command(z7cmd, "e", archive, "-o"+backupDir, fmt.Sprintf("%s/%s", rel, name))
+	if b, err := cmd.Output(); err != nil {
+		return fmt.Errorf("%s: %s", err, b)
 	}
-	// Remove the file from the zip file
-	//cmd = exec.Command(z7, "d", archive, fmt.Sprintf("%s/%s", rel, name))
-	//if err := cmd.Run(); err != nil {
-	//	return err
-	//}
 	return nil
 }
 
@@ -238,8 +178,15 @@ func (i *archiveInjector) add(archive, absoluteFrom string, rel, name string) (e
 	rel = strings.ReplaceAll(rel, "\\", "/")
 	if !ok {
 		// Modify File Structure
-		dir := filepath.Dir(absoluteFrom)
-		dir = filepath.Join(dir, "aexta")
+		dir := absoluteFrom
+		for !strings.HasSuffix(dir, "extracted") {
+			d := dir
+			dir = filepath.Dir(dir)
+			if d == dir {
+				return fmt.Errorf("could not find [extracted] directory")
+			}
+		}
+		dir = filepath.Join(dir, asDir(archive))
 		if err = os.MkdirAll(filepath.Join(dir, rel), 0755); err != nil {
 			return
 		}
@@ -266,11 +213,16 @@ func (i *archiveInjector) add(archive, absoluteFrom string, rel, name string) (e
 	return
 }
 
-func (i *archiveInjector) updateArchives(state *State, z7 string, gameDir string, action archiveAction) (err error) {
+func (i *archiveInjector) updateArchives(state *State, gameDir string, action archiveAction) (err error) {
 	// Update the zip file
+	var (
+		cmd *exec.Cmd
+		b   []byte
+	)
 	for archive, af := range i.archives {
-		cmd := exec.Command(z7, "a", filepath.Join(gameDir, string(archive)), af.dirToInject, "-r", "-y")
-		if err = cmd.Run(); err != nil {
+		cmd = exec.Command(z7cmd, "a", filepath.Join(gameDir, string(archive)), af.dirToInject, "-r", "-y")
+		if b, err = cmd.Output(); err != nil {
+			err = fmt.Errorf("%s: %s", err, b)
 			return
 		}
 		if action == archiveRestoreBackup {
@@ -287,4 +239,10 @@ func (i *archiveInjector) revertFileMoves() {
 	for _, ft := range i.renames {
 		_ = os.Rename(ft.to, ft.from)
 	}
+}
+
+func asDir(s string) string {
+	s = strings.ReplaceAll(s, ".", "_")
+	s = strings.ReplaceAll(s, "/", "_")
+	return strings.ReplaceAll(s, "\\", "_")
 }

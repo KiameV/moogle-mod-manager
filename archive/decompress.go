@@ -72,7 +72,7 @@ func newExtractor(to string, ti *mods.ToInstall) *extractor {
 	}
 	for _, df := range ti.DownloadFiles {
 		for _, f := range df.Files {
-			e.files[f.From] = true
+			e.files[strings.ReplaceAll(f.From, "\\", "/")] = true
 		}
 		for _, d := range df.Dirs {
 			if d.From == "." {
@@ -83,10 +83,12 @@ func newExtractor(to string, ti *mods.ToInstall) *extractor {
 					e.includeBaseDir = true
 				}
 			} else {
+				from := strings.ReplaceAll(d.From, "\\", "/")
+				from = strings.Trim(from, "/")
 				if d.Recursive {
-					e.dirsRecursive = append(e.dirsRecursive, d.From)
+					e.dirsRecursive = append(e.dirsRecursive, from)
 				} else {
-					e.dirs[d.From] = true
+					e.dirs[from] = true
 				}
 			}
 		}
@@ -177,6 +179,7 @@ func (e *extractor) shouldSkip(path string) bool {
 		strings.HasPrefix(lowerName, ".ds_store") {
 		return true
 	}
+	path = strings.ReplaceAll(path, "\\", "/")
 
 	if e.includeBaseDirRecursive {
 		return false
@@ -191,6 +194,7 @@ func (e *extractor) shouldSkip(path string) bool {
 		return false
 	}
 
+	dir = strings.ReplaceAll(dir, "\\", "/")
 	if _, found = e.dirs[dir]; found {
 		return false
 	}
