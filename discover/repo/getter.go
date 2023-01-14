@@ -99,6 +99,7 @@ func (r *repo) GetMod(toGet *mods.Mod) (mod *mods.Mod, err error) {
 		dir  string
 		game config.GameDef
 	)
+	mod = &mods.Mod{}
 	for _, rd := range repoDefs {
 		if toGet.Category == config.Utility && len(toGet.Games) > 1 {
 			dir = filepath.Join(rd.repoUtilDir(r.kind), toGet.ID().AsDir())

@@ -23,6 +23,7 @@ type (
 		DisplayNamePtr() *string
 		SetDisplayName(name string)
 		UpdatedMod() *Mod
+		UpdateModDef(m *Mod)
 		SetUpdatedMod(m *Mod)
 		MoogleModFile() string
 		InstallType(game config.GameDef) config.InstallType
@@ -60,6 +61,11 @@ func (m *TrackedModConc) MoogleModFile() string {
 
 func (m *TrackedModConc) UpdatedMod() *Mod {
 	return m.UpdatedMod_
+}
+
+func (m *TrackedModConc) UpdateModDef(mod *Mod) {
+	m.Mod_.ModDef = mod.ModDef
+	_ = m.Save()
 }
 
 func (m *TrackedModConc) DisplayName() string {

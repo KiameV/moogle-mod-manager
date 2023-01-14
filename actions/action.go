@@ -38,7 +38,10 @@ const (
 )
 
 var (
+	running          = false
+	mutex            = sync.Mutex{}
 	installMoveSteps = []steps.Step{
+		steps.UpdateMoogleFile,
 		steps.VerifyEnable,
 		steps.PreDownload,
 		steps.ShowWorkingDialog,
@@ -55,15 +58,18 @@ var (
 		steps.Uninstall,
 		steps.DisableMod,
 	}
-	updateMoveSteps = []steps.Step{
-		steps.VerifyEnable,
-		steps.ShowWorkingDialog,
-		steps.DisableMod,
-		steps.Uninstall,
-	}
-	running = false
-	mutex   = sync.Mutex{}
+	updateMoveSteps []steps.Step
 )
+
+func init() {
+	updateMoveSteps = make([]steps.Step, len(uninstallMoveSteps)+len(installMoveSteps)-1)
+	for i := 1; i < len(uninstallMoveSteps); i++ {
+		updateMoveSteps = append(updateMoveSteps, uninstallMoveSteps[i])
+	}
+	for _, s := range installMoveSteps {
+		updateMoveSteps = append(updateMoveSteps, s)
+	}
+}
 
 func init() {
 	updateMoveSteps = append(updateMoveSteps, installMoveSteps...)

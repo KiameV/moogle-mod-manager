@@ -6,6 +6,7 @@ import (
 	"github.com/kiamev/moogle-mod-manager/archive"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/discover"
+	"github.com/kiamev/moogle-mod-manager/discover/repo"
 	"github.com/kiamev/moogle-mod-manager/downloads"
 	"github.com/kiamev/moogle-mod-manager/files"
 	"github.com/kiamev/moogle-mod-manager/mods"
@@ -39,6 +40,13 @@ func NewState(game config.GameDef, mod mods.TrackedMod) *State {
 		Game: game,
 		Mod:  mod,
 	}
+}
+
+func UpdateMoogleFile(state *State) (mods.Result, error) {
+	if m, err := repo.NewGetter(repo.Read).GetMod(state.Mod.Mod()); err == nil {
+		state.Mod.UpdateModDef(m)
+	} // else No repo entry for this mod
+	return mods.Ok, nil
 }
 
 func VerifyEnable(state *State) (mods.Result, error) {

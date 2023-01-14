@@ -22,6 +22,7 @@ const (
 )
 
 func checkFor7zip() (mods.Result, error) {
+	_ = os.Remove(filepath.Join(config.PWD, "7z.exe"))
 	if _, err := exec.Command("where", z7cmd).Output(); err != nil {
 		wg := sync.WaitGroup{}
 		wg.Add(1)

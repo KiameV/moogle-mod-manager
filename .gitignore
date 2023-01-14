@@ -13,3 +13,6 @@ temp
 !winres/*
 scripts/*
 !scripts/findSupportedMods.go
+moogle-mod-manager.ex*
+moogle-mod-manager.upx
+rm.exe.stackdump
