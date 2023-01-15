@@ -76,7 +76,7 @@ func installDirectMoveToArchive(state *State, backupDir string) (mods.Result, er
 			rel = filepath.Dir(rel)
 			name = filepath.Base(ti.Relative)
 			// Check if file already exists in the zip file
-			cmd := exec.Command("l", absArch, fmt.Sprintf("%s/%s", rel, name))
+			cmd := exec.Command(z7cmd, "l", absArch, fmt.Sprintf("%s/%s", rel, name))
 			b, err = cmd.Output()
 			if err == nil && !strings.Contains(string(b), "0 files") {
 				// Extract file and move to backup directory
