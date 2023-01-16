@@ -7,7 +7,6 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 	"github.com/atotto/clipboard"
-	"github.com/kiamev/moogle-mod-manager/discover/remote/nexus"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/ui/state/ui"
 	"github.com/kiamev/moogle-mod-manager/ui/util"
@@ -22,15 +21,15 @@ type toDownload struct {
 	fileName string
 }
 
-type nexusConfirmer struct {
+type manualDownloadConfirmer struct {
 	Params
 }
 
-func newNexusConfirmer(params Params) Confirmer {
-	return &nexusConfirmer{Params: params}
+func newManualDownloadConfirmer(params Params) Confirmer {
+	return &manualDownloadConfirmer{Params: params}
 }
 
-func (c *nexusConfirmer) Downloads(done func(mods.Result)) (err error) {
+func (c *manualDownloadConfirmer) Downloads(done func(mods.Result)) (err error) {
 	var (
 		toDl     []toDownload
 		fileName string
@@ -39,13 +38,12 @@ func (c *nexusConfirmer) Downloads(done func(mods.Result)) (err error) {
 		fileName, _ = ti.Download.FileName()
 		if ti.Download != nil {
 			dl := toDownload{
-				uri:      fmt.Sprintf(nexus.NexusFileDownload, ti.Download.Nexus.FileID, c.Game.Remote().Nexus.ID),
 				fileName: fileName,
 			}
 			if dl.dir, err = ti.GetDownloadLocation(c.Game, c.Mod); err != nil {
 				return
 			}
-			if _, err = os.Stat(filepath.Join(dl.dir, ti.Download.Nexus.FileName)); err == nil {
+			if _, err = os.Stat(filepath.Join(dl.dir, fileName)); err == nil {
 				continue
 			}
 			toDl = append(toDl, dl)
@@ -60,7 +58,7 @@ func (c *nexusConfirmer) Downloads(done func(mods.Result)) (err error) {
 	return c.showDialog(toDl, done)
 }
 
-func (c *nexusConfirmer) showDialog(toDl []toDownload, done func(mods.Result)) (err error) {
+func (c *manualDownloadConfirmer) showDialog(toDl []toDownload, done func(mods.Result)) (err error) {
 	var (
 		fi   []*widget.FormItem
 		rows []*downloadRow
@@ -76,7 +74,7 @@ func (c *nexusConfirmer) showDialog(toDl []toDownload, done func(mods.Result)) (
 
 		fi = append(fi, widget.NewFormItem(fmt.Sprintf("%d:", i+1), r))
 		fi = append(fi, widget.NewFormItem("",
-			widget.NewLabelWithStyle("Download the following file from Nexus", fyne.TextAlignLeading, fyne.TextStyle{Bold: true})))
+			widget.NewLabelWithStyle("Download the following file/s:", fyne.TextAlignLeading, fyne.TextStyle{Bold: true})))
 		fi = append(fi, widget.NewFormItem("",
 			util.CreateUrlRow(td.uri)))
 		fi = append(fi, widget.NewFormItem("",

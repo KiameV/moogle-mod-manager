@@ -27,10 +27,13 @@ func NewParams(game config.GameDef, mod mods.TrackedMod, toInstall []*mods.ToIns
 func NewConfirmer(params Params) Confirmer {
 	k := params.Mod.Kinds()
 	if k.Is(mods.Nexus) {
-		return newNexusConfirmer(params)
+		return newManualDownloadConfirmer(params)
 	}
 	if k.IsHosted() {
 		return newHostedConfirmer(params)
+	}
+	if k.Is(mods.GoogleDrive) {
+		return newManualDownloadConfirmer(params)
 	}
 	return newBypassConfirmer(params)
 }

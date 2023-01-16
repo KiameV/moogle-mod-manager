@@ -13,6 +13,7 @@ const (
 	CurseForge   Kind = "CurseForge"
 	HostedAt     Kind = "HostedAt"
 	HostedGitHub Kind = "GitHub"
+	GoogleDrive  Kind = "GoogleDrive"
 )
 
 type (

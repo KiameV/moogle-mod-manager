@@ -7,6 +7,7 @@ import (
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func Download(game config.GameDef, mod mods.TrackedMod, toInstall []*mods.ToInstall) (err error) {
@@ -21,8 +22,8 @@ func Download(game config.GameDef, mod mods.TrackedMod, toInstall []*mods.ToInst
 			// Success
 			return
 		}
-	} else if k.Is(mods.Nexus) {
-		if err = nexus(game, mod, toInstall); err == nil {
+	} else if k.Is(mods.Nexus) || k.Is(mods.GoogleDrive) {
+		if err = manualDownload(game, mod, toInstall); err == nil {
 			// Success
 			return
 		}
@@ -68,7 +69,7 @@ func hosted(game config.GameDef, mod mods.TrackedMod, toInstall []*mods.ToInstal
 	return nil
 }
 
-func nexus(game config.GameDef, mod mods.TrackedMod, toInstall []*mods.ToInstall) error {
+func manualDownload(game config.GameDef, mod mods.TrackedMod, toInstall []*mods.ToInstall) error {
 	var (
 		dir  []os.DirEntry
 		path string
@@ -88,7 +89,7 @@ func nexus(game config.GameDef, mod mods.TrackedMod, toInstall []*mods.ToInstall
 
 		ti.Download.DownloadedArchiveLocation = nil
 		for _, f := range dir {
-			if name == f.Name() {
+			if strings.HasPrefix(name, f.Name()) {
 				s := filepath.Join(path, f.Name())
 				ti.Download.DownloadedArchiveLocation = (*mods.ArchiveLocation)(&s)
 				break

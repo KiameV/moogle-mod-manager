@@ -27,6 +27,7 @@ func newDownloads(games *gamesDef, kinds *mods.Kinds) *downloads {
 		dlHosters: []dlHoster{
 			newDownloadsDef(kinds),
 			newGithubDownloadsDef(kinds),
+			newGoogleDriveDownloadsDef(kinds),
 			newDownloadsRemoteDef(games, mods.Nexus),
 			newDownloadsRemoteDef(games, mods.CurseForge),
 		},
