@@ -1,12 +1,15 @@
 package confirm
 
 import (
+	"errors"
 	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 	"github.com/atotto/clipboard"
+	"github.com/kiamev/moogle-mod-manager/config"
+	"github.com/kiamev/moogle-mod-manager/discover/remote/nexus"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/ui/state/ui"
 	"github.com/kiamev/moogle-mod-manager/ui/util"
@@ -37,8 +40,9 @@ func (c *manualDownloadConfirmer) Downloads(done func(mods.Result)) (err error) 
 	for _, ti := range c.ToInstall {
 		fileName, _ = ti.Download.FileName()
 		if ti.Download != nil {
-			dl := toDownload{
-				fileName: fileName,
+			dl := toDownload{fileName: fileName}
+			if dl.uri, err = downloadLink(c.Game, ti.Download); err != nil {
+				return
 			}
 			if dl.dir, err = ti.GetDownloadLocation(c.Game, c.Mod); err != nil {
 				return
@@ -169,4 +173,14 @@ func (r *downloadRow) Validate() error {
 
 func (r *downloadRow) SetOnValidationChanged(validatedCallback func(error)) {
 	r.validatedCallback = validatedCallback
+}
+
+func downloadLink(game config.GameDef, d *mods.Download) (string, error) {
+	if d.Nexus != nil {
+		return fmt.Sprintf(nexus.NexusFileDownload, d.Nexus.FileID, game.Remote().Nexus.ID), nil
+	}
+	if d.GoogleDrive != nil {
+		return d.GoogleDrive.Url, nil
+	}
+	return "", errors.New("DownloadLink only works with Nexus and Google Drive")
 }
