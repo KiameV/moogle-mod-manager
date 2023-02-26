@@ -1,9 +1,9 @@
 package mods
 
 type ModCompatibility struct {
-	Requires []*ModCompat `json:"Require" xml:"Requires"`
-	Forbids  []*ModCompat `json:"Forbid" xml:"Forbids"`
-	//OrderConstraints []ModCompat `json:"OrderConstraint"`
+	Requires []*ModCompat `json:"Require,omitempty" xml:"Requires,omitempty"`
+	Forbids  []*ModCompat `json:"Forbid,omitempty" xml:"Forbids,omitempty"`
+	// OrderConstraints []ModCompat `json:"OrderConstraint"`
 }
 
 func (c *ModCompatibility) HasItems() bool {

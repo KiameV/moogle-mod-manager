@@ -5,6 +5,12 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"net/url"
+	"os"
+	"path"
+	"strings"
+	"time"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
@@ -23,11 +29,6 @@ import (
 	"github.com/kiamev/moogle-mod-manager/ui/util"
 	u "github.com/kiamev/moogle-mod-manager/util"
 	"github.com/ncruces/zenity"
-	"net/url"
-	"os"
-	"path"
-	"strings"
-	"time"
 )
 
 func New() state.Screen {
@@ -40,7 +41,7 @@ func New() state.Screen {
 		releaseNotes: newRichTextEditor(),
 	}
 	a.gamesDef = newGamesDef(a.gameAdded)
-	//a.modKindDef = newModKindDef(a.kind)
+	// a.modKindDef = newModKindDef(a.kind)
 	a.categorySelect = entry.NewSelectEntry(a, "Category", "", []string{})
 
 	a.modCompatsDef = newModCompatibilityDef(a.gamesDef)
@@ -64,7 +65,7 @@ type ModAuthorer struct {
 	editCallback func(*mods.Mod)
 
 	previewsDef *previewsDef
-	//modKindDef     *modKindDef
+	// modKindDef     *modKindDef
 	modCompatsDef  *modCompatabilityDef
 	donationsDef   *donationsDef
 	gamesDef       *gamesDef
@@ -348,12 +349,13 @@ func (a *ModAuthorer) updateEntries(mod *mods.Mod) {
 	a.previewsDef.set(mod.Previews)
 
 	a.modCompatsDef.set(mod.ModCompatibility)
-	//a.modKindDef.set(&mod.ModKind)
+	// a.modKindDef.set(&mod.ModKind)
 	a.downloads.set(mod)
 	a.donationsDef.set(mod.DonationLinks)
 	a.gamesDef.set(mod.Games)
 	a.alwaysDownload.set(mod.AlwaysDownload)
 	a.configsDef.set(mod.Configurations)
+	a.categorySelect.(*entry.SelectFormEntry).Entry.Options = state.CurrentGame.CategoriesForSelect()
 }
 
 type As byte
@@ -435,9 +437,9 @@ func (a *ModAuthorer) compileMod() (m *mods.Mod, err error) {
 			Kinds: *a.kinds,
 		},
 		Previews: a.previewsDef.compile(),
-		//ModKind:      *a.modKindDef.compile(),
+		// ModKind:      *a.modKindDef.compile(),
 		ConfigSelectionType: mods.SelectType(a.selectType.Value()),
-		//ConfigSelectionType: mods.Auto,
+		// ConfigSelectionType: mods.Auto,
 		ModCompatibility:  a.modCompatsDef.compile(),
 		DonationLinks:     a.donationsDef.compile(),
 		Games:             a.gamesDef.compile(),
@@ -649,7 +651,7 @@ func (a *ModAuthorer) createHostedInputs() *container.AppTabs {
 		container.NewTabItem("Configurations", container.NewVScroll(a.configsDef.draw())))
 }
 
-//func (a *ModAuthorer) createRemoteInputs() *container.AppTabs {
+// func (a *ModAuthorer) createRemoteInputs() *container.AppTabs {
 //	var entries = []*widget.FormItem{
 //		entry.GetBaseDirFormItem(a, "Working Dir"),
 //		entry.FormItem[bool](a, "Hide"),
@@ -670,7 +672,7 @@ func (a *ModAuthorer) createHostedInputs() *container.AppTabs {
 //		//container.NewTabItem("Games", container.NewVScroll(a.gamesDef.draw())),
 //		container.NewTabItem("Always Install", container.NewVScroll(a.alwaysDownload.draw())),
 //		container.NewTabItem("Configurations", container.NewVScroll(a.configsDef.draw())))
-//}
+// }
 
 func (a *ModAuthorer) gameAdded(id config.GameID) {
 	game, err := config.GameDefFromID(id)

@@ -2,10 +2,11 @@ package mods
 
 import (
 	"fmt"
-	"github.com/kiamev/moogle-mod-manager/config"
-	"github.com/kiamev/moogle-mod-manager/util"
 	"sort"
 	"strings"
+
+	"github.com/kiamev/moogle-mod-manager/config"
+	"github.com/kiamev/moogle-mod-manager/util"
 )
 
 type (
@@ -74,7 +75,7 @@ type (
 		ModKind             ModKind             `json:"ModKind" xml:"ModKind"`
 		ModCompatibility    *ModCompatibility   `json:"Compatibility,omitempty" xml:"ModCompatibility,omitempty"`
 		Downloadables       []*Download         `json:"Downloadable" xml:"Downloadables"`
-		DonationLinks       []*DonationLink     `json:"DonationLink" xml:"DonationLinks"`
+		DonationLinks       []*DonationLink     `json:"DonationLink,omitempty" xml:"DonationLinks,omitempty"`
 		Games               []*Game             `json:"Games" xml:"Games"`
 		AlwaysDownload      []*DownloadFiles    `json:"AlwaysDownload,omitempty" xml:"AlwaysDownload,omitempty"`
 		Configurations      []*Configuration    `json:"Configuration,omitempty" xml:"Configurations,omitempty"`
@@ -179,7 +180,7 @@ func (m *Mod) Validate() string {
 		}
 	}*/
 
-	//kinds := m.ModKind.Kinds
+	// kinds := m.ModKind.Kinds
 	dlableNames := make(map[string]bool)
 	for _, d := range m.Downloadables {
 		if d.Name == "" {
@@ -270,9 +271,9 @@ func (m *Mod) Validate() string {
 		if c.Name == "" {
 			sb.WriteString("Configuration's Name is required\n")
 		}
-		//if c.Description == "" {
+		// if c.Description == "" {
 		//	sb.WriteString(fmt.Sprintf("Configuration's [%s] Description is required\n", c.Name))
-		//}
+		// }
 		if len(c.Choices) == 0 {
 			sb.WriteString(fmt.Sprintf("Configuration's [%s] must have Choices\n", c.Name))
 		}

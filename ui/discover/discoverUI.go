@@ -1,6 +1,8 @@
 package discover
 
 import (
+	"strings"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
@@ -14,7 +16,6 @@ import (
 	mp "github.com/kiamev/moogle-mod-manager/ui/mod-preview"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
 	"github.com/kiamev/moogle-mod-manager/ui/util"
-	"strings"
 )
 
 func New() state.Screen {
@@ -172,7 +173,7 @@ func (ui *discoverUI) draw(w fyne.Window, isPopup bool) {
 						state.ShowPreviousScreen()
 					}
 				}),
-				//NewFilterButton(ui.filterCallback, w),
+				// NewFilterButton(ui.filterCallback, w),
 				container.New(layout.NewGridLayout(6),
 					widget.NewLabelWithStyle("Search", fyne.TextAlignTrailing, fyne.TextStyle{}), searchTb,
 					widget.NewLabelWithStyle("Category", fyne.TextAlignTrailing, fyne.TextStyle{}), newCategoryFilter(ui.filterCallback),
