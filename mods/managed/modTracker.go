@@ -5,6 +5,10 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+
 	"github.com/kiamev/moogle-mod-manager/browser"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/discover/remote"
@@ -13,9 +17,6 @@ import (
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
 	"github.com/kiamev/moogle-mod-manager/util"
-	"os"
-	"path/filepath"
-	"strings"
 )
 
 const (
@@ -56,7 +57,7 @@ func Initialize(games []config.GameDef) (err error) {
 }
 
 func AddModFromFile(game config.GameDef, file string) (mods.TrackedMod, error) {
-	var mod *mods.Mod
+	mod := &mods.Mod{}
 	if err := mod.LoadFromFile(file); err != nil {
 		return nil, err
 	}
@@ -115,7 +116,7 @@ func addMod(game config.GameDef, tm mods.TrackedMod) (err error) {
 		return
 	}
 
-	//tm.Disable()
+	// tm.Disable()
 	if lookup.HasMod(game, tm) {
 		return errors.New("mod already added")
 	}

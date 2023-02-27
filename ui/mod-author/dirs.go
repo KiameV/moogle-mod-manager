@@ -2,6 +2,8 @@ package mod_author
 
 import (
 	"fmt"
+	"strings"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
@@ -12,7 +14,6 @@ import (
 	"github.com/kiamev/moogle-mod-manager/ui/mod-author/entry"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
 	"github.com/kiamev/moogle-mod-manager/ui/state/ui"
-	"strings"
 )
 
 type dirsDef struct {
@@ -130,5 +131,6 @@ func (d *dirsDef) populate(dirs []*mods.ModDir) {
 
 func cleanPath(s string) string {
 	s = strings.ReplaceAll(s, "\\", "/")
-	return strings.ReplaceAll(s, "//", "/")
+	s = strings.ReplaceAll(s, "//", "/")
+	return strings.Trim(s, "/")
 }

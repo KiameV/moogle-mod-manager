@@ -4,15 +4,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
+
 	"github.com/google/go-github/v45/github"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/util"
 	"golang.org/x/oauth2"
-	"os"
-	"path/filepath"
-	"strings"
-	"time"
 )
 
 var (
@@ -45,9 +46,9 @@ type repoClient struct {
 }
 
 func (c *repoClient) Submit() (url string, err error) {
-	//if *sourceOwner == "" || *sourceRepo == "" || *commitBranch == "" || *sourceFiles == "" || *authorName == "" || *authorEmail == "" {
+	// if *sourceOwner == "" || *sourceRepo == "" || *commitBranch == "" || *sourceFiles == "" || *authorName == "" || *authorEmail == "" {
 	//	log.Fatal("You need to specify a non-empty value for the flags `-source-owner`, `-source-repo`, `-commit-branch`, `-files`, `-author-name` and `-author-email`")
-	//}
+	// }
 	var (
 		rd   = repoDefs[0]
 		ref  *github.Reference
@@ -56,8 +57,7 @@ func (c *repoClient) Submit() (url string, err error) {
 		game config.GameDef
 	)
 	for _, d := range c.mod.Downloadables {
-		s := ""
-		d.DownloadedArchiveLocation = (*mods.ArchiveLocation)(&s)
+		d.DownloadedArchiveLocation = nil
 	}
 	if len(c.mod.Games) == 1 {
 		if game, err = config.GameDefFromID(c.mod.Games[0].ID); err != nil {
@@ -128,9 +128,9 @@ func (c *repoClient) getRef(rd repoDef) (ref *github.Reference, commitBranch str
 
 	// We consider that an error means the branch has not been found and needs to
 	// be created.
-	//if *commitBranch == *baseBranch {
+	// if *commitBranch == *baseBranch {
 	//	return nil, errors.New("the commit branch does not exist but `-base-branch` is the same as `-commit-branch`")
-	//}
+	// }
 
 	var baseRef *github.Reference
 	if baseRef, _, err = c.client.Git.GetRef(ctx, author, sourceRepo, "refs/heads/main"); err != nil {

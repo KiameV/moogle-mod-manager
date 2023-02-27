@@ -2,6 +2,12 @@ package steps
 
 import (
 	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+	"sync"
+
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
@@ -9,11 +15,6 @@ import (
 	"github.com/kiamev/moogle-mod-manager/files"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/ui/state/ui"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"strings"
-	"sync"
 )
 
 const (
@@ -205,6 +206,11 @@ func (i *archiveInjector) add(archive, absoluteFrom string, rel, name string) (e
 
 	// Move the file to its new relative location
 	to := filepath.Join(filepath.Dir(af.dirToInject), rel, name)
+	if rel == " " || rel == "." || rel == "" {
+		to = filepath.Join(af.dirToInject, name)
+		af.dirToInject = strings.TrimRight(af.dirToInject, "/")
+		af.dirToInject += "/."
+	}
 	i.renames = append(i.renames, fromTo{from: absoluteFrom, to: to})
 	if err = os.Rename(absoluteFrom, to); err != nil {
 		return

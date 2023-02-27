@@ -2,12 +2,13 @@ package steps
 
 import (
 	"fmt"
-	"github.com/kiamev/moogle-mod-manager/archive"
-	"github.com/kiamev/moogle-mod-manager/config"
-	"github.com/kiamev/moogle-mod-manager/mods"
 	"io/fs"
 	"path/filepath"
 	"strings"
+
+	"github.com/kiamev/moogle-mod-manager/archive"
+	"github.com/kiamev/moogle-mod-manager/config"
+	"github.com/kiamev/moogle-mod-manager/mods"
 )
 
 type (
