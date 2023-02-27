@@ -3,13 +3,15 @@ package actions
 import (
 	"errors"
 	"fmt"
+	"os"
+	"sync"
+	"time"
+
 	"github.com/kiamev/moogle-mod-manager/actions/steps"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/mods/managed"
 	"github.com/kiamev/moogle-mod-manager/ui/util/working"
-	"sync"
-	"time"
 )
 
 type (
@@ -154,6 +156,13 @@ func (a action) Run() (err error) {
 		}
 	}
 	go func() {
+		defer func() {
+			if a.state != nil {
+				for _, d := range a.state.DirsToRemove {
+					_ = os.RemoveAll(d)
+				}
+			}
+		}()
 		a.run()
 	}()
 	return

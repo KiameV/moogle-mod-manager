@@ -3,6 +3,11 @@ package steps
 import (
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
+	"sync"
+	"time"
+
 	"github.com/kiamev/moogle-mod-manager/archive"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/discover"
@@ -16,10 +21,6 @@ import (
 	uic "github.com/kiamev/moogle-mod-manager/ui/conflicts"
 	ui "github.com/kiamev/moogle-mod-manager/ui/state"
 	"github.com/kiamev/moogle-mod-manager/util"
-	"os"
-	"path/filepath"
-	"sync"
-	"time"
 )
 
 type (
@@ -31,6 +32,7 @@ type (
 		ExtractedFiles []Extracted
 		Requires       *mods.Mod
 		Added          []mods.TrackedMod
+		DirsToRemove   []string
 	}
 	Step func(state *State) (result mods.Result, err error)
 )
@@ -365,9 +367,9 @@ func uninstallMove(state *State) (mods.Result, error) {
 		return mods.Error, err
 	}
 	for _, f := range i.Keys() {
-		//if err = os.Remove(f); err != nil {
+		// if err = os.Remove(f); err != nil {
 		//	return mods.Error, err
-		//}
+		// }
 		_ = os.Remove(f)
 		files.RemoveFiles(state.Game, state.Mod.ID(), f)
 
