@@ -17,6 +17,7 @@ type configurationsDef struct {
 	list       *cw.DynamicList
 	choicesDef *choicesDef
 	previewDef *previewDef
+	selectType entry.Entry[string]
 }
 
 func newConfigurationsDef(dlDef *downloads, installType *config.InstallType, gamesDef *gamesDef) *configurationsDef {
@@ -24,7 +25,8 @@ func newConfigurationsDef(dlDef *downloads, installType *config.InstallType, gam
 		Manager:    entry.NewManager(),
 		previewDef: newPreviewDef(),
 	}
-	d.choicesDef = newChoicesDef(dlDef, d, installType, gamesDef)
+	d.selectType = entry.NewSelectEntry(d, "Selection Type", string(mods.Auto), mods.SelectTypes)
+	d.choicesDef = newChoicesDef(dlDef, d, d.selectType, installType, gamesDef)
 	d.list = cw.NewDynamicList(cw.Callbacks{
 		GetItemKey:    d.getItemKey,
 		GetItemFields: d.getItemFields,
@@ -66,6 +68,9 @@ func (d *configurationsDef) createItem(item interface{}, done ...func(interface{
 	entry.NewEntry[string](d, entry.KindString, "Name", c.Name)
 	entry.NewEntry[string](d, entry.KindMultiLine, "Description", c.Description)
 	entry.NewEntry[bool](d, entry.KindBool, "Root", c.Root)
+	if d.selectType.Value() == "" {
+		d.selectType.Set(string(mods.Auto))
+	}
 	d.previewDef.set(c.Preview)
 	d.choicesDef.populate(c.Choices)
 
@@ -73,6 +78,7 @@ func (d *configurationsDef) createItem(item interface{}, done ...func(interface{
 		entry.FormItem[string](d, "Name"),
 		entry.FormItem[string](d, "Description"),
 		entry.FormItem[bool](d, "Root"),
+		d.selectType.FormItem(),
 	}
 	items = append(items, d.previewDef.getFormItems()...)
 	items = append(items, widget.NewFormItem("Choices", d.choicesDef.draw(false)))
@@ -84,6 +90,7 @@ func (d *configurationsDef) createItem(item interface{}, done ...func(interface{
 			c.Root = entry.Value[bool](d, "Root")
 			c.Preview = d.previewDef.compile()
 			c.Choices = d.choicesDef.compile()
+			c.SelectionType = mods.SelectType(d.selectType.Value())
 			if len(done) > 0 {
 				done[0](c)
 			}

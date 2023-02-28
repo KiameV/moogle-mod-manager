@@ -14,18 +14,20 @@ import (
 
 type choicesDef struct {
 	entry.Manager
-	list       *cw.DynamicList
-	dlfDef     *downloadFilesDef
-	configDef  *configurationsDef
-	previewDef *previewDef
+	list         *cw.DynamicList
+	dlfDef       *downloadFilesDef
+	configDef    *configurationsDef
+	previewDef   *previewDef
+	parentSelect entry.Entry[string]
 }
 
-func newChoicesDef(dlDef *downloads, configDef *configurationsDef, installType *config.InstallType, gamesDef *gamesDef) *choicesDef {
+func newChoicesDef(dlDef *downloads, configDef *configurationsDef, parentSelect entry.Entry[string], installType *config.InstallType, gamesDef *gamesDef) *choicesDef {
 	d := &choicesDef{
-		Manager:    entry.NewManager(),
-		dlfDef:     newDownloadFilesDef(dlDef, installType, gamesDef),
-		configDef:  configDef,
-		previewDef: newPreviewDef(),
+		Manager:      entry.NewManager(),
+		dlfDef:       newDownloadFilesDef(dlDef, installType, gamesDef),
+		configDef:    configDef,
+		previewDef:   newPreviewDef(),
+		parentSelect: parentSelect,
 	}
 	d.list = cw.NewDynamicList(cw.Callbacks{
 		GetItemKey:    d.getItemKey,
@@ -90,7 +92,9 @@ func (d *choicesDef) createItem(item interface{}, done ...func(interface{})) {
 	form := []*widget.FormItem{
 		entry.FormItem[string](d, "Name"),
 		entry.FormItem[string](d, "Description"),
-		entry.FormItem[string](d, "Next Configuration"),
+	}
+	if d.parentSelect.Value() != string(mods.Multi) {
+		form = append(form, entry.FormItem[string](d, "Next Configuration"))
 	}
 	form = append(form, d.previewDef.getFormItems()...)
 

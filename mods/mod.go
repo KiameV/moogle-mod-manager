@@ -38,11 +38,12 @@ type (
 		ToArchive *string `json:"ToArchive,omitempty" xml:"ToArchive,omitempty"`
 	}
 	Configuration struct {
-		Name        string    `json:"Name" xml:"Name"`
-		Description string    `json:"Description" xml:"Description"`
-		Preview     *Preview  `json:"Preview,omitempty" xml:"Preview,omitempty"`
-		Root        bool      `json:"Root" xml:"Root"`
-		Choices     []*Choice `json:"Choice" xml:"Choices"`
+		Name          string     `json:"Name" xml:"Name"`
+		Description   string     `json:"Description" xml:"Description"`
+		Preview       *Preview   `json:"Preview,omitempty" xml:"Preview,omitempty"`
+		Root          bool       `json:"Root" xml:"Root"`
+		Choices       []*Choice  `json:"Choice" xml:"Choices"`
+		SelectionType SelectType `json:"ConfigSelectionType" xml:"ConfigSelectionType"`
 
 		NextConfigurationName *string `json:"NextConfigurationName,omitempty" xml:"NextConfigurationName"`
 	}
@@ -59,31 +60,30 @@ type (
 		Link string `json:"Link" xml:"Link"`
 	}
 	ModDef struct {
-		ModID               ModID               `json:"ID" xml:"ID"`
-		Name                ModName             `json:"Name" xml:"Name"`
-		Author              string              `json:"Author" xml:"Author"`
-		AuthorLink          string              `json:"AuthorLink" xml:"AuthorLink"`
-		ReleaseDate         string              `json:"ReleaseDate" xml:"ReleaseDate"`
-		Category            config.Category     `json:"Category" xml:"Category"`
-		Description         string              `json:"Description" xml:"Description"`
-		ReleaseNotes        string              `json:"ReleaseNotes" xml:"ReleaseNotes"`
-		Link                string              `json:"Link" xml:"Link"`
-		Version             string              `json:"Version" xml:"Version"`
-		InstallType_        *config.InstallType `json:"InstallType,omitempty" xml:"InstallType,omitempty"`
-		Preview             *Preview            `json:"Preview,omitempty" xml:"Preview,omitempty"`
-		Previews            []*Preview          `json:"Previews,omitempty" xml:"Previews,omitempty"`
-		ModKind             ModKind             `json:"ModKind" xml:"ModKind"`
-		ModCompatibility    *ModCompatibility   `json:"Compatibility,omitempty" xml:"ModCompatibility,omitempty"`
-		Downloadables       []*Download         `json:"Downloadable" xml:"Downloadables"`
-		DonationLinks       []*DonationLink     `json:"DonationLink,omitempty" xml:"DonationLinks,omitempty"`
-		Games               []*Game             `json:"Games" xml:"Games"`
-		AlwaysDownload      []*DownloadFiles    `json:"AlwaysDownload,omitempty" xml:"AlwaysDownload,omitempty"`
-		Configurations      []*Configuration    `json:"Configuration,omitempty" xml:"Configurations,omitempty"`
-		ConfigSelectionType SelectType          `json:"ConfigSelectionType" xml:"ConfigSelectionType"`
-		Hide                bool                `json:"Hide" xml:"Hide"`
-		VerifiedAsWorking   bool                `json:"VerifiedAsWorking" xml:"VerifiedAsWorking"`
-		Bugs                []BugReport         `json:"Bugs,omitempty" xml:"Bugs,omitempty"`
-		IsManuallyCreated   bool                `json:"IsManuallyCreated" xml:"IsManuallyCreated"`
+		ModID             ModID               `json:"ID" xml:"ID"`
+		Name              ModName             `json:"Name" xml:"Name"`
+		Author            string              `json:"Author" xml:"Author"`
+		AuthorLink        string              `json:"AuthorLink" xml:"AuthorLink"`
+		ReleaseDate       string              `json:"ReleaseDate" xml:"ReleaseDate"`
+		Category          config.Category     `json:"Category" xml:"Category"`
+		Description       string              `json:"Description" xml:"Description"`
+		ReleaseNotes      string              `json:"ReleaseNotes" xml:"ReleaseNotes"`
+		Link              string              `json:"Link" xml:"Link"`
+		Version           string              `json:"Version" xml:"Version"`
+		InstallType_      *config.InstallType `json:"InstallType,omitempty" xml:"InstallType,omitempty"`
+		Preview           *Preview            `json:"Preview,omitempty" xml:"Preview,omitempty"`
+		Previews          []*Preview          `json:"Previews,omitempty" xml:"Previews,omitempty"`
+		ModKind           ModKind             `json:"ModKind" xml:"ModKind"`
+		ModCompatibility  *ModCompatibility   `json:"Compatibility,omitempty" xml:"ModCompatibility,omitempty"`
+		Downloadables     []*Download         `json:"Downloadable" xml:"Downloadables"`
+		DonationLinks     []*DonationLink     `json:"DonationLink,omitempty" xml:"DonationLinks,omitempty"`
+		Games             []*Game             `json:"Games" xml:"Games"`
+		AlwaysDownload    []*DownloadFiles    `json:"AlwaysDownload,omitempty" xml:"AlwaysDownload,omitempty"`
+		Configurations    []*Configuration    `json:"Configuration,omitempty" xml:"Configurations,omitempty"`
+		Hide              bool                `json:"Hide" xml:"Hide"`
+		VerifiedAsWorking bool                `json:"VerifiedAsWorking" xml:"VerifiedAsWorking"`
+		Bugs              []BugReport         `json:"Bugs,omitempty" xml:"Bugs,omitempty"`
+		IsManuallyCreated bool                `json:"IsManuallyCreated" xml:"IsManuallyCreated"`
 	}
 	Mod struct {
 		*ModDef
@@ -94,10 +94,11 @@ const (
 	Auto   SelectType = "Auto"
 	Select SelectType = "Select"
 	Radio  SelectType = "Radio"
+	Multi  SelectType = "Multi"
 )
 
 var (
-	SelectTypes  = []string{string(Auto), string(Select), string(Radio)}
+	SelectTypes  = []string{string(Auto), string(Select), string(Radio), string(Multi)}
 	InstallTypes = []string{string(config.Move), string(config.MoveToArchive)}
 )
 

@@ -99,8 +99,7 @@ func (a *ModAuthorer) OnClose() {
 func (a *ModAuthorer) NewHostedMod() {
 	a.modID = ""
 	a.updateEntries(mods.NewMod(&mods.ModDef{
-		ReleaseDate:         time.Now().Format("Jan 02 2006"),
-		ConfigSelectionType: mods.Auto,
+		ReleaseDate: time.Now().Format("Jan 02 2006"),
 	}))
 }
 
@@ -111,8 +110,7 @@ func (a *ModAuthorer) NewNexusMod() {
 		ModKind: mods.ModKind{
 			Kinds: *a.kinds,
 		},
-		ReleaseDate:         time.Now().Format("Jan 02 2006"),
-		ConfigSelectionType: mods.Auto,
+		ReleaseDate: time.Now().Format("Jan 02 2006"),
 	}))
 
 	e := widget.NewEntry()
@@ -140,8 +138,7 @@ func (a *ModAuthorer) NewCurseForgeMod() {
 		ModKind: mods.ModKind{
 			Kinds: *a.kinds,
 		},
-		ReleaseDate:         time.Now().Format("Jan 02 2006"),
-		ConfigSelectionType: mods.Auto,
+		ReleaseDate: time.Now().Format("Jan 02 2006"),
 	}))
 
 	e := widget.NewEntry()
@@ -336,10 +333,6 @@ func (a *ModAuthorer) updateEntries(mod *mods.Mod) {
 		}
 	}
 	a.installTypeSelect.Set(string(a.installType))
-	if mod.ConfigSelectionType == "" {
-		mod.ConfigSelectionType = mods.Auto
-	}
-	a.selectType.Set(string(mod.ConfigSelectionType))
 
 	entry.NewEntry[string](a, entry.KindString, "Working Dir", config.PWD)
 	if dir, ok := authored.GetDir(mod.ModID); ok && dir != "" {
@@ -438,7 +431,6 @@ func (a *ModAuthorer) compileMod() (m *mods.Mod, err error) {
 		},
 		Previews: a.previewsDef.compile(),
 		// ModKind:      *a.modKindDef.compile(),
-		ConfigSelectionType: mods.SelectType(a.selectType.Value()),
 		// ConfigSelectionType: mods.Auto,
 		ModCompatibility:  a.modCompatsDef.compile(),
 		DonationLinks:     a.donationsDef.compile(),

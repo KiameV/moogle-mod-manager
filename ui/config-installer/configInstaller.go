@@ -3,6 +3,7 @@ package config_installer
 import (
 	"errors"
 	"fmt"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
@@ -30,8 +31,8 @@ type configInstallerUI struct {
 	baseDir         string
 	done            func(mods.Result, []*mods.ToInstall) error
 
-	currentConfig *mods.Configuration
-	currentChoice *mods.Choice
+	currentConfig  *mods.Configuration
+	currentChoices []*mods.Choice
 }
 
 func (ui *configInstallerUI) PreDraw(fyne.Window, ...interface{}) error { return nil }
@@ -65,12 +66,15 @@ func (ui *configInstallerUI) Draw(w fyne.Window) {
 	state.SetBaseDir(ui.baseDir)
 	buttons := container.NewHBox(
 		widget.NewButton("Select", func() {
-			if ui.currentChoice == nil {
+			if len(ui.currentChoices) == 0 {
 				return
 			}
 			ui.prevConfigs = append(ui.prevConfigs, ui.currentConfig)
-			ui.choices = append(ui.choices, ui.currentChoice)
-			if ui.currentChoice.NextConfigurationName == nil {
+			for _, c := range ui.currentChoices {
+				ui.choices = append(ui.choices, c)
+			}
+
+			if ui.currentConfig.SelectionType == mods.Multi || ui.currentChoices[0].NextConfigurationName == nil {
 				tis, err := mods.NewToInstallForMod(ui.mod, ui.uniqueToInstall())
 				if err != nil {
 					util.ShowErrorLong(err)
@@ -84,11 +88,11 @@ func (ui *configInstallerUI) Draw(w fyne.Window) {
 				}
 			} else {
 				for _, ui.currentConfig = range ui.mod.Configurations {
-					if ui.currentConfig.Name == *ui.currentChoice.NextConfigurationName {
+					if ui.currentConfig.Name == *ui.currentChoices[0].NextConfigurationName {
 						break
 					}
 				}
-				ui.currentChoice = nil
+				ui.currentChoices = ui.currentChoices[:0]
 				ui.choiceContainer.RemoveAll()
 				ui.Draw(w)
 			}
@@ -107,13 +111,19 @@ func (ui *configInstallerUI) Draw(w fyne.Window) {
 		widget.NewLabelWithStyle(ui.currentConfig.Name, fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
 		widget.NewRichTextFromMarkdown(ui.currentConfig.Description),
 		buttons,
-		ui.getChoiceSelector(func(name string) {
-			for _, ui.currentChoice = range ui.currentConfig.Choices {
-				if ui.currentChoice.Name == name {
-					ui.choiceContainer.RemoveAll()
-					ui.drawChoiceInfo()
-					break
+		ui.getChoiceSelector(func(selected ...string) {
+			ui.currentChoices = ui.currentChoices[:0]
+			for _, s := range selected {
+				for _, c := range ui.currentConfig.Choices {
+					if s == c.Name {
+						ui.currentChoices = append(ui.currentChoices, c)
+						break
+					}
 				}
+			}
+			ui.choiceContainer.RemoveAll()
+			if l := len(ui.currentChoices); l > 0 {
+				ui.drawChoiceInfo(ui.currentChoices[l-1])
 			}
 		}))
 	if img := ui.currentConfig.Preview.GetAsEnlargeOnClick(); img != nil {
@@ -128,13 +138,13 @@ func (ui *configInstallerUI) Draw(w fyne.Window) {
 			container.NewBorder(c, nil, nil, nil, container.NewVScroll(ui.choiceContainer))))
 }
 
-func (ui *configInstallerUI) getChoiceSelector(onChange func(choice string)) fyne.CanvasObject {
+func (ui *configInstallerUI) getChoiceSelector(onChange func(choices ...string)) fyne.CanvasObject {
 	possible := make([]string, len(ui.currentConfig.Choices))
 	for j, c := range ui.currentConfig.Choices {
 		possible[j] = c.Name
 	}
 
-	st := ui.mod.ConfigSelectionType
+	st := ui.currentConfig.SelectionType
 	if st == mods.Auto {
 		st = mods.Radio
 		if len(ui.currentConfig.Choices) > 3 {
@@ -143,26 +153,35 @@ func (ui *configInstallerUI) getChoiceSelector(onChange func(choice string)) fyn
 	}
 
 	if st == mods.Radio {
-		rg := widget.NewRadioGroup(possible, onChange)
+		rg := widget.NewRadioGroup(possible, func(s string) {
+			onChange(s)
+		})
 		if len(rg.Options) > 0 {
 			rg.SetSelected(rg.Options[0])
 		}
 		return rg
 	}
-	sg := widget.NewSelect(possible, onChange)
+	if st == mods.Multi {
+		return widget.NewCheckGroup(possible, func(s []string) {
+			onChange(s...)
+		})
+	}
+	sg := widget.NewSelect(possible, func(s string) {
+		onChange(s)
+	})
 	if len(sg.Options) > 0 {
 		sg.SetSelected(sg.Options[0])
 	}
 	return sg
 }
 
-func (ui *configInstallerUI) drawChoiceInfo() {
+func (ui *configInstallerUI) drawChoiceInfo(choice *mods.Choice) {
 	c := container.NewVBox(
-		widget.NewLabelWithStyle(ui.currentChoice.Name, fyne.TextAlignLeading, fyne.TextStyle{Bold: true}))
-	if ui.currentChoice.Description != "" {
-		c.Add(widget.NewRichTextFromMarkdown(ui.currentChoice.Description))
+		widget.NewLabelWithStyle(choice.Name, fyne.TextAlignLeading, fyne.TextStyle{Bold: true}))
+	if choice.Description != "" {
+		c.Add(widget.NewRichTextFromMarkdown(choice.Description))
 	}
-	if img := ui.currentChoice.Preview.GetAsEnlargeOnClick(); img != nil {
+	if img := choice.Preview.GetAsEnlargeOnClick(); img != nil {
 		c = container.NewBorder(img, nil, nil, nil, c)
 	}
 	ui.choiceContainer.Add(c)
