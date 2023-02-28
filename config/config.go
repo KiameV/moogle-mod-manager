@@ -3,11 +3,12 @@ package config
 import (
 	"errors"
 	"fmt"
-	"fyne.io/fyne/v2"
-	"github.com/kiamev/moogle-mod-manager/util"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"fyne.io/fyne/v2"
+	"github.com/kiamev/moogle-mod-manager/util"
 )
 
 const configsFile = "configs.json"
@@ -25,7 +26,7 @@ const (
 
 	windowsRegLookup = "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Steam App "
 
-	//idChronoCross    = "1133760"
+	// idChronoCross    = "1133760"
 	// TODO BoF
 )
 
@@ -58,6 +59,7 @@ type (
 		DownloadDir                string              `json:"downloadDir"`
 		BackupDir                  string              `json:"backupDir"`
 		DefaultGame                string              `json:"openTo"`
+		CheckForM3UpdateOnStart    *bool               `json:"checkAppUpdate"`
 		GameDirs                   map[string]*GameDir `json:"gameDirs"`
 		DeleteDownloadAfterInstall bool                `json:"deleteDownloadAfterInstall"`
 	}

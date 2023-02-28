@@ -2,6 +2,8 @@ package menu
 
 import (
 	"fmt"
+	"net/url"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/cmd/fyne_settings/settings"
 	"fyne.io/fyne/v2/container"
@@ -17,7 +19,6 @@ import (
 	"github.com/kiamev/moogle-mod-manager/ui/secret"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
 	"github.com/kiamev/moogle-mod-manager/ui/util"
-	"net/url"
 )
 
 func New() state.Screen {
@@ -59,20 +60,7 @@ func (m *MainMenu) Draw(w fyne.Window) {
 		}),
 		fyne.NewMenuItemSeparator(),
 		fyne.NewMenuItem("Check For App Updates", func() {
-			if newer, newerVersion, err := browser.CheckForUpdate(); err != nil {
-				dialog.ShowError(err, w)
-			} else if newer {
-				dialog.ShowConfirm(
-					"Update Available",
-					fmt.Sprintf("Version %s is available.\nWould you like to update?", newerVersion),
-					func(ok bool) {
-						if ok {
-							_ = browser.Update(newerVersion)
-						}
-					}, w)
-			} else {
-				dialog.ShowInformation("No Updates Available", "You are running the latest version.", w)
-			}
+			util.PromptForUpdateAsNeeded(false)
 		}))
 	if state.GetCurrentGUI() == state.LocalMods {
 		file.Items = append(file.Items,

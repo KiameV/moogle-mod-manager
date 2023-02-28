@@ -1,6 +1,8 @@
 package configure
 
 import (
+	"os"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
@@ -9,13 +11,13 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/config"
 	cw "github.com/kiamev/moogle-mod-manager/ui/custom-widgets"
-	"os"
 )
 
 func Show(w fyne.Window, done func()) {
 	configs := *config.Get()
 	items := []*widget.FormItem{
 		createSelectRow("Default GameDef", &configs.DefaultGame, config.GameIDs()...),
+		createCheckboxRow("Check For M3 Updates on Start", configs.CheckForM3UpdateOnStart),
 		createCheckboxRow("Delete Downloads After Install", &configs.DeleteDownloadAfterInstall),
 	}
 	for _, g := range config.GameDefs() {

@@ -1,6 +1,13 @@
 package main
 
 import (
+	"log"
+	"os"
+	"path/filepath"
+	"runtime/pprof"
+	"strconv"
+	"time"
+
 	"fyne.io/fyne/v2/app"
 	"github.com/kiamev/moogle-mod-manager/browser"
 	"github.com/kiamev/moogle-mod-manager/config"
@@ -21,10 +28,6 @@ import (
 	"github.com/kiamev/moogle-mod-manager/ui/state/ui"
 	"github.com/kiamev/moogle-mod-manager/ui/util"
 	"github.com/kiamev/moogle-mod-manager/ui/util/resources"
-	"log"
-	"os"
-	"path/filepath"
-	"runtime/pprof"
 )
 
 func main() {
@@ -42,6 +45,8 @@ func main() {
 			}
 		}
 	}()
+
+	readScaleFile()
 
 	if os.Getenv("profile") == "true" {
 		f, err := os.Create(filepath.Join(config.PWD, "cpuprofile"))
@@ -75,7 +80,22 @@ func main() {
 		state.ShowScreen(state.LocalMods)
 	}
 
+	if *config.Get().CheckForM3UpdateOnStart {
+		go func() {
+			time.Sleep(time.Second)
+			util.PromptForUpdateAsNeeded(true)
+		}()
+	}
+
 	ui.Window.ShowAndRun()
+}
+
+func readScaleFile() {
+	if b, err := os.ReadFile("scale.txt"); err == nil {
+		if _, err = strconv.ParseFloat(string(b), 64); err == nil {
+			_ = os.Setenv("FYNE_SCALE", string(b))
+		}
+	}
 }
 
 func initialize() {
@@ -89,6 +109,10 @@ func initialize() {
 	configs := config.Get()
 	if err = configs.Initialize(); err != nil {
 		util.ShowErrorLong(err)
+	}
+	if configs.CheckForM3UpdateOnStart == nil {
+		b := true
+		configs.CheckForM3UpdateOnStart = &b
 	}
 
 	ui.Window.Resize(config.Get().Size())
