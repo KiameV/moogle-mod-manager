@@ -23,7 +23,6 @@ const (
 )
 
 func checkFor7zip() (mods.Result, error) {
-	_ = os.Remove(filepath.Join(config.PWD, "7z.exe"))
 	if _, err := exec.Command("where", z7cmd).Output(); err != nil {
 		wg := sync.WaitGroup{}
 		wg.Add(1)
@@ -236,6 +235,7 @@ func (i *archiveInjector) add(archive, absoluteFrom string, rel, name string) (c
 		af.dirToInject += "/."
 	}
 	i.renames = append(i.renames, fromTo{from: absoluteFrom, to: to})
+	_ = os.MkdirAll(filepath.Dir(to), 0755)
 	if err = os.Rename(absoluteFrom, to); err != nil {
 		return
 	}
