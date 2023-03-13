@@ -5,6 +5,7 @@ import (
 	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/dialog"
 	"github.com/kiamev/moogle-mod-manager/config"
+	"github.com/kiamev/moogle-mod-manager/ui/state/gui"
 	"github.com/kiamev/moogle-mod-manager/ui/state/ui"
 	"github.com/kiamev/moogle-mod-manager/ui/util/working"
 )
@@ -58,33 +59,34 @@ func GetScreen(gui GUI) Screen {
 	return screens[gui]
 }
 
-func ShowScreen(gui GUI, args ...interface{}) {
+func ShowScreen(g GUI, args ...interface{}) {
 	defer working.HideDialog()
 	working.ShowDialog()
 
-	if gui == DiscoverMods {
+	if g == DiscoverMods {
 		if ui.PopupWindow == nil {
 			ui.PopupWindow = ui.App.NewWindow("Finder")
 			ui.PopupWindow.Resize(config.Get().Size())
 			ui.PopupWindow.SetOnClosed(func() { ui.PopupWindow = nil })
-			if err := screens[gui].PreDraw(ui.PopupWindow, args); err != nil {
+			if err := screens[g].PreDraw(ui.PopupWindow, args); err != nil {
 				dialog.ShowError(err, ui.Window)
 				return
 			}
 			ui.PopupWindow.Show()
 			ui.ShowingPopup = true
-			screens[gui].DrawAsDialog(ui.PopupWindow)
+			screens[g].DrawAsDialog(ui.PopupWindow)
 		}
 		return
 	} else {
-		if err := screens[gui].PreDraw(ui.Window, args); err != nil {
+		if err := screens[g].PreDraw(ui.Window, args); err != nil {
 			dialog.ShowError(err, ui.Window)
 			return
 		}
 	}
-	appendGuiHistory(gui)
+	appendGuiHistory(g)
 	mainMenu.Draw(ui.Window)
-	screens[gui].Draw(ui.Window)
+	screens[g].Draw(ui.Window)
+	gui.Current.Set(int(g))
 }
 
 func ClosePopupWindow() {
@@ -99,9 +101,11 @@ func ShowPreviousScreen() {
 		h := guiHistories[len(guiHistories)-1]
 		s = screens[h.gui]
 		SetBaseDir(h.baseDir)
+		gui.Current.Set(int(h.gui))
 	} else {
 		s = screens[None]
 		SetBaseDir("")
+		gui.Current.Set(int(None))
 	}
 	ui.Window.MainMenu().Refresh()
 	mainMenu.Draw(ui.Window)
@@ -111,10 +115,12 @@ func ShowPreviousScreen() {
 func UpdateCurrentScreen() {
 	s := screens[GetCurrentGUI()]
 	s.Draw(ui.Window)
+	gui.Current.Set(int(GetCurrentGUI()))
 }
 
-func RegisterScreen(gui GUI, screen Screen) {
-	screens[gui] = screen
+func RegisterScreen(g GUI, screen Screen) {
+	screens[g] = screen
+	gui.Current.Set(int(g))
 }
 
 func RegisterMainMenu(m Screen) {
