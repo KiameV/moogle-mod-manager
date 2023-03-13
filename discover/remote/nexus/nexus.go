@@ -4,16 +4,17 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/kiamev/moogle-mod-manager/config"
-	"github.com/kiamev/moogle-mod-manager/config/secrets"
-	u "github.com/kiamev/moogle-mod-manager/discover/remote/util"
-	"github.com/kiamev/moogle-mod-manager/mods"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/kiamev/moogle-mod-manager/config"
+	"github.com/kiamev/moogle-mod-manager/config/secrets"
+	u "github.com/kiamev/moogle-mod-manager/discover/remote/util"
+	"github.com/kiamev/moogle-mod-manager/mods"
 )
 
 const (
@@ -23,7 +24,7 @@ const (
 	nexusUrl               = "https://www.nexusmods.com/%s/mods/%d"
 	nexusApiNewestModsUrl  = "https://api.nexusmods.com/v1/games/%s/mods/latest_added.json"
 
-	//nexusUsersApiUrl = "https://users.nexusmods.com/oauth/token"
+	// nexusUsersApiUrl = "https://users.nexusmods.com/oauth/token"
 
 	// NexusFileDownload file_id, NexusGameID
 	NexusFileDownload = "https://www.nexusmods.com/Core/Libs/Common/Widgets/DownloadPopUp?id=%d&game_id=%v"
@@ -277,7 +278,7 @@ func toMod(n nexusMod, dls []NexusFile) (include bool, mod *mods.Mod, err error)
 		})
 	}
 
-	include = true
+	/*include = true
 	if len(choices) > 1 {
 		mod.Configurations = []*mods.Configuration{
 			{
@@ -292,7 +293,7 @@ func toMod(n nexusMod, dls []NexusFile) (include bool, mod *mods.Mod, err error)
 		mod.AlwaysDownload = append(mod.AlwaysDownload, choices[0].DownloadFiles)
 	} else {
 		include = false
-	}
+	}*/
 	return
 }
 

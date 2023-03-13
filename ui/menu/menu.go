@@ -10,6 +10,7 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/browser"
+	"github.com/kiamev/moogle-mod-manager/discover/repo"
 	"github.com/kiamev/moogle-mod-manager/files"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	"github.com/kiamev/moogle-mod-manager/mods/managed"
@@ -61,6 +62,13 @@ func (m *MainMenu) Draw(w fyne.Window) {
 		fyne.NewMenuItemSeparator(),
 		fyne.NewMenuItem("Check For App Updates", func() {
 			util.PromptForUpdateAsNeeded(false)
+		}),
+		fyne.NewMenuItemSeparator(),
+		fyne.NewMenuItem("Clear Repo Cache", func() {
+			dialog.ShowConfirm("Clear Cache", "This will cause the application to close. Would you like to continue?", func(ok bool) {
+				repo.ClearCache()
+				w.Close()
+			}, w)
 		}))
 	if state.GetCurrentGUI() == state.LocalMods {
 		file.Items = append(file.Items,

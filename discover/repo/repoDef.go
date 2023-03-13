@@ -2,12 +2,13 @@ package repo
 
 import (
 	"fmt"
-	"github.com/kiamev/moogle-mod-manager/config"
-	"github.com/kiamev/moogle-mod-manager/mods"
-	"github.com/kiamev/moogle-mod-manager/util"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/kiamev/moogle-mod-manager/config"
+	"github.com/kiamev/moogle-mod-manager/mods"
+	"github.com/kiamev/moogle-mod-manager/util"
 )
 
 const (
@@ -87,6 +88,10 @@ func Initialize() (err error) {
 		_ = saveDefaultRepo(f)
 	}
 	return
+}
+
+func ClearCache() {
+	_ = os.RemoveAll(filepath.Join(config.PWD, repoDir))
 }
 
 func Dirs(k UseKind) (dirs []string) {
