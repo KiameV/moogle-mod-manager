@@ -1,13 +1,14 @@
 package game_select
 
 import (
+	"net/url"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
-	"net/url"
 )
 
 func New() state.Screen {
@@ -33,7 +34,7 @@ func (s *GameSelect) Draw(w fyne.Window) {
 	u, _ := url.Parse("https://discord.gg/KMehVn7GwM")
 	w.SetContent(
 		container.NewBorder(
-			container.NewCenter(widget.NewHyperlinkWithStyle("Join us in the Moogles & Discord", u, fyne.TextAlignCenter, fyne.TextStyle{Bold: true})),
+			container.NewCenter(widget.NewHyperlinkWithStyle("Join us in the Moogles & Mods Discord", u, fyne.TextAlignCenter, fyne.TextStyle{Bold: true})),
 			nil, nil, nil,
 			container.New(layout.NewGridLayout(3), inputs...)))
 }
