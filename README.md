@@ -12,5 +12,11 @@ Discussions is open https://github.com/KiameV/moogle-mod-manager/discussions
 In association with `Moogles & Mods` discord channel - https://discord.gg/uEfSJDdQ
 
 ______________________________________________________________________________________
+
 If you'd like to support me in this effort, consider buying me a coffee
 https://ko-fi.com/kiamev
+
+______________________________________________________________________________________
+
+Logo copyrights are owned by their respective owners and are being used in this project 
+in accordance with the [Fair Use Doctrine](https://en.wikipedia.org/wiki/Fair_use).
