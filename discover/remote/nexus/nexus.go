@@ -278,8 +278,8 @@ func toMod(n nexusMod, dls []NexusFile) (include bool, mod *mods.Mod, err error)
 		})
 	}
 
-	/*include = true
-	if len(choices) > 1 {
+	include = true
+	/*if len(choices) > 1 {
 		mod.Configurations = []*mods.Configuration{
 			{
 				Name:        "Choose",
