@@ -1,6 +1,11 @@
 package mods
 
 import (
+	"image"
+	"io"
+	"os"
+	"path/filepath"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
@@ -11,8 +16,7 @@ import (
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/ui/state"
 	"github.com/kiamev/moogle-mod-manager/ui/state/ui"
-	"os"
-	"path/filepath"
+	"golang.org/x/image/webp"
 )
 
 type Preview struct {
@@ -39,7 +43,7 @@ func (p *Preview) GetUncachedImage() (img *canvas.Image) {
 	if p.Local != nil {
 		f := filepath.Join(state.GetBaseDir(), *p.Local)
 		if _, err = os.Stat(f); err == nil {
-			r, err = fyne.LoadResourceFromPath(f)
+			r, err = p.loadResourceFromPath(f)
 		}
 	}
 	if r == nil && p.Url != nil {
@@ -53,6 +57,24 @@ func (p *Preview) GetUncachedImage() (img *canvas.Image) {
 	img = canvas.NewImageFromResource(r)
 	img.SetMinSize(fyne.Size{Width: float32(300), Height: float32(300)})
 	img.FillMode = canvas.ImageFillContain
+	return
+}
+
+func (p *Preview) loadResourceFromPath(f string) (r fyne.Resource, err error) {
+	var (
+		i      image.Image
+		reader io.Reader
+	)
+	if r, err = fyne.LoadResourceFromPath(f); err != nil {
+		if reader, err = os.Open(f); err != nil {
+			return
+		}
+		if i, err = webp.Decode(reader); err != nil {
+			return
+		}
+		canvas.NewImageFromImage(i)
+
+	}
 	return
 }
 
