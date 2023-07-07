@@ -1,6 +1,7 @@
 package discover
 
 import (
+	"sort"
 	"strings"
 
 	"fyne.io/fyne/v2"
@@ -60,6 +61,9 @@ func (ui *discoverUI) PreDraw(w fyne.Window, args ...interface{}) (err error) {
 			ui.mods = append(ui.mods, m)
 		}
 	}
+	sort.Slice(ui.mods, func(i, j int) bool {
+		return ui.mods[i].Name < ui.mods[j].Name
+	})
 	return
 }
 

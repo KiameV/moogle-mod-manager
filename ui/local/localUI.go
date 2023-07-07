@@ -18,6 +18,7 @@ import (
 	"github.com/kiamev/moogle-mod-manager/ui/util/working"
 	"github.com/ncruces/zenity"
 	"os/exec"
+	"sort"
 )
 
 type LocalUI interface {
@@ -136,7 +137,11 @@ func (ui *localUI) Draw(w fyne.Window) {
 		}
 	})
 
-	for _, mod := range managed.GetMods(state.CurrentGame) {
+	m := managed.GetMods(state.CurrentGame)
+	sort.Slice(m, func(i, j int) bool {
+		return m[i].DisplayName() < m[j].DisplayName()
+	})
+	for _, mod := range m {
 		ui.addModToList(mod)
 	}
 
