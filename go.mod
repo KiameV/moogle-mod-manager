@@ -3,8 +3,8 @@ module github.com/kiamev/moogle-mod-manager
 go 1.19
 
 require (
-	fyne.io/fyne/v2 v2.3.0
-	fyne.io/x/fyne v0.0.0-20221121180555-92e65f302337
+	fyne.io/fyne/v2 v2.3.5
+	fyne.io/x/fyne v0.0.0-20230712143731-ae1d5b63c4f2
 	github.com/JohannesKaufmann/html-to-markdown v1.3.6
 	github.com/atotto/clipboard v0.1.4
 	github.com/carwale/golibraries v1.5.0
@@ -13,13 +13,14 @@ require (
 	github.com/google/go-github/v45 v45.2.0
 	github.com/mholt/archiver/v4 v4.0.0-alpha.7
 	github.com/ncruces/zenity v0.10.5
+	golang.org/x/image v0.3.0
 	golang.org/x/oauth2 v0.4.0
 	golang.org/x/sync v0.1.0
 	golang.org/x/sys v0.4.0
 )
 
 require (
-	fyne.io/systray v1.10.1-0.20221115204952-d16a6177e6f1 // indirect
+	fyne.io/systray v1.10.1-0.20230602210930-b6a2d6ca2a7b // indirect
 	github.com/Microsoft/go-winio v0.6.0 // indirect
 	github.com/ProtonMail/go-crypto v0.0.0-20221026131551-cf6655e29de4 // indirect
 	github.com/PuerkitoBio/goquery v1.8.0 // indirect
@@ -27,7 +28,6 @@ require (
 	github.com/akavel/rsrc v0.10.2 // indirect
 	github.com/andybalholm/brotli v1.0.4 // indirect
 	github.com/andybalholm/cascadia v1.3.1 // indirect
-	github.com/benoitkugler/textlayout v0.3.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/cloudflare/circl v1.3.1 // indirect
@@ -44,7 +44,7 @@ require (
 	github.com/go-git/go-billy/v5 v5.4.0 // indirect
 	github.com/go-gl/gl v0.0.0-20211210172815-726fda9656d6 // indirect
 	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20221017161538-93cebf72946b // indirect
-	github.com/go-text/typesetting v0.0.0-20230104230035-6cdafd18ca27 // indirect
+	github.com/go-text/typesetting v0.0.0-20230405155246-bf9c697c6e16 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
 	github.com/goki/freetype v0.0.0-20220119013949-7a161fd3728c // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
@@ -80,7 +80,6 @@ require (
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	github.com/yuin/goldmark v1.5.3 // indirect
 	golang.org/x/crypto v0.5.0 // indirect
-	golang.org/x/image v0.3.0 // indirect
 	golang.org/x/mobile v0.0.0-20221110043201-43a038452099 // indirect
 	golang.org/x/mod v0.7.0 // indirect
 	golang.org/x/net v0.5.0 // indirect

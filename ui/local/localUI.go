@@ -2,6 +2,9 @@ package local
 
 import (
 	"fmt"
+	"os/exec"
+	"sort"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
@@ -17,8 +20,6 @@ import (
 	"github.com/kiamev/moogle-mod-manager/ui/util"
 	"github.com/kiamev/moogle-mod-manager/ui/util/working"
 	"github.com/ncruces/zenity"
-	"os/exec"
-	"sort"
 )
 
 type LocalUI interface {
@@ -97,21 +98,23 @@ func (ui *localUI) Draw(w fyne.Window) {
 	removeButton := widget.NewButton("Remove", func() {
 		dialog.NewConfirm("Delete?", "Are you sure you want to delete this mod?", func(ok bool) {
 			mod := ui.selectedMod
-			if ok && mod != nil && mod.Enabled() {
-				if a, err := actions.New(actions.Uninstall, state.CurrentGame, mod, func(r actions.Result) {
-					if r.Err != nil {
-						util.ShowErrorLong(r.Err)
-					} else if r.Status == mods.Ok && !mod.Enabled() {
-						ui.removeSelectedMod()
+			if ok {
+				if mod != nil && mod.Enabled() {
+					if a, err := actions.New(actions.Uninstall, state.CurrentGame, mod, func(r actions.Result) {
+						if r.Err != nil {
+							util.ShowErrorLong(r.Err)
+						} else if r.Status == mods.Ok && !mod.Enabled() {
+							ui.removeSelectedMod()
+						}
+					}); err != nil {
+						util.ShowErrorLong(err)
+					} else if err = a.Run(); err != nil {
+						util.ShowErrorLong(err)
+						return
 					}
-				}); err != nil {
-					util.ShowErrorLong(err)
-				} else if err = a.Run(); err != nil {
-					util.ShowErrorLong(err)
-					return
+				} else {
+					ui.removeSelectedMod()
 				}
-			} else {
-				ui.removeSelectedMod()
 			}
 		}, u.Window).Show()
 	})

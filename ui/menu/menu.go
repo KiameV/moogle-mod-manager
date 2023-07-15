@@ -95,8 +95,10 @@ func (m *MainMenu) createFileMenu() {
 		fyne.NewMenuItemSeparator(),
 		fyne.NewMenuItem("Clear Repo Cache (Debug)", func() {
 			dialog.ShowConfirm("Clear Cache", "This will cause the application to close. Would you like to continue?", func(ok bool) {
-				repo.ClearCache()
-				ui.Window.Close()
+				if ok {
+					repo.ClearCache()
+					ui.Window.Close()
+				}
 			}, ui.Window)
 		}))
 	if state.GetCurrentGUI() == state.LocalMods {
