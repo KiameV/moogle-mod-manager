@@ -1,15 +1,15 @@
 package files
 
 import (
-	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
+
 	"github.com/kiamev/moogle-mod-manager/collections"
 	"github.com/kiamev/moogle-mod-manager/config"
 	"github.com/kiamev/moogle-mod-manager/mods"
 	uu "github.com/kiamev/moogle-mod-manager/ui/util"
 	"github.com/kiamev/moogle-mod-manager/util"
-	"path/filepath"
-	"syscall"
 )
 
 const file = "filetracker.json"
@@ -20,7 +20,7 @@ type (
 	}
 	modTracker struct {
 		Mods map[mods.ModID]*fileTracker `json:"mods"`
-		//Backups collections.Set[string]     `json:"backup"`
+		// Backups collections.Set[string]     `json:"backup"`
 	}
 	fileTracker struct {
 		Files        collections.Set[string]            `json:"files,omitempty"`
@@ -31,10 +31,8 @@ type (
 var tracker = &gameTracker{Games: make(map[config.GameID]*modTracker)}
 
 func Initialize() error {
-	if err := util.LoadFromFile(filepath.Join(config.PWD, file), tracker); err != nil {
-		if !errors.Is(err, syscall.ERROR_FILE_NOT_FOUND) {
-			return fmt.Errorf("failed to load file tracker: %v", err)
-		}
+	if _, err := os.Stat(filepath.Join(config.PWD, file)); err == nil {
+		return util.LoadFromFile(filepath.Join(config.PWD, file), tracker)
 	}
 	return nil
 }
@@ -44,7 +42,7 @@ func ModTracker(game config.GameDef) *modTracker {
 	if !ok {
 		mt = &modTracker{
 			Mods: make(map[mods.ModID]*fileTracker),
-			//Backups: collections.NewSet[string](),
+			// Backups: collections.NewSet[string](),
 		}
 		tracker.Games[game.ID()] = mt
 	}
@@ -82,9 +80,9 @@ func EmptyMods(game config.GameDef) (result []mods.ModID) {
 	return
 }
 
-//func Backups(game config.GameDef) collections.Set[string] {
+// func Backups(game config.GameDef) collections.Set[string] {
 //	return ModTracker(game).Backups
-//}
+// }
 
 func HasFile(game config.GameDef, file string) (modID mods.ModID, found bool) {
 	var ft *fileTracker
@@ -108,9 +106,9 @@ func HasArchiveFile(game config.GameDef, archive string, file string) (modID mod
 	return
 }
 
-//func HasBackup(game config.GameDef, file string) bool {
+// func HasBackup(game config.GameDef, file string) bool {
 //	return ModTracker(game).Backups.Contains(file)
-//}
+// }
 
 func SetFiles(game config.GameDef, modID mods.ModID, files ...string) {
 	var (
