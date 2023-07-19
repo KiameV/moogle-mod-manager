@@ -23,15 +23,15 @@ jobs:
 
     - name: Install gcc and graphics libraries
       run: sudo apt-get install -y gcc libgl1-mesa-dev xorg-dev
-    - name: Install Fyne
+    - name: Install fyne
       run: go install fyne.io/fyne/v2/cmd/fyne@latest
-    - name: Install UPX
+    - name: Install upx
       uses: crazy-max/ghaction-upx@v2
       with:
         install-only: true
 
     - name: Build
-      run: go build -ldflags="-s -H=windowsgui" -o moogle-mod-manager
+      run: go build -o moogle-mod-manager
     
     - name: upx
       run: upx -9 -k moogle-mod-manager
