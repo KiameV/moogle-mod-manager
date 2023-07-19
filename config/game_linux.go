@@ -2,6 +2,6 @@
 
 package config
 
-func (g *gameDef) SteamDirFromRegistry() (dir string) {
-
+func (g *gameDef) SteamDirFromRegistry() string {
+	return ""
 }
