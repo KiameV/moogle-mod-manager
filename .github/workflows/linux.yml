@@ -31,16 +31,16 @@ jobs:
         install-only: true
 
     - name: Build
-      run: go build -ldflags="-s -H=windowsgui" -o moogle-mod-manager.exe
+      run: go build -ldflags="-s -H=windowsgui" -o moogle-mod-manager
     
     - name: upx
-      run: upx -9 -k moogle-mod-manager.exe
+      run: upx -9 -k moogle-mod-manager
       
     - name: upload to release
       uses: svenstaro/upload-release-action@v2
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: moogle-mod-manager.exe
-        asset_name: moogle-mod-manager.exe
+        file: moogle-mod-manager
+        asset_name: moogle-mod-manager
         tag: latest
         overwrite: true
