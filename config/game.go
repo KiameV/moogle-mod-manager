@@ -2,13 +2,12 @@ package config
 
 import (
 	"fmt"
-	"fyne.io/fyne/v2"
-	"github.com/kiamev/moogle-mod-manager/util"
-	"golang.org/x/sys/windows/registry"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
+
+	"fyne.io/fyne/v2"
+	"github.com/kiamev/moogle-mod-manager/util"
 )
 
 var gameDefs []GameDef
@@ -259,20 +258,6 @@ func Initialize(dirs []string) (err error) {
 			return nil
 		}); err != nil {
 			return
-		}
-	}
-	return
-}
-
-func (g *gameDef) SteamDirFromRegistry() (dir string) {
-	//only poke into registry for Windows, there's probably a similar method for Mac/Linux
-	if runtime.GOOS == "windows" {
-		key, err := registry.OpenKey(registry.LOCAL_MACHINE, fmt.Sprintf("%s%s", windowsRegLookup, g.SteamID_), registry.QUERY_VALUE)
-		if err != nil {
-			return
-		}
-		if dir, _, err = key.GetStringValue("InstallLocation"); err != nil {
-			dir = ""
 		}
 	}
 	return

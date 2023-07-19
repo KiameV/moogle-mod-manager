@@ -24,8 +24,6 @@ const (
 	WindowWidth  = 1200
 	WindowHeight = 850
 
-	windowsRegLookup = "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Steam App "
-
 	// idChronoCross    = "1133760"
 	// TODO BoF
 )
