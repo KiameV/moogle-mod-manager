@@ -156,8 +156,12 @@ const (
 
 const (
 	BlankInstallType InstallType = ""
-	MoveToArchive    InstallType = "MoveToArchive"
-	Move             InstallType = "Move"
+	// MoveFile moves file to destination
+	MoveFile InstallType = "MoveFile"
+	// MoveToArchive extracts and move to destination archive
+	MoveToArchive InstallType = "MoveToArchive"
+	// Move extracts and move to destination
+	Move InstallType = "Move"
 )
 
 func GameDefs() []GameDef {

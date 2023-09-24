@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"sync"
 	"time"
@@ -293,12 +294,61 @@ func Install(state *State) (result mods.Result, err error) {
 
 func install(state *State, backupDir string) (mods.Result, error) {
 	switch state.Mod.InstallType(state.Game) {
+	case config.MoveFile:
+		return installDirectMoveFile(state, backupDir)
 	case config.Move:
 		return installDirectMove(state, backupDir)
 	case config.MoveToArchive:
 		return installDirectMoveToArchive(state, backupDir)
 	}
 	return mods.Error, fmt.Errorf("unknown install type: %v", state.Mod.InstallType(state.Game))
+}
+
+func installDirectMoveFile(state *State, backupDir string) (mods.Result, error) {
+	var (
+		fi              os.FileInfo
+		installDir, err = config.Get().GetDir(state.Game, config.GameDirKind)
+	)
+	if err != nil {
+		return mods.Error, err
+	}
+	for _, i := range state.ToInstall {
+		dl, _ := i.GetDownloadLocation(state.Game, nil)
+		for _, d := range i.DownloadFiles {
+			for _, f := range d.Files {
+				to := path.Join(installDir, f.To)
+				if fi, err = os.Stat(to); err == nil && !fi.IsDir() {
+					// File Exists
+					// See if there's a file backup
+					absBackup := filepath.Join(backupDir, f.To)
+					if _, err = os.Stat(absBackup); err == nil {
+						// Backup Exists
+						if err = os.Remove(to); err != nil {
+							return mods.Error, err
+						}
+					} else {
+						// No Backup
+						if err = os.MkdirAll(filepath.Dir(absBackup), 0755); err != nil {
+							return mods.Error, err
+						}
+						if err = util.MoveFile(to, absBackup); err != nil {
+							return mods.Error, err
+						}
+					}
+				}
+
+				from := path.Join(dl, f.From)
+				// Install the file
+				if err = util.MoveFile(from, to); err != nil {
+					return mods.Error, err
+				}
+				files.SetFiles(state.Game, state.Mod.ID(), to)
+			}
+		}
+
+	}
+
+	return mods.Ok, nil
 }
 
 func installDirectMove(state *State, backupDir string) (mods.Result, error) {
@@ -344,7 +394,7 @@ func installDirectMove(state *State, backupDir string) (mods.Result, error) {
 
 func Uninstall(state *State) (mods.Result, error) {
 	switch state.Mod.InstallType(state.Game) {
-	case config.Move:
+	case config.Move, config.MoveFile:
 		return uninstallMove(state)
 	case config.MoveToArchive:
 		return uninstallDirectMoveToArchive(state)

@@ -99,7 +99,7 @@ const (
 
 var (
 	SelectTypes  = []string{string(Auto), string(Select), string(Radio), string(Multi)}
-	InstallTypes = []string{string(config.Move), string(config.MoveToArchive)}
+	InstallTypes = []string{string(config.Move), string(config.MoveToArchive), string(config.MoveFile)}
 )
 
 const (

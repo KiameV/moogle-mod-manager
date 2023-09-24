@@ -40,9 +40,9 @@ const (
 )
 
 var (
-	running          = false
-	mutex            = sync.Mutex{}
-	installMoveSteps = []steps.Step{
+	running                 = false
+	mutex                   = sync.Mutex{}
+	extractInstallMoveSteps = []steps.Step{
 		steps.UpdateMoogleFile,
 		steps.VerifyEnable,
 		steps.PreDownload,
@@ -54,34 +54,50 @@ var (
 		steps.EnableMod,
 		steps.PostInstall,
 	}
-	uninstallMoveSteps = []steps.Step{
+	extractUpdateMoveSteps []steps.Step
+	directInstallMoveSteps = []steps.Step{
+		steps.UpdateMoogleFile,
+		steps.VerifyEnable,
+		steps.PreDownload,
+		steps.ShowWorkingDialog,
+		steps.Download,
+		steps.Conflicts,
+		steps.Install,
+		steps.EnableMod,
+		steps.PostInstall,
+	}
+	directUpdateMoveSteps []steps.Step
+	uninstallMoveSteps    = []steps.Step{
 		steps.VerifyDisable,
 		steps.ShowWorkingDialog,
 		steps.Uninstall,
 		steps.DisableMod,
 	}
-	updateMoveSteps []steps.Step
 )
 
 func init() {
-	updateMoveSteps = make([]steps.Step, len(uninstallMoveSteps)+len(installMoveSteps)-1)
+	extractUpdateMoveSteps = make([]steps.Step, len(uninstallMoveSteps)+len(extractInstallMoveSteps)-1)
 	for i := 1; i < len(uninstallMoveSteps); i++ {
-		updateMoveSteps = append(updateMoveSteps, uninstallMoveSteps[i])
+		extractUpdateMoveSteps = append(extractUpdateMoveSteps, uninstallMoveSteps[i])
 	}
-	for _, s := range installMoveSteps {
-		updateMoveSteps = append(updateMoveSteps, s)
+	for _, s := range extractInstallMoveSteps {
+		extractUpdateMoveSteps = append(extractUpdateMoveSteps, s)
 	}
-}
 
-func init() {
-	updateMoveSteps = append(updateMoveSteps, installMoveSteps...)
+	directUpdateMoveSteps = make([]steps.Step, len(uninstallMoveSteps)+len(directInstallMoveSteps)-1)
+	for i := 1; i < len(uninstallMoveSteps); i++ {
+		directUpdateMoveSteps = append(directUpdateMoveSteps, uninstallMoveSteps[i])
+	}
+	for _, s := range directInstallMoveSteps {
+		directUpdateMoveSteps = append(directUpdateMoveSteps, s)
+	}
 }
 
 func New(kind ActionKind, game config.GameDef, mod mods.TrackedMod, done Done) (Action, error) {
 	mutex.Lock()
 	defer mutex.Unlock()
 	if running {
-		return nil, errors.New("Another action is running. Please wait for the current mod to finish installing or uninstalling.")
+		return nil, errors.New("another action is running. Please wait for the current mod to finish installing or uninstalling.")
 	}
 	a, err := new(kind, game, mod, done)
 	if err != nil {
@@ -114,8 +130,10 @@ func new(kind ActionKind, game config.GameDef, mod mods.TrackedMod, done Done) (
 
 func createInstallSteps(game config.GameDef, tm mods.TrackedMod) (s []steps.Step, err error) {
 	switch tm.InstallType(game) {
+	case config.MoveFile:
+		s = directInstallMoveSteps
 	case config.Move, config.MoveToArchive:
-		s = installMoveSteps
+		s = extractInstallMoveSteps
 	default:
 		err = fmt.Errorf("unknown install %s for mod %s", tm.InstallType(game), tm.Mod().Name)
 	}
@@ -124,7 +142,7 @@ func createInstallSteps(game config.GameDef, tm mods.TrackedMod) (s []steps.Step
 
 func createUninstallSteps(game config.GameDef, tm mods.TrackedMod) (s []steps.Step, err error) {
 	switch tm.InstallType(game) {
-	case config.Move, config.MoveToArchive:
+	case config.Move, config.MoveToArchive, config.MoveFile:
 		s = uninstallMoveSteps
 	default:
 		err = fmt.Errorf("unknown install %s for mod %s", tm.InstallType(game), tm.Mod().Name)
@@ -134,8 +152,10 @@ func createUninstallSteps(game config.GameDef, tm mods.TrackedMod) (s []steps.St
 
 func createUpdateSteps(game config.GameDef, tm mods.TrackedMod) (s []steps.Step, err error) {
 	switch tm.InstallType(game) {
+	case config.MoveFile:
+		s = directUpdateMoveSteps
 	case config.Move, config.MoveToArchive:
-		s = updateMoveSteps
+		s = extractUpdateMoveSteps
 	default:
 		err = fmt.Errorf("unknown install %s for mod %s", tm.InstallType(game), tm.Mod().Name)
 	}

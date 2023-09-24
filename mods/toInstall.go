@@ -48,6 +48,9 @@ func NewToInstallForMod(mod *Mod, downloadFiles []*DownloadFiles) (result []*ToI
 }
 
 func (ti *ToInstall) GetDownloadLocation(game config.GameDef, tm TrackedMod) (string, error) {
+	if ti.downloadDir != "" {
+		return ti.downloadDir, nil
+	}
 	if ti.kinds.IsHosted() {
 		return ti.getHostedDownloadLocation(game, tm, tm.Mod().Version)
 	}
