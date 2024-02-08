@@ -76,7 +76,7 @@ var (
 )
 
 func init() {
-	extractUpdateMoveSteps = make([]steps.Step, len(uninstallMoveSteps)+len(extractInstallMoveSteps)-1)
+	extractUpdateMoveSteps = make([]steps.Step, 0, len(uninstallMoveSteps)+len(extractInstallMoveSteps)-1)
 	for i := 1; i < len(uninstallMoveSteps); i++ {
 		extractUpdateMoveSteps = append(extractUpdateMoveSteps, uninstallMoveSteps[i])
 	}
@@ -84,7 +84,7 @@ func init() {
 		extractUpdateMoveSteps = append(extractUpdateMoveSteps, s)
 	}
 
-	directUpdateMoveSteps = make([]steps.Step, len(uninstallMoveSteps)+len(directInstallMoveSteps)-1)
+	directUpdateMoveSteps = make([]steps.Step, 0, len(uninstallMoveSteps)+len(directInstallMoveSteps)-1)
 	for i := 1; i < len(uninstallMoveSteps); i++ {
 		directUpdateMoveSteps = append(directUpdateMoveSteps, uninstallMoveSteps[i])
 	}
